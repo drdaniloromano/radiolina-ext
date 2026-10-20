@@ -58,6 +58,25 @@ class PackageE2E(unittest.TestCase):
                 for name in ('extension.js', 'stylesheet.css'):
                     self.assertIn(b'SPDX-License-Identifier: MIT', archive.read(name))
 
+            config = checkout / 'src/service/build-config.js'
+            original = config.read_bytes()
+            bundle = checkout / 'build' / f'{metadata["uuid"]}.zip'
+            for value, literal in (('0', '0'), ('750', '750'), ('1000', '1000'), ('inherit', 'null')):
+                result = subprocess.run([sys.executable, 'scripts/build.py', '--oom-score-adj', value],
+                                        cwd=checkout, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                with zipfile.ZipFile(bundle) as archive:
+                    self.assertIn(f'export const OOM_SCORE_ADJ = {literal};',
+                                  archive.read('src/service/build-config.js').decode())
+                self.assertEqual(config.read_bytes(), original, 'Build flags must not rewrite source defaults')
+            previous = bundle.read_bytes()
+            for value in ('-1', '1001', 'invalid', '2.5'):
+                result = subprocess.run([sys.executable, 'scripts/build.py', '--oom-score-adj', value],
+                                        cwd=checkout, text=True, capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('0 to 1000, or inherit', result.stderr)
+                self.assertEqual(bundle.read_bytes(), previous, 'Invalid options must preserve the previous build')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

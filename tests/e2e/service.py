@@ -542,6 +542,64 @@ class ServiceE2E(unittest.TestCase):
         print(f'Idle service: {rss_mib:.1f} MiB RSS, {cpu_seconds:.3f}s CPU / {time.monotonic() - start:.2f}s')
         self.assertLess(cpu_seconds, 0.2, 'Idle service unexpectedly busy')
 
+    def test_oom_adjustment_targets_only_service_and_recovers_after_kill(self):
+        parent_score = Path('/proc/self/oom_score_adj').read_text()
+        self.assertEqual(int(Path(f'/proc/{self.process.pid}/oom_score_adj').read_text()), 500)
+        identifier = self.add('/icy')
+        self.call('PlayPause')
+        self.wait(lambda: self.state()['status'] == 'Playing', 'playback before abrupt termination')
+        self.process.kill()  # Exercise recovery without creating actual memory pressure.
+        self.assertEqual(self.process.wait(timeout=5), -9)
+        self.wait(lambda: not self.has_owner(), 'killed service releases D-Bus name')
+        self.start()
+        self.assertEqual(self.state()['selected'], identifier)
+        self.assertEqual(self.state()['status'], 'Stopped')
+        self.assertEqual(int(Path(f'/proc/{self.process.pid}/oom_score_adj').read_text()), 500)
+        self.assertEqual(Path('/proc/self/oom_score_adj').read_text(), parent_score)
+        self.call('PlayPause')
+        self.wait(lambda: self.state()['status'] == 'Playing', 'playback recovers after abrupt termination')
+
+    def test_packaged_oom_override_inheritance_and_denied_control(self):
+        parent_score = int(Path('/proc/self/oom_score_adj').read_text())
+        self.shutdown()
+        with tempfile.TemporaryDirectory(prefix='radiolina-oom-build-') as directory:
+            checkout = Path(directory)
+            for name in ('extension', 'src'):
+                shutil.copytree(ROOT / name, checkout / name)
+            (checkout / 'scripts').mkdir()
+            shutil.copyfile(ROOT / 'scripts/build.py', checkout / 'scripts/build.py')
+            shutil.copyfile(ROOT / 'LICENSE', checkout / 'LICENSE')
+            uuid = json.loads((checkout / 'extension/metadata.json').read_text())['uuid']
+            entry = checkout / 'build' / uuid / 'src/service/main.js'
+            try:
+                for value, expected, denied in (('750', 750, False), ('inherit', parent_score, False),
+                                                ('500', parent_score, True)):
+                    result = subprocess.run(['python3', 'scripts/build.py', '--oom-score-adj', value],
+                                            cwd=checkout, text=True, capture_output=True)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.service_entry = entry
+                    if denied:
+                        denied_control = entry.with_name('denied-oom.js')
+                        denied_control.write_text("import Gio from 'gi://Gio';\n"
+                            "const original = Gio.File.new_for_path;\n"
+                            "Gio.File.new_for_path = path => path === '/proc/self/oom_score_adj' ?\n"
+                            "    {open_readwrite() {throw new Error('fixture: OOM control denied');}} : original(path);\n")
+                        entry.write_text(entry.read_text().replace("import Gio from 'gi://Gio';",
+                            "import './denied-oom.js';\nimport Gio from 'gi://Gio';", 1))
+                    self.start()
+                    self.assertEqual(int(Path(f'/proc/{self.process.pid}/oom_score_adj').read_text()), expected)
+                    self.assertEqual(int(Path('/proc/self/oom_score_adj').read_text()), parent_score)
+                    if not self.state()['stations']:
+                        self.add('/icy')
+                    self.call('PlayPause')
+                    self.wait(lambda: self.state()['status'] == 'Playing', 'build-policy playback')
+                    self.shutdown()
+            finally:
+                if self.process.poll() is None:
+                    self.shutdown()
+                del self.service_entry
+                self.start()
+
     def test_service_exits_when_its_shell_connection_disappears(self):
         self.shutdown()
         parent = Gio.DBusConnection.new_for_address_sync(os.environ['DBUS_SESSION_BUS_ADDRESS'],

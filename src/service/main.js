@@ -7,6 +7,9 @@ import {cleanText, emptyConfig, validateUrl, validateRecentLimit, MAX_RECENT_LIM
 import {Store} from './store.js';
 import {Player} from './player.js';
 import {isDirectAudioUrl} from '../core/playlists.js';
+import {configureOomPreference} from './resource-policy.js';
+
+configureOomPreference();
 
 const BUS = 'org.mpris.MediaPlayer2.GnomeRadio';
 const APP_PATH = '/org/gnome/Radio';

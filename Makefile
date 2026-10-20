@@ -3,9 +3,10 @@
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
+OOM_SCORE_ADJ ?= 500
 
 build:
-	python3 scripts/build.py
+	python3 scripts/build.py --oom-score-adj "$(OOM_SCORE_ADJ)"
 
 test:
 	python3 scripts/test.py
@@ -20,4 +21,4 @@ container-test:
 	$(CONTAINER_ENGINE) run --rm --network=none --userns=keep-id --security-opt label=disable -e PYTHONDONTWRITEBYTECODE=1 -v "$(CURDIR):/project:ro" $(IMAGE)
 
 container-package:
-	$(CONTAINER_ENGINE) run --rm --network=none --userns=keep-id --security-opt label=disable -v "$(CURDIR):/project" $(IMAGE) python3 scripts/build.py
+	$(CONTAINER_ENGINE) run --rm --network=none --userns=keep-id --security-opt label=disable -v "$(CURDIR):/project" $(IMAGE) python3 scripts/build.py --oom-score-adj "$(OOM_SCORE_ADJ)"

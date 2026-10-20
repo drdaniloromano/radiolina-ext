@@ -6,6 +6,9 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- Build-time playback-service OOM adjustment (`--oom-score-adj`, Make
+  `OOM_SCORE_ADJ`), default 500, accepting 0–1000 or `inherit`. Unsupported or
+  denied kernel controls leave playback operational; Shell's score is untouched.
 - Persisted **Show Stop button** setting, off by default. Hiding/showing the
   optional infobox control preserves playback and popup dimensions.
 - A single Play/Pause button containing the playback circle and station/track

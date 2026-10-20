@@ -102,6 +102,23 @@ favicons, and a working desktop audio sink.
 Tests additionally need Python 3, PyGObject, `dbus-run-session`, and `gst-launch-1.0`.
 Other runtime versions are not yet verified.
 
+The playback service applies a best-effort Linux kernel OOM adjustment of **500**
+at startup, making it a preferred victim under memory pressure. Configure the ZIP
+at build time with an integer from **0 to 1000**, or `inherit` to leave the
+inherited adjustment untouched:
+
+```sh
+make build OOM_SCORE_ADJ=750
+make container-package OOM_SCORE_ADJ=inherit
+# Direct build flag: python3 scripts/build.py --oom-score-adj 750
+```
+
+Only the separate playback process writes `/proc/self/oom_score_adj`; GNOME Shell's
+score is never changed. Missing or denied support logs a warning and playback
+continues normally. This does not establish a universal kill order: other OOM
+managers, including [systemd-oomd](https://www.freedesktop.org/software/systemd/man/latest/systemd-oomd.service.html),
+use their own policies. No system-wide configuration or OOM-daemon dependency is added.
+
 ## Desktop verification
 
 `make test-shell` exercises the actual extension inside a disposable headless

@@ -14,6 +14,14 @@ source metadata (including `version-name`) in the archive, and rejects unexpecte
 development/private files.
 It needs only Python's standard library; run it alone with `python3 tests/e2e/package.py`.
 
+OOM-policy packaging checks cover 0, 750, 1000, and `inherit`, reject invalid values
+before changing existing artifacts, and preserve source defaults. Service checks
+read the real child process's `/proc/<pid>/oom_score_adj`, verify that the parent
+score is unchanged, and exercise packaged overrides, inheritance, and simulated
+denied control access with working playback. An abrupt SIGKILL followed by restart
+must preserve saved stations and allow playback without generating memory pressure.
+Other OOM managers' selection policies are outside this kernel-control test.
+
 The standalone service starts with the `#!@GJS@ -m` review marker and is launched
 explicitly through `gjs -m`. Service and Shell E2E runs execute that same entry
 point, covering startup and teardown after packaging/review changes.

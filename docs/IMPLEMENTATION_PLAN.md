@@ -16,6 +16,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   JavaScript package manager, Python runtime dependency, or application window.
 - Run playback in a separate on-demand session D-Bus service. This keeps decoding
   and network work out of Shell. Export MPRIS for media keys.
+- Apply a one-time, best-effort kernel OOM preference only inside the service.
+  Build-time adjustment defaults to 500 (0–1000 or `inherit`); failure is nonfatal.
+  Never change Shell's score, host OOM settings, or other managers' selection policies.
 - Pause uses GStreamer's PAUSED state and resumes the same pipeline, satisfying
   MPRIS PlayPause semantics. There is no disk recording or dedicated time-shift
   buffer; resuming can briefly lag the live edge. Stop releases the connection.
