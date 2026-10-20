@@ -5,6 +5,7 @@ import struct
 import zlib
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -41,6 +42,7 @@ class Streams(http.server.BaseHTTPRequestHandler):
     title = 'First song'
     audio = b''
     slow_started = threading.Event()
+    stall_streams = threading.Event()
     favicon_requests = 0
     favicon_mode = 'png'
     favicon = fixture_favicon()
@@ -95,7 +97,7 @@ class Streams(http.server.BaseHTTPRequestHandler):
         if self.path == '/missing':
             self.send_error(404)
             return
-        icy = self.path == '/icy'
+        icy = self.path in ('/icy', '/stall.mp3')
         self.send_response(200)
         self.send_header('Content-Type', 'audio/mpeg')
         if icy:
@@ -107,6 +109,9 @@ class Streams(http.server.BaseHTTPRequestHandler):
         position = 0
         try:
             while True:
+                if self.path == '/stall.mp3' and Streams.stall_streams.is_set():
+                    time.sleep(0.05)
+                    continue
                 audio = (self.audio * 2)[position:position + 4096]
                 if len(audio) < 4096:
                     audio += self.audio[:4096 - len(audio)]
@@ -156,6 +161,7 @@ class ServiceE2E(unittest.TestCase):
         self.env = dict(os.environ, XDG_CONFIG_HOME=self.directory.name, XDG_CACHE_HOME=self.directory.name, GIO_USE_VFS='local')
         Streams.title = 'First song'
         Streams.slow_started.clear()
+        Streams.stall_streams.clear()
         Streams.favicon_requests = 0
         Streams.favicon_mode = 'png'
         self.tracks = []
@@ -167,11 +173,13 @@ class ServiceE2E(unittest.TestCase):
         self.start()
 
     def start(self, extra=()):
-        self.process = subprocess.Popen(['gjs', '-m', str(ROOT / 'src/service/main.js'), '--test-audio', *extra],
+        entry = getattr(self, 'service_entry', ROOT / 'src/service/main.js')
+        self.process = subprocess.Popen(['gjs', '-m', str(entry), '--test-audio', *extra],
                                         env=self.env, stdout=self.log, stderr=self.log)
         self.wait(lambda: self.state(), 'service startup')
 
     def tearDown(self):
+        Streams.stall_streams.clear()
         self.bus.signal_unsubscribe(self.subscription)
         self.shutdown()
         self.log.seek(0)
@@ -469,6 +477,42 @@ class ServiceE2E(unittest.TestCase):
         self.wait(lambda: self.state()['status'] == 'Playing', 'recovered playback')
         self.assertEqual(self.state()['error'], '')
         self.call('RemoveStation', '(s)', (bad,))
+
+    def test_stalled_buffering_is_bounded_and_pause_cancels_deadline(self):
+        self.shutdown()
+        runtime = Path(self.directory.name) / 'runtime'
+        shutil.copytree(ROOT / 'src', runtime)
+        player = runtime / 'service/player.js'
+        source = player.read_text()
+        # Reproduce a transport that never supplies its own timeout/error, as
+        # observed after virtual link loss. Keep the real decoding pipeline.
+        self.assertIn("source.set_property('timeout', 15)", source)
+        player.write_text(source.replace("source.set_property('timeout', 15)",
+                                         "source.set_property('timeout', 0)"))
+        self.service_entry = runtime / 'service/main.js'
+        self.start()
+        identifier = self.add('/stall.mp3')
+        self.call('PlayPause')
+        self.wait(lambda: self.state()['status'] == 'Playing' and self.state()['title'], 'stream plays with metadata')
+        Streams.stall_streams.set()
+        self.wait(lambda: self.state()['status'] == 'Connecting', 'stream rebuffers')
+        self.call('PlayPause')
+        time.sleep(31)
+        self.assertEqual(self.state()['status'], 'Paused')
+        self.assertEqual(self.state()['error'], '')
+        self.call('PlayPause')
+        self.wait(lambda: 'timed out' in self.state()['error'], 'bounded buffering failure', timeout=36)
+        self.assertEqual(self.state()['status'], 'Stopped')
+        self.assertEqual(self.state()['title'], '')
+        self.assertEqual(self.state()['artist'], '')
+        self.assertEqual(self.state()['selected'], identifier)
+        error = self.state()['error']
+        time.sleep(0.3)
+        self.assertEqual(self.state()['error'], error, 'Error persists until the next action')
+        Streams.stall_streams.clear()
+        self.call('PlayPause')
+        self.wait(lambda: self.state()['status'] == 'Playing', 'manual retry reconnects')
+        self.assertEqual(self.state()['error'], '')
 
     def test_corrupt_configuration_is_never_overwritten(self):
         self.shutdown()

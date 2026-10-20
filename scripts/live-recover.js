@@ -32,7 +32,9 @@ async function stopService() {
                     connection.call_finish(result);
                 } catch (error) {
                     if (!error.matches(Gio.DBusError, Gio.DBusError.SERVICE_UNKNOWN) &&
-                        !error.matches(Gio.DBusError, Gio.DBusError.NAME_HAS_NO_OWNER))
+                        !error.matches(Gio.DBusError, Gio.DBusError.NAME_HAS_NO_OWNER) &&
+                        !error.matches(Gio.DBusError, Gio.DBusError.UNKNOWN_METHOD) &&
+                        !error.matches(Gio.DBusError, Gio.DBusError.UNKNOWN_OBJECT))
                         finish(error);
                 }
             });

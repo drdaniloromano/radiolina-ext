@@ -38,9 +38,13 @@ installation paths. Service identifiers and storage paths remain compatible.
 
 Nine critical unit cases cover URL validation, bounded metadata sanitization,
 deduplication, saved-state validation, and private persistence/corruption safety.
-Fifteen service E2E cases cover real decoding and MPRIS controls, ICY title changes
+Sixteen service E2E cases cover real decoding and MPRIS controls, ICY title changes
 and legacy track-change signals, station CRUD/restart, HTTP failure/recovery, corrupt
 configuration preservation, idle resource sampling, and Shell-owner loss.
+The stalled-transport case disables the HTTP source's own timeout in a disposable
+runtime copy, holds a real stream open without data, pauses beyond 30 seconds,
+then verifies the resumed buffering deadline, cleared metadata, persistent error,
+and successful retry. This exercises the fallback when GStreamer supplies no error.
 
 Additional cases cover validated/persistent edits, renaming while playing, URL
 changes while paused/playing, M3U/XSPF/redirect/content-type sources, malformed,
@@ -211,7 +215,7 @@ On 2026-10-14, the user also confirmed the indicator became visible in their
 running GNOME 49.8 session after the recovery helper, without logging out.
 
 Latest verification: 2026-10-20, Fedora 43, GNOME Shell 49.8/Mutter 49.7, GJS 1.86,
-GStreamer 1.26.11. The 9 unit, 15 service E2E, and 1 Shell workflow tests pass.
+GStreamer 1.26.11. The 9 unit, 16 service E2E, and 1 Shell workflow tests pass.
 The Shell workflow passes at 100% and 150% scaling, including native light/dark
 switching, unsupported-group fallback, indicator ownership, and lifecycle recovery.
 The service idle sample was 36.6 MiB RSS and 0.000s CPU over 1.00 second inside the
@@ -277,6 +281,17 @@ establish hardware suspend compatibility. Preparing this environment does not
 complete the manual acceptance checks below.
 
 ## Manual acceptance on a disposable desktop
+
+Autonomous verification on 2026-10-20: the offline service suite passed in 143.363
+seconds; the expanded Shell workflow passed in 101.058 seconds. Light/dark error
+screenshots were visually inspected and checked for native foreground, full text
+opacity, containment, persistence across popup reopening, and recovery. A forced
+teardown race covers an object disappearing before its bus name is released.
+In the GNOME 49.1 VM, actual virtual-link loss produced the visible timeout in
+38.46 seconds, including buffered audio; reconnecting and activating Play restored
+Playing with the error hidden. Popup width remained 394 pixels. Guest screenshots
+were inspected directly; networking was restored and temporary guest-only evaluator
+access was disabled afterward. The host desktop was not modified.
 
 On 2026-10-20, the maintainer confirmed audible Nightride FM playback in the
 Fedora 43/GNOME 49.1 live VM through the SPICE viewer, using the fixed startup

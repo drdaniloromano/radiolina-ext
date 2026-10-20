@@ -91,7 +91,7 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 ## Progress
 
 - All five delivery phases completed for the initial GNOME 49 implementation.
-- Nine critical unit tests and fifteen service E2E tests pass inside the offline
+- Nine critical unit tests and sixteen service E2E tests pass inside the offline
   development container, including unexpected Shell-disconnect cleanup.
 - The real headless Shell E2E workflow passes: popup form, title/artist metadata,
   no desktop notifications, persistence, disable/re-enable, and rapid toggles.
@@ -117,6 +117,11 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Bound stream connection/rebuffering stalls with a cancellable 30-second one-shot
+  deadline. Verify pause cancellation, cleared metadata, persistent error and retry
+  with a real stalled transport. Autonomously inspect error/recovery screenshots
+  and native foreground inheritance in Shell and the GNOME 49.1 VM. Keep error rows
+  non-interactive and fix the helpers' object-disappearance shutdown race.
 - Diagnose first-activation failure as premature teardown during cold GStreamer
   registry discovery (69.6 seconds cold versus 1.1 seconds cached in the guest).
   Extend the cancellable readiness deadline to 120 seconds and fail promptly on

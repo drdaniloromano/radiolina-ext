@@ -243,6 +243,11 @@ playlist URL stays saved and displayed. Loading is asynchronous, cancelled on
 stop/edit/switch, and bounded to 256 KiB, three playlist levels, five redirects,
 and 15 seconds. HLS manifests and XML DTD declarations are outside this support.
 
+Connection and rebuffering waits have a 30-second deadline. A timeout stops the
+stream, clears stale song metadata, and shows an error in the popup. Closing and
+reopening the popup preserves that error; press Play to retry. The one-shot
+deadline is cancelled during normal playback, Pause, and Stop.
+
 Pause suspends the pipeline without recording to disk or allocating a dedicated
 time-shift buffer. Resuming can lag the live edge. The infobox Stop button releases
 the playback service; MPRIS Stop releases its stream pipeline while keeping the

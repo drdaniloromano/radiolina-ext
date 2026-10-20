@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 import Gst from 'gi://Gst?version=1.0';
+import GLib from 'gi://GLib';
+
+const BUFFERING_TIMEOUT_SECONDS = 30;
 
 export class Player {
     constructor(onState, onMetadata, onError) {
@@ -10,6 +13,25 @@ export class Player {
         this.pipeline = null;
         this.buffering = false;
         this.desired = 'Stopped';
+        this.bufferingTimeout = 0;
+    }
+
+    _cancelBufferingTimeout() {
+        if (this.bufferingTimeout) GLib.source_remove(this.bufferingTimeout);
+        this.bufferingTimeout = 0;
+    }
+
+    _armBufferingTimeout() {
+        if (this.bufferingTimeout) return;
+        const pipeline = this.pipeline;
+        this.bufferingTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, BUFFERING_TIMEOUT_SECONDS, () => {
+            this.bufferingTimeout = 0;
+            if (this.pipeline === pipeline && this.desired === 'Playing') {
+                this.stop();
+                this.onError('Stream connection timed out. Press Play to retry.');
+            }
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     start(url) {
@@ -61,19 +83,23 @@ export class Player {
                 const percent = message.parse_buffering();
                 this.buffering = percent < 100;
                 if (this.desired === 'Playing') {
+                    if (this.buffering) this._armBufferingTimeout();
                     pipeline.set_state(this.buffering ? Gst.State.PAUSED : Gst.State.PLAYING);
                     this.onState(this.buffering ? 'Connecting' : 'Playing');
                 }
                 break;
             }
             case Gst.MessageType.STATE_CHANGED:
-                if (message.src === pipeline && this.desired === 'Playing' &&
-                    message.parse_state_changed()[1] === Gst.State.PLAYING)
+                if (message.src === pipeline && this.desired === 'Playing' && !this.buffering &&
+                    message.parse_state_changed()[1] === Gst.State.PLAYING) {
+                    this._cancelBufferingTimeout();
                     this.onState('Playing');
+                }
                 break;
             }
         });
         this.onState('Connecting');
+        this._armBufferingTimeout();
         if (pipeline.set_state(Gst.State.PLAYING) === Gst.StateChangeReturn.FAILURE) {
             this.stop();
             this.onError('Playback could not start. Check audio and codec support.');
@@ -84,6 +110,7 @@ export class Player {
         if (!this.pipeline)
             return;
         this.desired = 'Paused';
+        this._cancelBufferingTimeout();
         this.pipeline.set_state(Gst.State.PAUSED);
         this.onState('Paused');
     }
@@ -92,11 +119,13 @@ export class Player {
         if (!this.pipeline)
             return;
         this.desired = 'Playing';
+        this._armBufferingTimeout();
         this.pipeline.set_state(this.buffering ? Gst.State.PAUSED : Gst.State.PLAYING);
         this.onState(this.buffering ? 'Connecting' : 'Playing');
     }
 
     stop() {
+        this._cancelBufferingTimeout();
         if (this.bus) {
             this.bus.disconnect(this.busSignal);
             this.bus.remove_signal_watch();

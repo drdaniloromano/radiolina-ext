@@ -597,6 +597,50 @@ class ShellE2E(unittest.TestCase):
             return top(i._title) >= top(i._name) + i._name.height &&
                 top(i._title) + i._title.height <= top(i._details) + i._details.height;
         }})()'''), 'Both metadata rows must fit in the fixed infobox')
+        # Real stream errors must remain visible when the popup is reopened.
+        working = evaluate(f'{INDICATOR}._state.selected')
+        unavailable = call(BUS, APP, IFACE, 'AddStation', GLib.Variant('(ss)',
+                           ('Unavailable stream', ServiceE2E.url + '/missing')))[0]
+        call(BUS, APP, IFACE, 'SelectStation', GLib.Variant('(s)', (unavailable,)))
+        wait(lambda: evaluate(f'{INDICATOR}._state.selected === {json.dumps(unavailable)}'), 'unavailable station selected')
+        evaluate(f"{INDICATOR}._play.emit('clicked', 1); true")
+        wait(lambda: evaluate(f'{INDICATOR}._errorRow.visible && !{INDICATOR}._pending && '
+                              f"{INDICATOR}._state.status === 'Stopped'"), 'persistent stream error')
+        self.assertTrue(evaluate(f'{INDICATOR}.menu.isOpen'))
+        self.assertFalse(evaluate(f'{INDICATOR}._title.visible'), 'Stream errors clear stale metadata')
+        error_text = evaluate(f'{INDICATOR}._error.text')
+        evaluate(f'{INDICATOR}.menu.close(); {INDICATOR}.menu.open(); true')
+        self.assertEqual(evaluate(f'{INDICATOR}._error.text'), error_text)
+        original_scheme = evaluate("new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('color-scheme')")
+        for variant in ('light', 'dark'):
+            evaluate("new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).set_string('color-scheme', "
+                     f"'prefer-{variant}'); true")
+            wait(lambda: evaluate(f"Main.getStyleVariant() === '{variant}'"), 'stream-error native theme')
+            time.sleep(0.2)
+            self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
+                return !i._errorRow.reactive && i._error.get_paint_opacity() === 255 &&
+                    i._error.get_theme_node().get_foreground_color().to_string() ===
+                    i._name.get_theme_node().get_foreground_color().to_string();
+            }})()'''), 'Error text inherits the readable native foreground without disabled-row styling')
+            self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
+                const [x, y] = i._error.get_transformed_position();
+                const [w, h] = i._error.get_transformed_size();
+                const [mx, my] = i.menu.actor.get_transformed_position();
+                return i._errorRow.visible && x >= mx && y >= my &&
+                    x + w <= mx + i.menu.actor.width && y + h <= my + i.menu.actor.height;
+            }})()'''), 'Stream error text must fit inside the popup')
+            success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
+                'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
+                (False, False, str(Path(f'workspace/network-error-{variant}.png').resolve()))))
+            self.assertTrue(success)
+        evaluate("new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).set_string('color-scheme', "
+                 f'{json.dumps(original_scheme)}); true')
+        call(BUS, APP, IFACE, 'RemoveStation', GLib.Variant('(s)', (unavailable,)))
+        wait(lambda: evaluate(f'{INDICATOR}._state.selected === {json.dumps(working)} && '
+                              f'!{INDICATOR}._errorRow.visible'), 'error clears on station recovery')
+        evaluate(f"{INDICATOR}._play.emit('clicked', 1); true")
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending"),
+             'popup recovers playback after stream failure')
         # Reproduce the supplied long-title screenshot, including fractional scaling.
         identifier = evaluate(f'{INDICATOR}._state.selected')
         call(BUS, APP, IFACE, 'UpdateStation', GLib.Variant('(sss)',
@@ -1085,6 +1129,20 @@ class ShellE2E(unittest.TestCase):
         metadata['radio-runtime'] = original_runtime
         metadata['radio-stylesheet'] = original_stylesheet
         metadata_file.write_text(json.dumps(metadata))
+        # During teardown the object may vanish before its bus name. The
+        # updater must wait for name release rather than reject UnknownMethod.
+        evaluate(f'{INDICATOR}._stopPlayback(); true')
+        wait(lambda: evaluate(f'!{INDICATOR}._extension._process && !{INDICATOR}._proxy.g_name_owner'),
+             'backend stopped before shutdown-race fixture')
+        evaluate(f'''global._radioShutdownRaceReady = false;
+            global._radioShutdownRaceOwner = Gio.bus_own_name_on_connection(Gio.DBus.session,
+                '{BUS}', Gio.BusNameOwnerFlags.DO_NOT_QUEUE,
+                () => {{global._radioShutdownRaceReady = true;}}, null); true''')
+        wait(lambda: evaluate('global._radioShutdownRaceReady'), 'unexported shutdown owner ready')
+        evaluate('''GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+            Gio.bus_unown_name(global._radioShutdownRaceOwner);
+            return GLib.SOURCE_REMOVE;
+        }); true''')
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(updater)}); true')
         wait(lambda: evaluate(f"{INDICATOR}?._add.accessible_name === 'Add station' && Boolean({INDICATOR}?._proxy?.g_name_owner)"), 'repeat live update restores module')
         assert_cached_theme()

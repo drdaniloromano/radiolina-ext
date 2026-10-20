@@ -85,6 +85,8 @@ class RadioIndicator extends PanelMenu.Button {
         this.menu.addMenuItem(details);
         this._errorRow = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
         this._errorRow.remove_style_class_name('popup-inactive-menu-item');
+        this._errorRow.remove_style_class_name('popup-menu-item');
+        this._errorRow.add_style_class_name('gnome-radio-error-row');
         this._error = this._label('', 'gnome-radio-error');
         this._error.clutter_text.line_wrap = true;
         this._errorRow.add_child(this._error);

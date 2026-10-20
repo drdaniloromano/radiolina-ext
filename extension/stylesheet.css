@@ -18,6 +18,7 @@
 .gnome-radio-form-inputs { spacing: 6px; }
 .gnome-radio-name-entry, .gnome-radio-url-entry { min-width: 0; width: 0; }
 .gnome-radio-error { width: 280px; }
+.gnome-radio-error-row { padding: 4px 12px; }
 .gnome-radio-stations { max-height: 240px; min-width: 300px; }
 .gnome-radio-compact-button { padding: 6px; min-width: 16px; min-height: 16px; }
 .gnome-radio-station-row { padding-top: 3px; padding-bottom: 3px; }

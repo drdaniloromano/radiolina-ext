@@ -161,6 +161,14 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Fixed
 
+- Bound connection/rebuffering stalls to 30 seconds, with cancellation on playback,
+  Pause, and Stop, cleared stale metadata, persistent inline feedback, and manual
+  retry. Verify transport stalls and real VM link-loss/recovery autonomously.
+- Render inline errors with the normal native theme foreground, avoiding dimmed
+  disabled-row styling. Cover readable light/dark screenshots, popup reopening,
+  and recovery without clipping or width changes.
+- Let update/recovery helpers wait for bus-name release when the service object
+  disappears during teardown; retain the bounded shutdown wait and cover the race.
 - Allow up to two minutes for playback-service readiness instead of killing a
   healthy first activation after ten seconds during cold GStreamer discovery.
   Keep startup cancellable and report an exited backend promptly. Add isolated
