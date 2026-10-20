@@ -280,8 +280,9 @@ complete the manual acceptance checks below.
 
 On 2026-10-20, the maintainer confirmed audible Nightride FM playback in the
 Fedora 43/GNOME 49.1 live VM through the SPICE viewer, using the fixed startup
-build. This confirms real audio output for that stream/environment; physical
-media keys, pause/resume, lock/suspend, and the remaining checks below are pending.
+build. The maintainer also confirmed that the physical Play/Pause key pauses and
+resumes radiolina with the VM focused. These results cover that stream/environment;
+multiple-player routing, lock/suspend, and the remaining checks below are pending.
 
 1. Install the built ZIP in a GNOME 49 VM, enable it, and open the indicator.
 2. Add a direct stream from [Nightride FM](https://nightride.fm/); confirm audible
