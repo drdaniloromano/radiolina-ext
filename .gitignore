@@ -1,0 +1,5 @@
+/workspace/
+/build/
+/.aws
+__pycache__/
+*.pyc

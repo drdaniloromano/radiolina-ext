@@ -1,0 +1,19 @@
+<node>
+  <interface name="org.gnome.Radio1">
+    <method name="AddStation"><arg name="name" type="s" direction="in"/><arg name="url" type="s" direction="in"/><arg name="id" type="s" direction="out"/></method>
+    <method name="RemoveStation"><arg name="id" type="s" direction="in"/></method>
+    <method name="UpdateStation"><arg name="id" type="s" direction="in"/><arg name="name" type="s" direction="in"/><arg name="url" type="s" direction="in"/></method>
+    <method name="SelectStation"><arg name="id" type="s" direction="in"/></method>
+    <method name="PlayPause"/>
+    <method name="Stop"/>
+    <method name="SetNotifications"><arg name="enabled" type="b" direction="in"/></method>
+    <method name="SetFetchFavicons"><arg name="enabled" type="b" direction="in"/></method>
+    <method name="SetRecentLimit"><arg name="limit" type="u" direction="in"/></method>
+    <method name="SetPlayButtonOnLeft"><arg name="enabled" type="b" direction="in"/></method>
+    <method name="SetGroupWithAppIndicators"><arg name="enabled" type="b" direction="in"/></method>
+    <method name="Quit"/>
+    <property name="State" type="s" access="read"/>
+    <signal name="TrackChanged"><arg name="station" type="s"/><arg name="title" type="s"/></signal>
+    <signal name="Raise"/>
+  </interface>
+</node>

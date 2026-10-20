@@ -1,0 +1,7 @@
+{
+  "uuid": "gnome-radio@local",
+  "name": "GNOME Radio",
+  "description": "Lightweight radio with editable stations, M3U/XSPF sources, song and artist metadata, and media keys.",
+  "shell-version": ["49"],
+  "version": 1
+}
