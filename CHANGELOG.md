@@ -2,11 +2,26 @@
 
 ## Unreleased
 
+## 0.3.0 — 2026-10-20
+
+Finalized locally; GitHub and extensions.gnome.org publication is pending.
+
 ### Changed
 
 - Rename the development recipe/ignore file to `Dockerfile` and `.dockerignore`;
   support Podman and Docker with engine-specific user mapping and host-owned
   packages. Restrict build contexts and runtime mounts to exclude private files.
+
+### Verification and limitations
+
+- Podman 5.8.4: image build, packaging E2E, 9 critical cases, and 18 service cases
+  passed. Verified restricted build context, read-only source mounts, private-file
+  exclusion, package source fidelity, and host UID/GID ownership of generated files.
+- Docker CLI selection was checked through this host's Podman compatibility wrapper.
+  Rootful/rootless Docker identity branches passed CLI probes; genuine Docker
+  runtime build/test/package verification remains untested because it is unavailable.
+- Application behavior and the completed GNOME/OOM verification are unchanged;
+  the Shell workflow was not rerun for these container-tooling changes.
 
 ## 0.2.0 — 2026-10-20
 

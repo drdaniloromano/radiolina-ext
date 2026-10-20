@@ -172,7 +172,7 @@ streams, codecs, and audio sinks affect results; these are observations, not bud
 
 ## Release policy
 
-The current local release is **0.2.0**; public distribution is pending.
+The current local release is **0.3.0**; public distribution is pending.
 Use `MAJOR.MINOR.PATCH`:
 patches for fixes, minor increments for features/compatibility breaks during `0.x`,
 and major increments for compatibility breaks after `1.0`. Set `version-name` in
@@ -180,7 +180,7 @@ and major increments for compatibility breaks after `1.0`. Set `version-name` in
 [extensions.gnome.org](https://gjs.guide/extensions/overview/anatomy.html#version-name).
 
 For a finalized release, date the changelog entry, tag the reviewed commit
-`v{release}` (for example `v0.2.0`), build its ZIP, and record the checksum. A planned
+`v{release}` (for example `v0.3.0`), build its ZIP, and record the checksum. A planned
 version or Unreleased entry creates neither a tag nor a public release. Keep original
 MIT notices in the package; platform dependencies retain their own licenses.
 Retain the [provenance findings and review limits](PROVENANCE.md).
