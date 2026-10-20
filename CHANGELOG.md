@@ -6,6 +6,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- Isolated Shell checks for larger text and an alternate serif font in light/dark
+  mode, covering transport, saved-row actions, search, Add/Edit, and settings.
 - Record maintainer-confirmed native light/dark readability and layout for the
   popup, expanded Stations list, and Add/Edit form in the GNOME 49.1 VM, plus
   native high-contrast readability and keyboard-focus visibility.
@@ -161,6 +163,10 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Fixed
 
+- Let inline search use the remaining toolbar width so larger text does not
+  truncate the Stations heading. Refresh native entry hints on theme changes so
+  Add/Edit fields regain their compact height after changing fonts or text scale;
+  preserve their 30/70 width split when fonts or Copy-button visibility change.
 - Bound connection/rebuffering stalls to 30 seconds, with cancellation on playback,
   Pause, and Stop, cleared stale metadata, persistent inline feedback, and manual
   retry. Verify transport stalls and real VM link-loss/recovery autonomously.

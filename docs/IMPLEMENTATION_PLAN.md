@@ -110,13 +110,18 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Guest suspend verification remains open after the live VM became unresponsive
   and required restarting. Establish a working environment sleep/wake cycle
   before attributing the failure or repeating the applet check.
-- Multiple-player media-key routing, suspend, and custom-theme/font checks remain manual
+- Multiple-player media-key routing, suspend, and third-party-theme checks remain
   verification tasks. Automated tests do not install into the host session.
 - Native light/dark switching and the screenshot regression at 150% monitor scaling
   are covered by the real Shell workflow, with bounded metadata/control geometry.
 
 ## Subsequent completed work
 
+- Exercise a larger serif font and 125% text scaling across light/dark popup,
+  saved-row actions, search, Add/Edit, and settings. Keep the Stations heading
+  readable through flexible search sizing; refresh hidden native entry hints on
+  style changes so restored fonts also restore compact field height. Divide actual
+  form allocation 30/70 with flexible minimum widths when showing/hiding Copy.
 - Bound stream connection/rebuffering stalls with a cancellable 30-second one-shot
   deadline. Verify pause cancellation, cleared metadata, persistent error and retry
   with a real stalled transport. Autonomously inspect error/recovery screenshots

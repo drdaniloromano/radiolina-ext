@@ -121,6 +121,15 @@ with a bold infobox name and smaller track text dimmed from that theme's foregro
 including after repeated no-logout module updates. Screenshots from a confirmed
 150% run can be retained in `workspace/light-150/` for comparison.
 No disposed-actor errors are allowed during station refresh or cleanup.
+The same workflow temporarily selects `Serif 12` and 125% text scaling in its
+private settings, then checks light/dark popup, saved-row actions, search,
+Add/Edit, and settings. It requires the actual font/label height to change,
+checks fixed width and screen containment, preserves the full Stations heading
+while searching, and verifies the 30/70 editor split. Screenshots are saved as
+`workspace/large-text-{light,dark}-{popup,search,edit,editor,settings}.png`.
+Restoring the original typography must restore compact editor/search geometry,
+including hidden placeholder metrics. These checks use native Shell themes;
+they do not establish compatibility with arbitrary third-party themes.
 Pointer checks verify that Stations, Settings, and Add/Edit replace each other;
 showing Search returns to the saved-list view without leaving another panel open.
 
@@ -360,7 +369,9 @@ cause. Validate the environment's full sleep/wake cycle before repeating this ch
     automatic playback. Press Play to reconnect. Repeat around suspend/resume
     using the guest's normal lock settings; verify the same behavior when locked.
 
-Physical audio/media-key checks, high contrast, custom fonts/themes, and additional
-display scales remain manual. Native light/dark switching and 150% scaling are
-covered by the automated Shell workflow. The local tests
+Audible playback, basic physical Play/Pause, lock/unlock, and native high contrast
+have the maintainer confirmations recorded above. Multiple-player media-key
+routing, suspend/resume, third-party themes, and display scales beyond those tested
+remain open. Native light/dark switching, an alternate font with 125% text scaling,
+and 150% display scaling are covered by the automated Shell workflow. The local tests
 never install dependencies or enable the extension in the user's desktop session.

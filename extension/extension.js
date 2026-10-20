@@ -210,6 +210,10 @@ class RadioIndicator extends PanelMenu.Button {
         this._settingsSection.actor.hide();
 
         this._createForm();
+        // St.Entry measures hidden hints too. Refresh their inherited font when
+        // the theme changes, even while populated fields hide the hint actor.
+        for (const entry of [this._searchEntry, this._nameEntry, this._urlEntry])
+            entry.connect('style-changed', () => entry.get_hint_actor()?.ensure_style());
         // These controls update an inline panel; activation must not dismiss it.
         for (const menu of [this.menu, this._recent, this._stations, this._settingsSection])
             menu.itemActivated = () => {};
@@ -259,12 +263,19 @@ class RadioIndicator extends PanelMenu.Button {
         inputs.add_child(this._nameEntry);
         inputs.add_child(this._urlEntry);
         // Divide the input space after reserving the gap and optional Copy button.
-        const sizeName = () => {
-            const width = inputs.width - inputs.get_theme_node().get_length('spacing');
-            if (width > 0) this._nameEntry.width = Math.round(width * 0.3);
+        const sizeInputs = () => {
+            const width = inputs.get_allocation_box().get_width() - inputs.get_theme_node().get_length('spacing');
+            if (width > 0) {
+                const nameWidth = Math.round(width * 0.3);
+                // Keep minimum widths flexible when Copy appears or fonts change.
+                for (const [entry, share] of [[this._nameEntry, nameWidth], [this._urlEntry, width - nameWidth]]) {
+                    const contentWidth = Math.max(0, share - entry.get_theme_node().get_horizontal_padding());
+                    entry.set_style(`width: ${contentWidth}px; max-width: ${contentWidth}px;`);
+                }
+            }
         };
-        inputs.connect('notify::width', sizeName);
-        inputs.connect('style-changed', sizeName);
+        inputs.connect('notify::allocation', sizeInputs);
+        inputs.connect('style-changed', sizeInputs);
         fields.add_child(inputs);
         this._copySource = new St.Button({child: new St.Icon({icon_name: 'edit-copy-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,

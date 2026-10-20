@@ -226,16 +226,24 @@ class ShellE2E(unittest.TestCase):
             }})()''')
 
         def assert_input_ratio():
+            wait(lambda: evaluate(f'''(() => {{const i = {INDICATOR};
+                return Math.abs(i._nameEntry.width / (i._nameEntry.width + i._urlEntry.width) - 0.3) < 0.005;
+            }})()'''), 'form inputs settle at their 30/70 allocation')
             widths = evaluate(f'[{INDICATOR}._nameEntry.width, {INDICATOR}._urlEntry.width]')
             self.assertAlmostEqual(widths[0] / sum(widths), 0.3, delta=0.005,
                                    msg='Name/URL must split available input width 30/70')
-            self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
+            geometry = evaluate(f'''(() => {{const i = {INDICATOR};
                 const right = actor => actor.get_transformed_position()[0] + actor.get_transformed_size()[0];
                 const box = i._nameEntry.get_parent().get_parent().get_parent();
-                return right(i._urlEntry) < right(i.menu.actor) &&
-                    Math.abs(box.width - (i._form.width - i._form.get_theme_node().get_horizontal_padding())) < 1 &&
-                    (!i._copySource.visible || right(i._copySource) < right(i.menu.actor));
-            }})()'''), 'Form must fill the available width and contain inputs and Copy')
+                return {{urlRight: right(i._urlEntry), popupRight: right(i.menu.actor),
+                    copyRight: i._copySource.visible ? right(i._copySource) : 0,
+                    boxWidth: box.width,
+                    available: i._form.width - i._form.get_theme_node().get_horizontal_padding()}};
+            }})()''')
+            self.assertTrue(geometry['urlRight'] < geometry['popupRight'] and
+                            geometry['copyRight'] < geometry['popupRight'] and
+                            abs(geometry['boxWidth'] - geometry['available']) < 1,
+                            f'Form must fill available width and contain inputs and Copy: {geometry}')
 
         def assert_theme_variants(prefix):
             original_scheme = evaluate("new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('color-scheme')")
@@ -284,6 +292,86 @@ class ShellE2E(unittest.TestCase):
             self.assertNotEqual(colors[0], colors[1], 'Native text colors must follow light/dark changes')
             evaluate(f"new Gio.Settings({{schema_id: 'org.gnome.desktop.interface'}}).set_string('color-scheme', {json.dumps(original_scheme)}); true")
             time.sleep(0.3)
+
+        def assert_large_text():
+            settings = "new Gio.Settings({schema_id: 'org.gnome.desktop.interface'})"
+            original = evaluate(f'''(() => {{const s = {settings}; return {{
+                font: s.get_string('font-name'), scale: s.get_double('text-scaling-factor'),
+                scheme: s.get_string('color-scheme')}};}})()''')
+            original_name_height = evaluate(f'{INDICATOR}._name.height')
+
+            def assert_fit(actors):
+                self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
+                    const bounds = actor => {{const [x, y] = actor.get_transformed_position();
+                        const [w, h] = actor.get_transformed_size();
+                        return {{x, y, right: x + w, bottom: y + h, w, h}};}};
+                    const popup = bounds(i.menu.actor);
+                    return popup.w === {popup_width} && popup.y >= 0 &&
+                        popup.bottom <= Main.layoutManager.primaryMonitor.height &&
+                        [{actors}].every(actor => {{const b = bounds(actor);
+                            return actor.mapped && b.w > 0 && b.h > 0 &&
+                                b.x >= popup.x && b.right <= popup.right + 1 &&
+                                b.y >= popup.y && b.bottom <= popup.bottom + 1;
+                        }});
+                }})()'''), f'Large-text controls must remain inside the fixed-width popup: {actors}')
+
+            def screenshot(view, variant):
+                success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
+                    'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
+                        (False, False, str(Path(f'workspace/large-text-{variant}-{view}.png').resolve()))))
+                self.assertTrue(success)
+
+            try:
+                evaluate(f'''(() => {{const s = {settings};
+                    s.set_string('font-name', 'Serif 12');
+                    s.set_double('text-scaling-factor', 1.25);}})(); true''')
+                wait(lambda: evaluate(f'''{INDICATOR}._name.height > {original_name_height} &&
+                    {INDICATOR}._name.get_theme_node().get_font().get_family().toLowerCase() === 'serif' '''),
+                    'alternate font and larger text applied to actual Shell actors')
+                for variant in ('light', 'dark'):
+                    evaluate(f"{settings}.set_string('color-scheme', 'prefer-{variant}'); true")
+                    wait(lambda: evaluate(f"Main.getStyleVariant() === '{variant}'"), 'large-text theme variant')
+                    evaluate(f'{INDICATOR}._showView(null); {INDICATOR}.menu.open(); true')
+                    time.sleep(0.3)
+                    assert_fit('i._name, i._title, i._play, i._stopButton, i._quitButton, '
+                               'i._stationsHeading, i._expandButton, i._searchButton, i._add, i._settingsButton')
+                    self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
+                        return [i._name, i._title].every(label =>
+                            label.height >= label.clutter_text.get_preferred_height(label.width)[1]) &&
+                            i._title.get_transformed_position()[1] + i._title.height <=
+                                i._infoFrame.get_transformed_position()[1] + i._infoFrame.height;
+                    }})()'''), 'Large station/track text must fit the infobox height')
+                    screenshot('popup', variant)
+                    click(f'{INDICATOR}._searchButton')
+                    assert_fit('i._searchEntry, i._expandButton, i._searchButton, i._add, i._settingsButton')
+                    self.assertFalse(evaluate(f'{INDICATOR}._stationsHeading.clutter_text.get_layout().is_ellipsized()'),
+                                     'Search must leave the Stations heading readable with larger text')
+                    row = f'{INDICATOR}._stationButtons.get({json.dumps(identifier)})'
+                    evaluate(f'{row}.select.grab_key_focus(); true')
+                    wait(lambda: evaluate(f'{row}.edit.opacity === 255'), 'large-text row actions revealed')
+                    assert_fit(f'{row}.label, {row}.play, {row}.edit, {row}.remove')
+                    screenshot('search', variant)
+                    click(f'{row}.edit')
+                    screenshot('edit', variant)
+                    assert_input_ratio()
+                    assert_fit('i._nameEntry, i._urlEntry, i._copySource, i._save, i._cancel, i._remove')
+                    click(f'{INDICATOR}._add')
+                    assert_input_ratio()
+                    assert_fit('i._nameEntry, i._urlEntry, i._save, i._cancel')
+                    screenshot('editor', variant)
+                    click(f'{INDICATOR}._settingsButton')
+                    assert_fit('i._faviconToggle, i._groupToggle, i._groupWarning, '
+                               'i._recentLess, i._recentMore, i._recentCount')
+                    screenshot('settings', variant)
+            finally:
+                evaluate(f'''(() => {{const s = {settings};
+                    s.set_string('font-name', {json.dumps(original['font'])});
+                    s.set_double('text-scaling-factor', {original['scale']});
+                    s.set_string('color-scheme', {json.dumps(original['scheme'])});
+                    {INDICATOR}._showView(null);}})(); true''')
+                wait(lambda: evaluate(f'{INDICATOR}._details.height === {info_height} && '
+                                      f'{INDICATOR}._name.height === {original_name_height}'),
+                     'original private desktop typography restored')
 
         evaluate('Main.welcomeDialog?.close(); Main.overview.hide(); '
                  'Main.messageTray.getSources().forEach(source => source.destroy()); true')
@@ -665,6 +753,7 @@ class ShellE2E(unittest.TestCase):
         }})()'''), 'Metadata and playback must fit without crossing the separator or popup edge')
         self.assertEqual(evaluate(f'{INDICATOR}._details.height'), info_height)
         assert_theme_variants('screenshot-regression')
+        assert_large_text()
         call(BUS, APP, IFACE, 'UpdateStation', GLib.Variant('(sss)',
              (identifier, 'Fixture radio', ServiceE2E.url + '/icy')))
         Streams.title = 'First song'
@@ -832,7 +921,8 @@ class ShellE2E(unittest.TestCase):
         time.sleep(0.2)
         self.assertEqual(entry_style(f'{INDICATOR}._searchEntry'), focused_search, 'Search focus must not change dimensions or padding')
         evaluate(f"{INDICATOR}._stationButtons.get({json.dumps(other)}).edit.emit('clicked', 1); true")
-        time.sleep(0.2)
+        wait(lambda: entry_style(f'{INDICATOR}._nameEntry') == focused_search,
+             'remapped editor receives current typography and allocation')
         self.assertEqual(entry_style(f'{INDICATOR}._nameEntry'), focused_search, 'Search and name inputs must share native geometry/style')
         self.assertEqual(entry_style(f'{INDICATOR}._urlEntry'), focused_search, 'Search and URL inputs must share native geometry/style')
         evaluate(f"{INDICATOR}._cancel.emit('clicked', 1); {INDICATOR}._searchButton.emit('clicked', 1); {INDICATOR}._searchEntry.set_text('OTHER'); true")

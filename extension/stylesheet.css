@@ -12,7 +12,7 @@
 .gnome-radio-recent-heading { padding-top: 1px; }
 .gnome-radio-stations-toolbar { padding-top: 3px; }
 .gnome-radio-entry { padding: 4px 8px 5px; }
-.gnome-radio-search-entry { width: 120px; }
+.gnome-radio-search-entry { min-width: 0; width: 0; }
 .gnome-radio-form { spacing: 6px; padding: 6px 12px; }
 .gnome-radio-form-fields, .gnome-radio-form-actions { spacing: 6px; }
 .gnome-radio-form-inputs { spacing: 6px; }
