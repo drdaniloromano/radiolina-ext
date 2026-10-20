@@ -104,12 +104,16 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Diagnose first-activation failure as premature teardown during cold GStreamer
+  registry discovery (69.6 seconds cold versus 1.1 seconds cached in the guest).
+  Extend the cancellable readiness deadline to 120 seconds and fail promptly on
+  child exit. Cover delayed initialization, cancellation, early exit, and recovery
+  in the isolated Shell workflow; remove the local VM launcher's re-enable workaround.
 - Prepare a contained Fedora 43/GNOME 49.1 live desktop with 2 vCPUs and 2 GiB
   guest RAM, hardware acceleration, and no installed guest system disk. Verify
   applet/service startup without autoplay; document the profile and keep local VM
   assets excluded. Audible playback, physical keys, and lock/suspend checks remain
-  manual acceptance work. Initial live-session activation required a re-enable
-  to recover the backend; investigation remains open before publication.
+  manual acceptance work.
 - Confirm default GNOME user-session behavior: lock stops playback; unlock restores
   an idle applet. Keep this lifecycle and document manual lock/suspend checks.
 - Audit runtime/package structure against EGO review guidance. Add the standalone

@@ -7,8 +7,7 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 ### Added
 
 - Document a small disposable GNOME 49 live-VM profile for manual desktop checks,
-  with contained assets, KVM/graphics acceleration, and explicit verification limits,
-  including the observed first-activation/backend recovery issue still to investigate.
+  with contained assets, KVM/graphics acceleration, and explicit verification limits.
 - Isolated Shell E2E coverage for installation of the real ZIP, forced replacement
   of existing runtime files, and uninstall preserving saved stations/settings.
 - README architecture diagram showing process boundaries, D-Bus/MPRIS communication,
@@ -154,6 +153,10 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Fixed
 
+- Allow up to two minutes for playback-service readiness instead of killing a
+  healthy first activation after ten seconds during cold GStreamer discovery.
+  Keep startup cancellable and report an exited backend promptly. Add isolated
+  Shell regressions for delayed readiness, cancellation, early exit, and retry.
 - Remove stale applet styles during same-session updates and load versioned CSS.
   Isolated checks reproduce the old oversized Name field, verify URL containment
   and track/divider clearance, and retain native light/dark styling after updates.

@@ -134,6 +134,10 @@ gnome-extensions install --force build/radiolina@drdaniloromano.github.io.zip
 gnome-extensions enable radiolina@drdaniloromano.github.io
 ```
 
+The first activation can take longer while GStreamer builds its plugin registry.
+Readiness has a two-minute limit; later starts normally reuse the cache. Shell
+stays responsive, and Stop, Quit, or disabling radiolina cancels startup.
+
 Both IDs share `~/.config/gnome-radio/stations.json`, including saved stations,
 selection, recent history, and preferences. Keep the old ID disabled; do not run
 both installations together. After verifying the new installation, you may remove

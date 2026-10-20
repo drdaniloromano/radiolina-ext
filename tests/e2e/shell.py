@@ -313,13 +313,43 @@ class ShellE2E(unittest.TestCase):
         old_metadata = json.loads((previous / 'metadata.json').read_text())
         old_metadata['uuid'] = old_uuid
         (previous / 'metadata.json').write_text(json.dumps(old_metadata))
+        # Cold GStreamer registry discovery can exceed the old ten-second
+        # readiness deadline. Delay only this disposable backend, never Shell.
+        previous_entry = previous / 'src/service/main.js'
+        previous_entry.write_text(previous_entry.read_text().replace(
+            "const BUS =", "GLib.usleep(12_000_000);\nconst BUS =", 1))
         load_previous = (
             f"await Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject("
             f"'{old_uuid}', Gio.File.new_for_path({json.dumps(str(previous))}), 2)); "
             f"Main.extensionManager.enableExtension('{old_uuid}')"
         )
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(load_previous)}); true')
-        wait(lambda: evaluate(f'Boolean({old_indicator}?._proxy?.g_name_owner)'), 'development identity ready')
+        wait(lambda: evaluate(f'Boolean({old_indicator}?._extension._process)'), 'slow backend spawned')
+        cancelled_pid = evaluate(f'{old_indicator}._extension._process.get_identifier()')
+        evaluate(f'{old_indicator}._stopPlayback(); true')
+        wait(lambda: evaluate(f'!{old_indicator}._extension._starting && !{old_indicator}._extension._process')
+             and not Path(f'/proc/{cancelled_pid}').exists(), 'Stop cancels slow initial startup', timeout=5)
+        self.assertFalse(evaluate(f'Boolean({old_indicator}._state.error)'))
+        started = time.monotonic()
+        evaluate(f"{old_indicator}._call('SetRecentLimit', new GLib.Variant('(u)', [3])); true")
+        wait(lambda: evaluate(f'Boolean({old_indicator}?._proxy?.g_name_owner) && !{old_indicator}._pending'),
+             'first activation survives slow backend initialization', timeout=35)
+        self.assertGreaterEqual(time.monotonic() - started, 12)
+        self.assertFalse(evaluate(f'Boolean({old_indicator}._state.error)'),
+                         'Slow successful startup must not leave an unavailable error')
+        evaluate(f'{old_indicator}._stopPlayback(); true')
+        wait(lambda: evaluate(f'!{old_indicator}._extension._process && !{old_indicator}._proxy.g_name_owner'),
+             'backend stopped before early-exit fixture')
+        previous_entry.write_text(entry.read_text().replace(
+            'const BUS =', "import System from 'system';\nSystem.exit(7);\nconst BUS =", 1))
+        evaluate(f"{old_indicator}._call('SetRecentLimit', new GLib.Variant('(u)', [3])); true")
+        wait(lambda: evaluate(f'!{old_indicator}._pending && !{old_indicator}._extension._starting && '
+                              f'Boolean({old_indicator}._state.error)'),
+             'early backend exit fails promptly instead of waiting for the readiness deadline', timeout=5)
+        shutil.copyfile(entry, previous_entry)
+        evaluate(f"{old_indicator}._call('SetRecentLimit', new GLib.Variant('(u)', [3])); true")
+        wait(lambda: evaluate(f'Boolean({old_indicator}._proxy.g_name_owner) && !{old_indicator}._pending && !{old_indicator}._state.error'),
+             'backend recovers after early startup failure')
         saved_id = call(BUS, APP, IFACE, 'AddStation', GLib.Variant('(ss)',
             ('Migration station', ServiceE2E.url + '/icy')))[0]
         call(BUS, APP, IFACE, 'SetRecentLimit', GLib.Variant('(u)', (7,)))

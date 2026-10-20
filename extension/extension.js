@@ -12,6 +12,9 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const BUS = 'org.mpris.MediaPlayer2.GnomeRadio';
 const PATH = '/org/gnome/Radio';
+// First-use GStreamer registry discovery can take over a minute on a small VM.
+// This is a cancellable readiness deadline, not a delay or a recurring timer.
+const SERVICE_START_TIMEOUT_MS = 120_000;
 
 const RadioIndicator = GObject.registerClass({
     GTypeName: `RadiolinaIndicator_${GLib.compute_checksum_for_string(GLib.ChecksumType.SHA256, import.meta.url, -1).slice(0, 16)}`,
@@ -727,7 +730,8 @@ export default class RadioExtension extends Extension {
                 token.cancel = () => finish(new Error('radiolina startup cancelled.'));
                 watch = Gio.bus_watch_name_on_connection(Gio.DBus.session, BUS,
                     Gio.BusNameWatcherFlags.NONE, () => finish(), null);
-                timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10000, () => {
+                this._processExit.then(() => finish(new Error('radiolina service exited before becoming ready.')));
+                timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SERVICE_START_TIMEOUT_MS, () => {
                     timeout = null;
                     finish(new Error('radiolina service did not start.'));
                     return GLib.SOURCE_REMOVE;

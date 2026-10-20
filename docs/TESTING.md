@@ -254,11 +254,20 @@ not total host usage: a short QEMU sample used about 2.3 GiB RSS, including gues
 RAM and virtualization/graphics overhead. These are environment measurements,
 not applet resource figures or a guaranteed minimum.
 
-In this live environment, initial activation reported ACTIVE while the playback
-bus name was absent. Disabling/re-enabling recovered the backend, and the local
-launcher passed a fresh-boot readiness check with one bounded retry. This is
-recovery evidence, not a clean-first-activation pass; investigate the cause before
-publication. Check the backend's bus/state as well as the extension's ACTIVE flag.
+The earlier ten-second deadline killed the backend during cold GStreamer registry
+discovery. A controlled guest sample took 69.6 seconds with an empty registry,
+then 1.1 seconds with that registry cached. Readiness now has a cancellable
+120-second deadline and fails promptly if the child exits. An isolated Shell
+regression delays the backend for twelve seconds, checks successful readiness,
+Stop during startup, early-exit reporting, and recovery. No recurring timer or
+additional runtime dependency is introduced. Check the backend's bus/state as
+well as the extension's ACTIVE flag.
+
+On 2026-10-20, the delayed-start regression failed with the old deadline and the
+expanded Shell workflow passed with the fix (100.007 seconds), including startup
+cancellation, early exit, recovery, and backend removal after Stop. Packaging
+checks passed. The fixed ZIP also passed fresh live-VM activation without a
+disable/re-enable workaround, with playback Stopped and no reported error.
 
 Live guest changes disappear on power-off; repeat installation on the next boot.
 Set a guest-only password and enable normal screen locking for lifecycle checks.
