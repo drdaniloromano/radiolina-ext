@@ -283,6 +283,9 @@ Fedora 43/GNOME 49.1 live VM through the SPICE viewer, using the fixed startup
 build. The maintainer also confirmed that the physical Play/Pause key pauses and
 resumes radiolina with the VM focused. Guest locking stopped audio; unlocking
 restored the idle indicator without autoplay, and Play resumed audible output.
+The maintainer also confirmed readable text/icons and contained fields/buttons
+in the popup, expanded Stations list, and Add/Edit form in native light and dark
+modes, switching the guest's system preference without restarting the applet.
 These results cover that stream/environment; multiple-player routing, suspend,
 and the remaining checks below are pending.
 

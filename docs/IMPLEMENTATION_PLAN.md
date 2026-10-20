@@ -102,6 +102,8 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Physical Play/Pause pause/resume was also confirmed with the VM focused.
 - Guest lock/unlock was confirmed: audio stops on lock, unlock returns the idle
   indicator without autoplay, and Play resumes audio.
+- Native light/dark readability and layout were confirmed by the maintainer for
+  the popup, expanded Stations, and Add/Edit form in the GNOME 49.1 VM.
 - Guest suspend verification remains open after the live VM became unresponsive
   and required restarting. Establish a working environment sleep/wake cycle
   before attributing the failure or repeating the applet check.
