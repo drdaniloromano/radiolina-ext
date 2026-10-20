@@ -315,8 +315,9 @@ Use `MAJOR.MINOR.PATCH`: patch increments for fixes and minor increments for new
 functionality during `0.x`. Document compatibility breaks and increment the minor
 version during `0.x`; after `1.0`, compatibility breaks increment the major version.
 
-Keep changes under **Unreleased** until release checks pass. At release, date the
-changelog entry and tag the reviewed commit as `v<version>`, for example `v0.1.0`.
+Keep changes under **Unreleased** until release checks pass. Every finalized release
+must have a matching `v{release}` tag, for example `v0.1.0`. Date the changelog entry
+and create that tag on the reviewed release commit when finalizing the release.
 Build the ZIP from that commit and publish its checksum. A version in metadata
 does not itself create a tag, publish a release, or submit the extension.
 

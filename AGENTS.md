@@ -61,3 +61,7 @@ Cover edit persistence, invalid/duplicate URLs, playlist parsing/bounds, and can
 ## Documentation, Commits & Pull Requests
 
 Keep `README.md`, `CHANGELOG.md`, and plan current with behavior/tooling changes. Use focused imperative commits, e.g. `Add station menu`. PRs describe purpose, verification, limitations, linked issues, and UI screenshots.
+
+Every finalized release must have a matching Git tag `v{release}`, for example
+`v0.1.0`, pointing to its reviewed release commit. Create the tag when finalizing
+the release; an Unreleased entry or planned version alone does not create a release.

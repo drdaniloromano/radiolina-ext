@@ -69,6 +69,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Changed
 
+- Require a matching `v{release}` Git tag for each finalized release; planned
+  versions remain Unreleased until final checks and release completion.
 - Confirm GNOME's default user-session lifecycle as the intended policy: lock
   stops playback, and unlock restores the idle applet without automatic resume.
 - Mark the standalone service entry point with the recommended GJS module header,
