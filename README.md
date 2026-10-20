@@ -22,7 +22,7 @@ See the [changelog](CHANGELOG.md) for completed changes.
 GNOME Shell 49, GJS, GLib/Gio with GLibUnix, GStreamer with base/good plugins and
 codecs for your streams, libsoup 3, and working desktop audio output. The verified
 development stack uses GJS 1.86 and GStreamer 1.26. Building in a container requires
-existing Podman and Make; development dependencies stay inside the image.
+existing Podman or Docker, and Make; development dependencies stay inside the image.
 
 ## Installation
 
@@ -33,6 +33,9 @@ make container-build
 make container-package
 gnome-extensions install --force build/radiolina@drdaniloromano.github.io.zip
 ```
+
+Podman is the default. For Docker, add `CONTAINER_ENGINE=docker` to both Make
+commands. See [contained development](docs/DEVELOPMENT.md#contained-builds-and-configuration).
 
 For a first installation, log out and back in, then enable it:
 

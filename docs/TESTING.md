@@ -15,14 +15,20 @@ Run from the repository root; use existing tools rather than installing host dep
 | `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` | Repeat at 150% monitor scaling with light/dark checks. |
 | `git diff --check` | Check patch whitespace. |
 
+Repeat the three `container-*` commands with `CONTAINER_ENGINE=docker` to verify
+Docker independently. A Docker CLI backed by Podman is not an independent Docker
+result. Report engine versions and unavailable/untested engines. Check that files
+under `build/` belong to the invoking host UID/GID after packaging.
+
 See [build configuration](DEVELOPMENT.md#contained-builds-and-configuration) and
 [user installation/update procedures](USER_GUIDE.md#same-session-installation-and-updates).
 
 ## Isolation requirements
 
-- Container tests use `--network=none`, a read-only source mount, private XDG paths
+- Container tests use `--network=none`, explicit read-only source mounts, private XDG paths
   and D-Bus, generated local MP3/ICY/image fixtures, and synchronized silent audio.
-  Public streams never gate automated checks.
+  Private workspace/credentials/Git are excluded from the build context and mounts;
+  only packaging exposes `build/` writable. Public streams never gate automated checks.
 - Shell E2E needs an already installed GNOME 49 Shell/rendering backend. Its private
   D-Bus/XDG/settings/display isolate input, install/update/uninstall, typography,
   and lifecycle from the user's desktop. Host service activation stays disabled.

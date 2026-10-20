@@ -46,6 +46,9 @@ Keep dependencies/artifacts contained; do not install development packages globa
 - `make container-build`: build the development image.
 - `make container-test`: offline service E2E and critical unit tests.
 - `make container-package`: create the extension ZIP in `build/`.
+- Add `CONTAINER_ENGINE=docker` to container commands to select Docker instead of
+  the default Podman. Keep private files out of build contexts and runtime mounts;
+  preserve the invoking user's ownership of generated files.
 - `make test-shell`: actual popup/lifecycle checks in disposable headless GNOME.
 - `make build` / `make test`: use already installed tools without dependency installation.
 

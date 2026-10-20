@@ -1,0 +1,5 @@
+# The image contains dependencies only. App sources are mounted explicitly at run time.
+# Deny everything else, including private workspaces, credentials, Git, and artifacts.
+**
+!Dockerfile
+!.dockerignore

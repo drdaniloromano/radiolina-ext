@@ -38,7 +38,7 @@ recording, account system, or podcast subsystem.
 | [radio.xml](../src/service/radio.xml) | App command/state contract; `State` is JSON in a D-Bus string property. |
 | [tests/unit/](../tests/unit/) | Critical validation, metadata, parsing, and storage cases. |
 | [tests/e2e/](../tests/e2e/) | Production service and actual Shell workflows using local fixtures. |
-| [scripts/](../scripts/), [Makefile](../Makefile), [Containerfile](../Containerfile) | Contained builds, tests, packaging, and live-development helpers. |
+| [scripts/](../scripts/), [Makefile](../Makefile), [Dockerfile](../Dockerfile) | Contained builds, tests, packaging, and live-development helpers. |
 
 ### Lifecycle and cancellation
 
@@ -87,7 +87,7 @@ Clipboard access writes only the editor URL; it does not read clipboard contents
 
 ## Contained builds and configuration
 
-With Podman and Make already installed:
+With Podman or Docker, and Make already installed (Linux, local engine):
 
 ```sh
 make container-build
@@ -95,11 +95,37 @@ make container-test
 make container-package
 ```
 
-Development packages stay in the Fedora 43 image. Building the image needs network
-access; the test container runs offline with a read-only source mount. Packaging
-writes `build/radiolina@drdaniloromano.github.io.zip`; build/test commands do not
-install the extension on your desktop. The ZIP contains runtime source, interfaces,
-icons, metadata, CSS, and LICENSE, excluding repository docs and development/private files.
+Podman is the default; select Docker explicitly for each command:
+
+```sh
+make container-build CONTAINER_ENGINE=docker
+make container-test CONTAINER_ENGINE=docker
+make container-package CONTAINER_ENGINE=docker
+```
+
+Development packages stay in the Fedora 43 image defined by [Dockerfile](../Dockerfile).
+Building the image needs network access. [.dockerignore](../.dockerignore), supported
+by both engines, excludes everything except the recipe and ignore file from the
+build context; the image contains dependencies rather than a copy of the checkout.
+Tests and packaging run offline with only `extension/`, `src/`, `scripts/`, `tests/`,
+and `LICENSE` mounted read-only. Private `workspace/`, Git metadata, credentials,
+and the rest of the checkout are not mounted. Packaging alone mounts host-created
+`build/` writable and writes `build/radiolina@drdaniloromano.github.io.zip`.
+
+[Identity selection](../scripts/container-user-flags.sh) detects the actual CLI,
+including Docker commands backed by Podman. Podman uses `--userns=keep-id`.
+Rootful Docker uses the caller's numeric UID/GID with `--userns=host` to avoid
+daemon remapping; rootless Docker uses container UID/GID 0, mapped to its host
+user. Run rootless Docker as the same user who owns the checkout. See Docker's
+[UID/GID mapping](https://docs.docker.com/engine/security/rootless/uid-gid-mapping/).
+No `sudo`, host `chown`, or checkout relabeling is needed; the containers use
+`--security-opt label=disable` for SELinux bind-mount access. Remote daemons and
+Docker Desktop are outside this local-Linux workflow's verification scope.
+
+Build/test commands do not install the extension on your desktop. The ZIP contains
+runtime source, interfaces, icons, metadata, CSS, and LICENSE, excluding repository
+docs and development/private files. Rebuild the image after changing Dockerfile;
+ordinary source edits are visible through the explicit read-only mounts.
 
 `make build` and `make test` use already installed host tools without installing
 anything. The verified stack includes GJS 1.86, GLib/Gio/GLibUnix, GStreamer 1.26
@@ -108,7 +134,7 @@ PyGObject, `dbus-run-session`, and `gst-launch-1.0`; Shell E2E needs native GNOM
 
 | Make variable | Default | Meaning |
 | --- | --- | --- |
-| `CONTAINER_ENGINE` | `podman` | Container command; supplied flags follow Podman. |
+| `CONTAINER_ENGINE` | `podman` | `podman` or `docker`; runtime identity flags adapt to the actual engine. |
 | `IMAGE` | `localhost/gnome-radio-dev:43` | Development image tag. |
 | `OOM_SCORE_ADJ` | `500` | Playback-service kernel adjustment: integer 0–1000, or `inherit`. |
 

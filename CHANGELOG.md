@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- Rename the development recipe/ignore file to `Dockerfile` and `.dockerignore`;
+  support Podman and Docker with engine-specific user mapping and host-owned
+  packages. Restrict build contexts and runtime mounts to exclude private files.
+
 ## 0.2.0 — 2026-10-20
 
 Finalized locally; GitHub and extensions.gnome.org publication is pending.
