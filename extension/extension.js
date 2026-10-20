@@ -627,7 +627,15 @@ class RadioIndicator extends PanelMenu.Button {
                 button.can_focus = reveal;
             }
         };
-        item.connect('notify::hover', revealActions);
+        item.connect('notify::hover', () => {
+            // Native menu hover can leave keyboard focus on the last row.
+            // Hand focus back when the pointer leaves; keyboard-only navigation
+            // still reveals actions through the stage's focus signal below.
+            const focus = global.stage.get_key_focus();
+            if (!item.hover && focus && item.contains(focus))
+                this.menu.actor.grab_key_focus();
+            revealActions();
+        });
         global.stage.connectObject('notify::key-focus', revealActions, item);
         revealActions();
         buttons.set(saved.id, {select: item, play, edit, remove, label, marker});

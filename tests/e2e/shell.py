@@ -285,6 +285,9 @@ class ShellE2E(unittest.TestCase):
                 }})()'''), 'Infobox must show a bold name and smaller, subdued theme-colored track text')
                 self.assertEqual(evaluate(f'{INDICATOR}._details.height'), info_height)
                 self.assertEqual(evaluate(f'{INDICATOR}.menu.actor.width'), popup_width)
+                self.assertAlmostEqual(evaluate(f'{INDICATOR}._play.get_transformed_position()[0]'),
+                                       evaluate(f'{INDICATOR}._recentHeading.get_transformed_position()[0]'),
+                                       delta=1, msg='Play/Pause must align with the section text below')
                 success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
                     'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
                         (False, False, str(Path(f'workspace/{prefix}-{variant}.png').resolve()))))
@@ -853,6 +856,27 @@ class ShellE2E(unittest.TestCase):
                                   GLib.Variant('(bbs)', (False, False, str(Path('workspace/hover.png').resolve()))))
         self.assertTrue(success, 'Hover actions screenshot')
         pointer(0, 700)
+        wait(lambda: evaluate(f'''[{row}.play, {row}.edit, {row}.remove]
+            .every(button => button.opacity === 0 && !button.reactive && !button.can_focus)'''),
+             'leaving a hovered row hides actions despite native focus retention')
+        click(f'{row}.label')
+        wait(lambda: evaluate(f'!{INDICATOR}._pending'), 'pointer-selected station settles')
+        pointer(0, 700)
+        wait(lambda: evaluate(f'''[...{INDICATOR}._stationButtons.values(), ...{INDICATOR}._recentButtons.values()]
+            .every(row => [row.play, row.edit, row.remove].every(button => button.opacity === 0))'''),
+             'leaving a selected row hides actions in both lists')
+        recent_row = f'{INDICATOR}._recentButtons.get({INDICATOR}._state.selected)'
+        click(f'{recent_row}.label')
+        wait(lambda: evaluate(f'!{INDICATOR}._pending'), 'Recent pointer selection settles')
+        x, y = evaluate(f'{INDICATOR}._recentHeading.get_transformed_position()')
+        pointer(x + 5, y + 5)
+        wait(lambda: evaluate(f'''[{recent_row}.play, {recent_row}.edit, {recent_row}.remove]
+            .every(button => button.opacity === 0 && !button.reactive && !button.can_focus)'''),
+             'moving from Recent to a heading hides its retained row actions')
+        success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
+            'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
+                (False, False, str(Path('workspace/row-actions-hidden.png').resolve()))))
+        self.assertTrue(success)
         evaluate(f'{row}.select.grab_key_focus(); true')
         self.assertTrue(evaluate(f'{row}.play.can_focus && {row}.edit.opacity === 255'))
         evaluate(f'{row}.edit.grab_key_focus(); true')
@@ -861,7 +885,8 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(evaluate(f'{row}.edit.opacity'), 0)
         playing_row = f'{INDICATOR}._stationButtons.get({json.dumps(identifier)})'
         evaluate(f"{playing_row}.play.emit('clicked', 1); true")
-        wait(lambda: evaluate(f'!{INDICATOR}._pending'), 'playing row action finishes')
+        wait(lambda: evaluate(f"!{INDICATOR}._pending && {INDICATOR}._state.status === 'Playing'"),
+             'playing row action reconnects after pointer selection')
         self.assertEqual(evaluate(f'{INDICATOR}._state.status'), 'Playing')
         evaluate(f"{INDICATOR}._play.emit('clicked', 1); true")
         wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Paused' && !{INDICATOR}._pending"), 'pause before row Play')

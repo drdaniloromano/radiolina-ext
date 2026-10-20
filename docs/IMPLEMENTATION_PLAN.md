@@ -60,6 +60,8 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   clicks, and indicator toggling retain normal dismissal behavior. The infobox's Quit
   action disables radiolina, stops its service, and preserves saved stations/preferences.
 - Station Play/Edit/Remove controls appear on hover or keyboard focus without layout shifts.
+  Pointer exit clears stale row focus and hides actions; keyboard-only navigation
+  remains available. Align Play/Pause's left edge with the section headings below.
 - Recent defaults to three visible entries; Settings changes persist without
   interrupting playback or erasing history. Inputs and form actions use two compact rows.
 - The infobox hides URLs; Copy beside the editor URL writes its current contents

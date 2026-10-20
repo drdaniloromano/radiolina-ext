@@ -79,6 +79,10 @@ continued typing, Ctrl+F, clear-icon reset, and unaffected station-editor typing
 Virtual pointer input verifies hover-only Play/Edit/Remove actions without label movement;
 keyboard focus reveals and retains the actions through child focus. Row Play is
 checked while already playing, while paused, and when switching to another station.
+Leaving a hovered or pointer-selected row must hide Play/Edit/Remove in both lists,
+even if native menu handling retained focus on that row. Keyboard-only focus still
+reveals its actions. Light/dark checks also align the Play/Pause button's left edge
+with the Recent heading below it.
 Escape closes the popup and resets search. Hover screenshot: `workspace/hover.png`.
 Layout checks
 verify the input aligns with the Stations heading and native search
@@ -130,6 +134,9 @@ while searching, and verifies the 30/70 editor split. Screenshots are saved as
 Restoring the original typography must restore compact editor/search geometry,
 including hidden placeholder metrics. These checks use native Shell themes;
 they do not establish compatibility with arbitrary third-party themes.
+On 2026-10-20, the complete workflow passed at 100% display scaling (114.822 s)
+and 150% (122.578 s), including light/dark and larger-font checks. Screenshots
+were inspected for hidden row actions, playback alignment, and contained fields.
 Pointer checks verify that Stations, Settings, and Add/Edit replace each other;
 showing Search returns to the saved-list view without leaving another panel open.
 

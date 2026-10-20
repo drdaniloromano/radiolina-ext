@@ -163,6 +163,9 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Fixed
 
+- Hide station-row actions when the pointer leaves, clearing focus retained by
+  native menu hover while preserving keyboard navigation. Align the infobox
+  Play/Pause button's left edge with the section text below.
 - Let inline search use the remaining toolbar width so larger text does not
   truncate the Stations heading. Refresh native entry hints on theme changes so
   Add/Edit fields regain their compact height after changing fonts or text scale;
