@@ -104,6 +104,12 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Prepare a contained Fedora 43/GNOME 49.1 live desktop with 2 vCPUs and 2 GiB
+  guest RAM, hardware acceleration, and no installed guest system disk. Verify
+  applet/service startup without autoplay; document the profile and keep local VM
+  assets excluded. Audible playback, physical keys, and lock/suspend checks remain
+  manual acceptance work. Initial live-session activation required a re-enable
+  to recover the backend; investigation remains open before publication.
 - Confirm default GNOME user-session behavior: lock stops playback; unlock restores
   an idle applet. Keep this lifecycle and document manual lock/suspend checks.
 - Audit runtime/package structure against EGO review guidance. Add the standalone

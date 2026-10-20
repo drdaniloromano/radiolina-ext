@@ -237,6 +237,36 @@ format compatibility, not the availability of that advertised stream endpoint.
 PyGObject emits upstream Python 3.14 deprecation warnings, without test failures.
 The minimal test desktop also logs missing calendar/accessibility services.
 
+## Small disposable desktop profile
+
+A Fedora 43 Workstation Live VM provides GNOME Shell 49.1 for the remaining
+desktop checks. A locally verified profile uses **2 vCPUs, 2 GiB guest RAM,
+KVM, and accelerated virtio graphics** at 1280×720. The ISO and extracted boot
+files occupy about 2.9 GiB; no installed guest disk is required. Verify Fedora's
+signed checksum and the ISO hash before booting. Use the built extension ZIP as
+read-only guest media, user-mode networking, and output-only audio through SPICE.
+Keep clipboard/file transfer and host-directory sharing disabled.
+
+Install the ZIP inside the live guest, then enable radiolina after the desktop
+has finished starting. The verified applet was ACTIVE with its service Stopped,
+a saved test station, and no reported playback error. Configured guest RAM is
+not total host usage: a short QEMU sample used about 2.3 GiB RSS, including guest
+RAM and virtualization/graphics overhead. These are environment measurements,
+not applet resource figures or a guaranteed minimum.
+
+In this live environment, initial activation reported ACTIVE while the playback
+bus name was absent. Disabling/re-enabling recovered the backend, and the local
+launcher passed a fresh-boot readiness check with one bounded retry. This is
+recovery evidence, not a clean-first-activation pass; investigate the cause before
+publication. Check the backend's bus/state as well as the extension's ACTIVE flag.
+
+Live guest changes disappear on power-off; repeat installation on the next boot.
+Set a guest-only password and enable normal screen locking for lifecycle checks.
+Stop the VM and close its viewer when unused. Physical media keys may be
+intercepted by the host; verify keyboard capture. Guest suspend checks do not
+establish hardware suspend compatibility. Preparing this environment does not
+complete the manual acceptance checks below.
+
 ## Manual acceptance on a disposable desktop
 
 1. Install the built ZIP in a GNOME 49 VM, enable it, and open the indicator.

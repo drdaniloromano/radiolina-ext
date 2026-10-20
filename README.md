@@ -113,6 +113,8 @@ This requires an already installed GNOME 49 Shell and usable rendering backend.
 Prefer a disposable GNOME VM for full visual/audio/media-key checks. The private
 test bus deliberately cannot activate host desktop services. A headless Shell is
 process/settings isolation, not a full VM or security sandbox.
+See [the small live-VM profile](docs/TESTING.md#small-disposable-desktop-profile)
+for a GNOME 49 desktop using 2 vCPUs and 2 GiB of guest RAM.
 
 ## Try the built package
 

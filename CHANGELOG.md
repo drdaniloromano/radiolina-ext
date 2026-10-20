@@ -6,6 +6,9 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- Document a small disposable GNOME 49 live-VM profile for manual desktop checks,
+  with contained assets, KVM/graphics acceleration, and explicit verification limits,
+  including the observed first-activation/backend recovery issue still to investigate.
 - Isolated Shell E2E coverage for installation of the real ZIP, forced replacement
   of existing runtime files, and uninstall preserving saved stations/settings.
 - README architecture diagram showing process boundaries, D-Bus/MPRIS communication,
