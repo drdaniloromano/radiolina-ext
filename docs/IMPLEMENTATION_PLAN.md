@@ -104,6 +104,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Choose `0.1.0` for the first release and set `version-name` in metadata. Document
+  version increments and `v<version>` tags; keep the changelog unreleased until
+  final checks pass. Leave numeric submission versions to extensions.gnome.org.
 - Set the permanent extension ID to `radiolina@drdaniloromano.github.io`, add
   repository/support links in metadata/docs, and declare the Copy URL clipboard
   write. Build package paths from metadata; use the same ID in update helpers.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+Planned first release: **0.1.0**. Final verification and publication are pending.
+
 ### Added
 
 - MIT license for original project files, source/artwork/tooling identifiers, and

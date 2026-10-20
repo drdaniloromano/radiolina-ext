@@ -3,5 +3,6 @@
   "name": "radiolina",
   "description": "Lightweight internet radio for GNOME Shell, controlled entirely from the top bar. Supports editable stations, M3U/XSPF streams, track metadata, and media keys.\n\nThe Copy stream URL action writes a station URL to the clipboard. It does not read clipboard contents.",
   "shell-version": ["49"],
+  "version-name": "0.1.0",
   "url": "https://github.com/drdaniloromano/radiolina-ext"
 }

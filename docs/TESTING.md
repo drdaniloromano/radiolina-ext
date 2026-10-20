@@ -10,7 +10,8 @@ test dependencies; the host source mount is read-only.
 The packaging E2E check builds the real ZIP in a temporary checkout, verifies that
 `LICENSE` and the packaged runtime match source, checks MIT identifiers on generated
 wrappers, verifies the permanent UUID, support URL, clipboard disclosure, and
-source metadata in the archive, and rejects unexpected development/private files.
+source metadata (including `version-name`) in the archive, and rejects unexpected
+development/private files.
 It needs only Python's standard library; run it alone with `python3 tests/e2e/package.py`.
 
 Name checks require **radiolina** in package metadata, the real service's MPRIS

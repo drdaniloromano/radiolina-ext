@@ -276,6 +276,22 @@ same D-Bus contract. No additional desktop adapter is currently shipped.
 See [verification and manual checks](docs/TESTING.md), [the implementation plan](docs/IMPLEMENTATION_PLAN.md),
 and [changelog](CHANGELOG.md).
 
+## Releases and versioning
+
+The first release is being prepared as **0.1.0**; it has not been published.
+Set the user-visible version in `extension/metadata.json` as `version-name`.
+Leave the numeric `version` field to extensions.gnome.org; it tracks submissions
+separately from our release names. See [GNOME's version metadata documentation](https://gjs.guide/extensions/overview/anatomy.html#version-name).
+
+Use `MAJOR.MINOR.PATCH`: patch increments for fixes and minor increments for new
+functionality during `0.x`. Document compatibility breaks and increment the minor
+version during `0.x`; after `1.0`, compatibility breaks increment the major version.
+
+Keep changes under **Unreleased** until release checks pass. At release, date the
+changelog entry and tag the reviewed commit as `v<version>`, for example `v0.1.0`.
+Build the ZIP from that commit and publish its checksum. A version in metadata
+does not itself create a tag, publish a release, or submit the extension.
+
 ## License
 
 This project's original code, bundled SVGs, documentation, and tooling are licensed
