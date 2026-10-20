@@ -7,8 +7,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 ### Added
 
 - Record maintainer-confirmed audible Nightride FM playback and physical
-  Play/Pause pause/resume in the disposable GNOME 49.1 desktop; remaining manual
-  acceptance checks stay open.
+  Play/Pause pause/resume, plus lock/unlock without autoplay and subsequent Play
+  recovery, in the disposable GNOME 49.1 desktop. Remaining manual checks stay open.
 - Document a small disposable GNOME 49 live-VM profile for manual desktop checks,
   with contained assets, KVM/graphics acceleration, and explicit verification limits.
 - Isolated Shell E2E coverage for installation of the real ZIP, forced replacement
