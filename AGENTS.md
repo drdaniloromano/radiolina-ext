@@ -17,7 +17,7 @@ Defer station search. Keep podcasts, accounts, and recording outside the first r
 
 Clicking the indicator opens a compact native popup with controls and station management. Show station name, source URL in smaller text, and available song title. Clear stale metadata on stream changes.
 
-Take visual inspiration from Copyous: rounded cards, a clear selected state, and inline actions. Keep editing inside the popup and preserve station identity and playback when renaming.
+Follow native GNOME popup and indicator conventions, with a clear selected state and inline actions. Keep editing inside the popup and preserve station identity and playback when renaming.
 
 Notifications default off. Notify on distinct stream-reported track changes; suppress initial, duplicate, and empty metadata.
 

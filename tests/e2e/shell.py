@@ -243,8 +243,8 @@ class ShellE2E(unittest.TestCase):
                 wait(lambda: evaluate(f"Main.getStyleVariant() === '{variant}'"), 'native theme variant changed')
                 wait(lambda: evaluate(f"global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().default_stylesheet.get_uri().includes('-{variant}.css')"), 'native stylesheet changed')
                 time.sleep(0.3)
-                # Copyous 2.0.1 wraps its icon in a box and clears icon padding/margins.
-                # Reproduce that panel-only reference without loading clipboard code.
+                # Use a generic native panel reference with zero icon padding/margins.
+                # Keep the reference independent of installed extensions.
                 evaluate(f'''global._radioSpacingReference = new global._radioPanelMenu.Button(0.5, 'Spacing reference');
                     global._radioSpacingBox = new global._radioSt.BoxLayout({{style: 'spacing: 6px;'}});
                     global._radioSpacingIcon = new global._radioSt.Icon({{

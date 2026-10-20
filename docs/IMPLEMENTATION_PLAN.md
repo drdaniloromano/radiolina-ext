@@ -102,6 +102,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Review source/artwork provenance and describe UI behavior through native GNOME
+  conventions. Record findings and unresolved origins in `docs/PROVENANCE.md`;
+  project licensing remains a publication decision.
 - Add native Play/Pause, Stop, and Quit icons around the infobox text. Quit uses
   normal extension teardown after its input event; Stop ends only the backend.
   Replace the bottom Quit row and old left/right placement option.
@@ -109,7 +112,7 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   Report the standalone fallback until a cooperative host is explicitly supported.
 - Keep panel ownership independent. Shared grouping is deferred until a documented,
   explicitly compatible cooperative host is available and lifecycle-tested.
-- Match Copyous's icon-only panel spacing with zero icon padding/margins and native
+- Use compact icon-only panel spacing with zero icon padding/margins and native
   button padding, icon size, height, and theme states.
 - Bold infobox station name with smaller, subdued track text using the theme's
   foreground color; list station names retain their regular weight.
@@ -132,7 +135,7 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Persisted Recent count in Settings (1–10, default 3) with ten-entry retained history.
   Compact horizontal name/URL fields and a shared Save/Cancel/Delete row. Removed
   the infobox source line and added native clipboard access (now in the editor).
-- Hover/focus station actions, explicit row Play, and Copyous-inspired type-to-search
+- Hover/focus station actions, explicit row Play, and type-to-search
   with native search/clear icons. Isolated virtual keyboard/pointer checks cover
   activation, first-character preservation, clearing, Ctrl+F, and editor isolation.
 - Balanced the Stations separator using native row/toolbar action icons as the
@@ -140,7 +143,7 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   matches action-button height without changing toolbar padding/height.
 - Editable station names/source URLs with atomic validation and persistence.
 - Bounded asynchronous M3U/XSPF resolution and stale-load cancellation.
-- Per-station pencil actions and an inline editor inspired by Copyous.
+- Per-station pencil actions and a native inline editor.
 - Restored default GNOME text and button styling, retained the station
   information/playback box, and placed Search/**+** controls above the saved list
   below the divider. Search reveals a local name/source filter; the song-notifications

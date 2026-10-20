@@ -15,8 +15,8 @@ The panel icon shows **signal marks while playing** and a **plain radio while
 paused or inactive**. Both symbols inherit the theme's foreground color. Connecting,
 stopped, and failed playback use the inactive symbol. Both icons are static;
 playback status is shown by the signal marks, without animation.
-The top-bar icon has no extra padding or margins, matching Copyous's icon-only
-indicator spacing while retaining native button padding and icon sizing.
+The top-bar icon has no extra padding or margins while retaining native button
+padding and icon sizing.
 Radio uses its own panel button and popup by default. In Settings, **Group with
 other app indicators** is **off by default**. Its warning reads:
 
@@ -27,7 +27,6 @@ No host integration is currently shipped, so Radio stays separate and shows
 **No supported indicator group is available. Radio stays separate.** It does not
 inspect, move, restyle, or change input handling for other extensions' indicators.
 
-Inline actions take inspiration from [Copyous](https://github.com/boerdereinar/copyous).
 The indicator and popup controls use GNOME Shell's standard styles, including
 `system-status-icon`, `icon-button`, and native text buttons. Saved stations use standard Shell
 menu rows showing station names in regular weight. A small play/pause/stop icon
@@ -250,3 +249,6 @@ same D-Bus contract. No additional desktop adapter is currently shipped.
 
 See [verification and manual checks](docs/TESTING.md), [the implementation plan](docs/IMPLEMENTATION_PLAN.md),
 and [changelog](CHANGELOG.md).
+
+The project license is still undecided. See the [provenance review](docs/PROVENANCE.md)
+for the material inspected and the remaining licensing gate before publication.

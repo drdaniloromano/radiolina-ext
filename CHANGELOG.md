@@ -59,10 +59,14 @@
 
 ### Changed
 
+- Describe popup, inline actions, and panel spacing through native GNOME behavior;
+  remove incidental references to an example extension from docs and test comments.
+- Record the source/artwork provenance review and its limits; licensing remains
+  a pending publication decision.
 - Keep Radio's panel button independent; grouping requires an explicitly supported
   cooperative host. Add regression checks preserving other indicators' ownership
   and independent input handling through visibility changes and extension reloads.
-- Match Copyous's icon-only indicator spacing: clear icon padding and margins,
+- Use compact icon-only indicator spacing: clear icon padding and margins,
   retaining native button padding, icon size, height, and theme interaction states.
 - Bold the infobox station name and show track information in smaller, subdued
   text that follows the active theme in light and dark mode.
@@ -81,7 +85,7 @@
 - Show station Play/Edit/Remove actions on hover or keyboard focus, without shifting names.
   Play starts/resumes a station without pausing one already playing.
 - Move the expand arrow directly beside Stations. Typing in the popup or Ctrl+F
-  opens the saved-station filter, inspired by Copyous, with native search/clear icons.
+  opens the saved-station filter with native search/clear icons.
   Station-editor text input remains independent.
 - Balance the Stations separator against the action icons on either side, restoring
   clearance above the toolbar. Search keeps the same toolbar height/padding and matches

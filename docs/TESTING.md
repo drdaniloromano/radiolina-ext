@@ -97,10 +97,10 @@ banners. A screenshot is saved to `workspace/media-center.png`.
 Station rows are checked for native menu styling rather than button-card styling;
 edit controls use native `icon-button` styling. Panel checks verify `system-status-icon`
 and native controls without flat styles. Light/dark checks compare the indicator
-with a panel-only reference reproducing installed Copyous 2.0.1's box and zero icon
-padding/margins. Width, glyph size, and button height must match, including after
-live updates; the standard padded-icon reference must be wider. No clipboard code
-or Copyous installation is required for tests. Layout checks confirm edit/search/add
+with a generic panel-only reference using a box and zero icon padding/margins.
+Width, glyph size, and button height must match, including after live updates;
+the standard padded-icon reference must be wider. No clipboard code or other
+extension installation is required for tests. Layout checks confirm edit/search/add
 buttons are smaller than play/pause, station rows have tight vertical padding,
 and names remain centered beside their edit buttons. Missing song metadata produces an
 empty, hidden song label, which becomes visible when a title arrives.
