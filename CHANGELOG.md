@@ -2,42 +2,68 @@
 
 ## Unreleased
 
-Planned first release: **0.1.0**. Final verification and publication are pending.
+## 0.2.0 — 2026-10-20
+
+Finalized locally; GitHub and extensions.gnome.org publication is pending.
 
 ### Added
 
-- Isolated GNOME verification that the default playback service alone receives
-  `oom_score_adj=500`, Shell's original score is preserved, and a targeted SIGKILL
-  leaves the same indicator usable. One real Play click restores playback and
-  metadata in a fresh service without changing saved configuration or exhausting RAM.
-- Build-time playback-service OOM adjustment (`--oom-score-adj`, Make
-  `OOM_SCORE_ADJ`), default 500, accepting 0–1000 or `inherit`. Unsupported or
-  denied kernel controls leave playback operational; Shell's score is untouched.
-- Persisted **Show Stop button** setting, off by default. Hiding/showing the
-  optional infobox control preserves playback and popup dimensions.
-- A single Play/Pause button containing the playback circle and station/track
-  information, with a shared native hover/focus highlight and Enter/Space
-  activation while keeping the popup open. Optional Stop and Quit follow it.
-- Isolated Shell checks for larger text and an alternate serif font in light/dark
-  mode, covering transport, saved-row actions, search, Add/Edit, and settings.
-- Record maintainer-confirmed native light/dark readability and layout for the
-  popup, expanded Stations list, and Add/Edit form in the GNOME 49.1 VM, plus
-  native high-contrast readability and keyboard-focus visibility.
-- Record maintainer-confirmed audible Nightride FM playback and physical
-  Play/Pause pause/resume, plus lock/unlock without autoplay and subsequent Play
-  recovery, in the disposable GNOME 49.1 desktop. Remaining manual checks stay open.
-- Document a small disposable GNOME 49 live-VM profile for manual desktop checks,
-  with contained assets, KVM/graphics acceleration, and explicit verification limits.
-- Isolated Shell E2E coverage for installation of the real ZIP, forced replacement
-  of existing runtime files, and uninstall preserving saved stations/settings.
-- README architecture diagram showing process boundaries, D-Bus/MPRIS communication,
-  playback, and station storage.
+- Optional persisted **Show Stop button** setting, off by default, and one native
+  Play/Pause button combining the playback circle and station/track information.
+- Configurable playback-service OOM preference: default 500, build-time values
+  0–1000 or `inherit`, with nonfatal handling of missing/denied kernel controls.
+- Isolated GNOME SIGKILL/recovery verification: service score 500 before/after,
+  Shell's inherited score unchanged, same indicator and saved data preserved,
+  and one Play click restoring playback/metadata without memory exhaustion.
+- Larger-font and native light/dark/150% layout checks; actual ZIP installation,
+  update, migration, uninstall, process cleanup, and silent media-card coverage.
+
+### Changed
+
+- Follow GNOME's default user-session lifecycle: lock stops playback, unlock
+  restores an idle indicator, and Play reconnects without automatic playback.
+- Consolidate documentation into a concise README, user/development guides,
+  testing instructions, and retained provenance findings.
+- Bound private Shell-test rendering to two software threads without wallpaper
+  decoding, and require a matching version tag for finalized releases.
+
+### Fixed
+
+- Allow cancellable cold service initialization for up to 120 seconds; report
+  early process exit promptly. Bound connection/rebuffering stalls to 30 seconds
+  with cleared metadata, readable persistent errors, and explicit retry.
+- Preserve native hover/focus through playback commands; hide stale station-row
+  actions on pointer exit and keep keyboard navigation available.
+- Align compact playback/section/row spacing, preserve fixed popup geometry, and
+  keep search/editor fields contained across native fonts and text scales.
+- Complete the former development identity's shutdown before live activation,
+  preserving station data and handling service-object disappearance during teardown.
+
+### Verification and limitations
+
+- Packaging, 9 critical unit cases, 18 service E2E cases, and the GNOME 49 Shell
+  workflow pass. The OOM/crash check passed on GNOME 49.7; see [testing](docs/TESTING.md).
+- Maintainer-confirmed GNOME 49.1 VM checks cover audible Nightride playback,
+  basic physical Play/Pause, lock/unlock, and native light/dark/high contrast.
+- Suspend/resume remains unverified after the test VM failed to wake; no applet
+  cause is established. Multiple-player media-key routing, other codecs, and
+  third-party themes require their own checks. OOM tests simulate process death,
+  not actual memory pressure, kernel victim selection, or systemd-oomd behavior.
+- Song information depends on stream metadata; Pause can lag the live edge.
+  No online station discovery, podcasts, accounts, or recording are provided.
+
+## 0.1.0 baseline — 2026-10-20
+
+Earlier local development tag; no public release was recorded.
+
+### Added
+
 - MIT license for original project files, source/artwork/tooling identifiers, and
   the full license/copyright notice in the extension ZIP.
 - E2E packaging check for license inclusion, source fidelity, and exclusion of
   machine-local and development files; included in `make test` / `make container-test`.
-- Native symbolic infobox playback, Stop, and Quit controls; removed the bottom
-  textual Quit action and placement switch.
+- Fixed infobox order **Play/Pause | Stop | station/track info | Quit** using native
+  symbolic icon buttons; removed the bottom textual Quit action and placement switch.
 - Infobox Stop exits the playback service and clears track metadata while retaining
   the indicator and saved state. Play and station/settings actions restart it on
   demand; pending restarts are cancellable. Quit disables radiolina and stops its service.
@@ -78,14 +104,12 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 - MPRIS play/pause/stop controls and metadata for desktop media integration.
 - Container build/package/test commands, deterministic service E2E tests, critical
   unit tests, and disposable headless Shell E2E tooling.
-- Contributor guide and developer documentation.
+- Contributor guide and implementation plan.
 - Documented and tested GNOME 49 first-install loading through Looking Glass
   without logging out or restarting the current Shell session.
 
 ### Current limitations
 
-- Suspend/resume remains unverified after the live test VM failed to resume;
-  the cause has not been attributed to the applet.
 - GNOME 49 is the initial supported target; no other desktop adapter is shipped.
 - Song information depends on stream metadata; pause can lag the live edge.
 - Full physical media-key routing and audible playback need desktop/VM checks.
@@ -93,17 +117,6 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Changed
 
-- Make the README a concise project landing page, consolidate user operations and
-  architecture/build guidance into two focused guides, shorten the testing guide,
-  and retire the public implementation plan while preserving design decisions.
-- Require a matching `v{release}` Git tag for each finalized release; planned
-  versions remain Unreleased until final checks and release completion.
-- Confirm GNOME's default user-session lifecycle as the intended policy: lock
-  stops playback, and unlock restores the idle applet without automatic resume.
-- Mark the standalone service entry point with the recommended GJS module header,
-  place Shell enable/disable methods together for lifecycle review, and align the
-  contributor guide with current controls, metadata, silent media integration,
-  local filtering, and cooperative-only grouping.
 - Set the permanent extension ID to `radiolina@drdaniloromano.github.io`, link the
   source/support repository, and disclose the editor's clipboard write in metadata.
   Package names follow the metadata ID; installation/update helpers and docs use it.
@@ -178,34 +191,6 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Fixed
 
-- Use a single infobox inset to align the Play/Pause circle's outer edge with
-  section headings and station-row text, preserving native button padding/shape.
-- Reduce and balance the Play/Pause circle's top and left gaps from the popup
-  border, keeping headings and station rows aligned with the circle.
-- Reduce disposable Shell-test resource use with two software-rendering threads
-  and no wallpaper decoding; host settings remain unchanged.
-- Let the live updater finish disabling radiolina's former development identity
-  before activating the new ID, including when the new ZIP is installed but not
-  yet loaded. Cover that transition with preserved station data and one indicator.
-- Hide station-row actions when the pointer leaves, clearing focus retained by
-  native menu hover while preserving keyboard navigation. Align the infobox
-  Play/Pause button's left edge with the section text below.
-- Let inline search use the remaining toolbar width so larger text does not
-  truncate the Stations heading. Refresh native entry hints on theme changes so
-  Add/Edit fields regain their compact height after changing fonts or text scale;
-  preserve their 30/70 width split when fonts or Copy-button visibility change.
-- Bound connection/rebuffering stalls to 30 seconds, with cancellation on playback,
-  Pause, and Stop, cleared stale metadata, persistent inline feedback, and manual
-  retry. Verify transport stalls and real VM link-loss/recovery autonomously.
-- Render inline errors with the normal native theme foreground, avoiding dimmed
-  disabled-row styling. Cover readable light/dark screenshots, popup reopening,
-  and recovery without clipping or width changes.
-- Let update/recovery helpers wait for bus-name release when the service object
-  disappears during teardown; retain the bounded shutdown wait and cover the race.
-- Allow up to two minutes for playback-service readiness instead of killing a
-  healthy first activation after ten seconds during cold GStreamer discovery.
-  Keep startup cancellable and report an exited backend promptly. Add isolated
-  Shell regressions for delayed readiness, cancellation, early exit, and retry.
 - Remove stale applet styles during same-session updates and load versioned CSS.
   Isolated checks reproduce the old oversized Name field, verify URL containment
   and track/divider clearance, and retain native light/dark styling after updates.
