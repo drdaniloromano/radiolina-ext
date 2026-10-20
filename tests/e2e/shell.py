@@ -512,6 +512,27 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(saved_file.read_bytes(), saved_bytes, 'Loading the new ID must not rewrite saved data')
         self.assertFalse(evaluate(f'Boolean({old_indicator})'))
         self.assertFalse(evaluate(f"new Gio.Settings({{schema_id: 'org.gnome.shell'}}).get_strv('enabled-extensions').includes('{old_uuid}')"))
+        # Reproduce a host still running the development ID while the new ZIP
+        # exists on disk but has never been registered in this Shell session.
+        evaluate(f"Main.extensionManager.disableExtension('{UUID}'); true")
+        wait(lambda: evaluate(f'!{INDICATOR}'), 'new indicator disabled before legacy-only update fixture')
+        unload_new = f"await Main.extensionManager.unloadExtension(Main.extensionManager.lookup('{UUID}'));"
+        evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(unload_new)}); true')
+        wait(lambda: evaluate(f"!Main.extensionManager.lookup('{UUID}')"), 'new identity unregistered')
+        evaluate(f"Main.extensionManager.enableExtension('{old_uuid}'); true")
+        wait(lambda: evaluate(f'Boolean({old_indicator}?._proxy?.g_name_owner)'), 'legacy-only indicator active')
+        legacy_pid = int(evaluate(f'{old_indicator}._extension._process.get_identifier()'))
+        migration_update = (
+            f"await (await import({json.dumps((root / 'scripts/live-update.js').as_uri())})).update(Main);"
+        )
+        evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(migration_update)}); true')
+        wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner) && !{old_indicator}'),
+             'updater replaces active development ID with previously unregistered radiolina')
+        wait(lambda: not Path(f'/proc/{legacy_pid}').exists(), 'legacy-only backend exited')
+        self.assertFalse(evaluate(f"global.settings.get_strv('enabled-extensions').includes('{old_uuid}')"))
+        self.assertEqual(saved_file.read_bytes(), saved_bytes, 'Updater migration must preserve saved data bytes')
+        self.assertEqual(evaluate(f"Main.extensionManager.lookup('{UUID}').metadata['radio-runtime']"),
+                         json.loads((installed / 'metadata.json').read_text())['radio-runtime'])
         # Restore an empty/default profile for the existing station/UI workflow.
         call(BUS, APP, IFACE, 'RemoveStation', GLib.Variant('(s)', (saved_id,)))
         call(BUS, APP, IFACE, 'SetRecentLimit', GLib.Variant('(u)', (3,)))

@@ -49,6 +49,14 @@ export async function update(Main) {
     if (!/^radio-[0-9a-f]{12}\.js$/.test(runtime ?? ''))
         throw new Error('Install the newly built ZIP before updating.');
     const module = await import(directory.get_child(runtime).get_uri());
+    // This is radiolina's former development identity, not another app.
+    // Persist its disabled state and finish its native lifecycle before loading
+    // the new identity; otherwise the visible indicator can still be old code.
+    const legacyUuid = 'gnome-radio@local';
+    if (manager.lookup(legacyUuid)) {
+        await manager._callExtensionDisable(legacyUuid);
+        manager.disableExtension(legacyUuid);
+    }
     const previous = manager.lookup(UUID);
     previous?.stateObj?.disable();
     Main.panel.statusArea[UUID]?.destroy();

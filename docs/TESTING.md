@@ -35,6 +35,11 @@ selection, recent history, and preferences must survive without rewriting the
 configuration. Only the new indicator is present; the old ID remains disabled.
 This also exercises separate GType identities for cached modules at different
 installation paths. Service identifiers and storage paths remain compatible.
+The workflow additionally unloads the new ID, re-enables the development ID,
+then runs the live updater through Looking Glass. The updater must disable the
+old ID and service, activate the previously unregistered new ID, load the packaged
+runtime, and preserve saved-file bytes. A ZIP installed on disk is not evidence
+that its runtime is active in the current desktop session.
 
 Nine critical unit cases cover URL validation, bounded metadata sanitization,
 deduplication, saved-state validation, and private persistence/corruption safety.

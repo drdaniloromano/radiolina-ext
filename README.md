@@ -185,6 +185,13 @@ your checkout's absolute path:
 ```
 
 Wait for `radiolina updated`, then press Esc. Saved stations are preserved.
+The updater also disables this project's former `gnome-radio@local` identity if
+it is still loaded, then loads radiolina even if the new ID was not registered
+in the current session. It leaves unrelated extensions installed and enabled.
+Check `gnome-extensions info radiolina@drdaniloromano.github.io`: the running
+extension must report **Enabled: Yes** and **State: ACTIVE**. The development ID
+must be disabled. Installing the ZIP alone replaces files without replacing an
+already imported running module.
 The old playback service stops during this update; press Play to resume. The
 helper loads a fresh content-addressed UI module to avoid GNOME's JavaScript
 cache. Layout styles are versioned too, and startup unloads identifiable older

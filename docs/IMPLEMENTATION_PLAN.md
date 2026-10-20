@@ -119,6 +119,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Handle a still-active development identity in the live updater, including a new
+  ID installed on disk but absent from the running Shell. Verify the old service
+  exits, the new runtime loads, and saved stations/settings remain unchanged.
 - Exercise a larger serif font and 125% text scaling across light/dark popup,
   saved-row actions, search, Add/Edit, and settings. Keep the Stations heading
   readable through flexible search sizing; refresh hidden native entry hints on
