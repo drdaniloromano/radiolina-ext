@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import GLib from 'gi://GLib';
 
 export const DEFAULT_RECENT_LIMIT = 3;

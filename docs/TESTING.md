@@ -7,6 +7,11 @@ MP3/ICY fixtures. This executes the production GJS service and GStreamer pipelin
 on a private bus, using a synchronized silent audio sink. The image contains all
 test dependencies; the host source mount is read-only.
 
+The packaging E2E check builds the real ZIP in a temporary checkout, verifies that
+`LICENSE` and the packaged runtime match source, checks MIT identifiers on generated
+wrappers, and rejects unexpected development/private files. It needs only Python's
+standard library; run it alone with `python3 tests/e2e/package.py`.
+
 Nine critical unit cases cover URL validation, bounded metadata sanitization,
 deduplication, saved-state validation, and private persistence/corruption safety.
 Fifteen service E2E cases cover real decoding and MPRIS controls, ICY title changes

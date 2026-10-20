@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 FROM registry.fedoraproject.org/fedora:43
 RUN dnf -y install gjs gstreamer1 gstreamer1-plugins-base gstreamer1-plugins-good \
     python3 python3-gobject dbus-daemon make && dnf clean all

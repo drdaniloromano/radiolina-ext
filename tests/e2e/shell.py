@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Exercise native Shell actors on an isolated, headless GNOME 49 desktop."""
 import json
 import hashlib

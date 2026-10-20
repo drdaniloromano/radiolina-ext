@@ -4,6 +4,10 @@
 
 ### Added
 
+- MIT license for original project files, source/artwork/tooling identifiers, and
+  the full license/copyright notice in the extension ZIP.
+- E2E packaging check for license inclusion, source fidelity, and exclusion of
+  machine-local and development files; included in `make test` / `make container-test`.
 - Fixed infobox order **Play/Pause | Stop | station/track info | Quit** using native
   symbolic icon buttons; removed the bottom textual Quit action and placement switch.
 - Infobox Stop exits the playback service and clears track metadata while retaining
@@ -61,8 +65,8 @@
 
 - Describe popup, inline actions, and panel spacing through native GNOME behavior;
   remove incidental references to an example extension from docs and test comments.
-- Record the source/artwork provenance review and its limits; licensing remains
-  a pending publication decision.
+- Record the source/artwork provenance review and its limits; original project
+  files use MIT without changing external components' licensing.
 - Keep Radio's panel button independent; grouping requires an explicitly supported
   cooperative host. Add regression checks preserving other indicators' ownership
   and independent input handling through visibility changes and extension reloads.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 .PHONY: build test test-shell container-build container-test container-package
 
 CONTAINER_ENGINE ?= podman

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """Run real Shell E2E tests with disposable settings and a private bus."""
 import os
 import json

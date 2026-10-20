@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Arbitrarily named application indicator for isolated grouping/lifecycle checks.
 import St from 'gi://St';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';

@@ -4,6 +4,8 @@
 
 Reviewed the tracked source, bundled icons, test fixtures, and generated extension
 ZIP against the initial baseline.
+The findings below describe that baseline; MIT identifiers and a license file
+were subsequently added for publication.
 
 | Material | Findings |
 | --- | --- |
@@ -22,7 +24,8 @@ No copied code or artwork requiring a specific attribution was identified in thi
 review. This is a repository inspection, not proof of original authorship: Git
 history begins at the baseline and cannot trace earlier snippets or drawings.
 
-The project license remains undecided. Before publishing, confirm any known
-external sources, retain their required notices, choose a compatible project
-license, and include it in both the repository and ZIP. Do not remove an actual
-third-party attribution merely to simplify project documentation.
+The project's original files are now licensed under [MIT](../LICENSE), with the
+same license bundled in the ZIP. This choice does not establish the origin of
+unverified material or change upstream licenses. Confirm any known external
+sources and retain their required notices before publishing. Do not remove an
+actual third-party attribution merely to simplify project documentation.

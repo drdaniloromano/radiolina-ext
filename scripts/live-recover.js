@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Run from GNOME 49 Looking Glass; never enables remote evaluator access.
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';

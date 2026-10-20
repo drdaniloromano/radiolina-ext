@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import GLib from 'gi://GLib';
 import {validateUrl} from './stations.js';
 

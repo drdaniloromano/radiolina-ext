@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Real GJS + GStreamer + D-Bus tests with local MP3/ICY streams, no internet."""
 import http.server
 import struct

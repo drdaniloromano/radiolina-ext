@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {emptyConfig, validateConfig} from '../core/stations.js';

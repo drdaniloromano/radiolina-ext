@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <node>
   <interface name="org.mpris.MediaPlayer2">
     <method name="Raise"/><method name="Quit"/>

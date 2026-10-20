@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """Build a small self-contained source extension; never installs it on the host."""
 from pathlib import Path
 import hashlib
@@ -14,16 +15,19 @@ if destination.exists():
     shutil.rmtree(destination)
 shutil.copytree(ROOT / 'extension', destination)
 shutil.copytree(ROOT / 'src', destination / 'src')
+shutil.copyfile(ROOT / 'LICENSE', destination / 'LICENSE')
 source = (destination / 'extension.js').read_bytes()
 styles = (destination / 'stylesheet.css').read_bytes()
 stylesheet = f'radio-style-{hashlib.sha256(styles).hexdigest()[:12]}.css'
 (destination / stylesheet).write_bytes(styles)
 # Replace older installed styles; the extension loads its versioned CSS directly.
-(destination / 'stylesheet.css').write_text('/* Layout is loaded from the versioned radio stylesheet. */\n')
+(destination / 'stylesheet.css').write_text('/* SPDX-License-Identifier: MIT */\n'
+                                           '/* Layout is loaded from the versioned radio stylesheet. */\n')
 runtime_hash = hashlib.sha256(source + b'\0' + styles).hexdigest()[:12]
 runtime = f'radio-{runtime_hash}.js'
 (destination / runtime).write_bytes(source)
-(destination / 'extension.js').write_text(f"export {{default}} from './{runtime}';\n")
+(destination / 'extension.js').write_text('// SPDX-License-Identifier: MIT\n'
+                                         f"export {{default}} from './{runtime}';\n")
 metadata = json.loads((destination / 'metadata.json').read_text())
 metadata['radio-runtime'] = runtime
 metadata['radio-stylesheet'] = stylesheet

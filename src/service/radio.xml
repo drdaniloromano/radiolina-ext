@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <node>
   <interface name="org.gnome.Radio1">
     <method name="AddStation"><arg name="name" type="s" direction="in"/><arg name="url" type="s" direction="in"/><arg name="id" type="s" direction="out"/></method>

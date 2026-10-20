@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """Run tests with temporary XDG paths and a private D-Bus session."""
 import os
 from pathlib import Path
@@ -6,6 +7,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
+subprocess.run(['python3', 'tests/e2e/package.py'], cwd=ROOT, check=True)
 with tempfile.TemporaryDirectory(prefix='gnome-radio-tests-') as directory:
     env = dict(os.environ, GIO_USE_VFS='local', XDG_RUNTIME_DIR=directory,
                XDG_CONFIG_HOME=directory, XDG_CACHE_HOME=directory,

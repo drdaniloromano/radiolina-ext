@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import Gst from 'gi://Gst?version=1.0';
 
 export class Player {

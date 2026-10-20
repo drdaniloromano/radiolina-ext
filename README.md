@@ -250,5 +250,14 @@ same D-Bus contract. No additional desktop adapter is currently shipped.
 See [verification and manual checks](docs/TESTING.md), [the implementation plan](docs/IMPLEMENTATION_PLAN.md),
 and [changelog](CHANGELOG.md).
 
-The project license is still undecided. See the [provenance review](docs/PROVENANCE.md)
-for the material inspected and the remaining licensing gate before publication.
+## License
+
+This project's original code, bundled SVGs, documentation, and tooling are licensed
+under the [MIT License](LICENSE). The release ZIP includes the same license and
+copyright notice; retain them when redistributing copies or substantial portions.
+
+MIT is GPL-compatible. GNOME's [extension review guidelines](https://gjs.guide/extensions/review-guidelines/review-guidelines.html#licensing)
+allow MIT-licensed code while requiring distribution under terms compatible with
+GNOME Shell's GPL. GNOME Shell and separately installed dependencies retain their
+own licenses. See the [provenance review](docs/PROVENANCE.md) for the material
+inspected and the limits of that review.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // GNOME 49 Looking Glass update helper. Uses a new content-addressed UI module
 // instead of attempting to unload cached JavaScript or changing other settings.
 import Gio from 'gi://Gio';

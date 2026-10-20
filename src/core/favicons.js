@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 export const MAX_FAVICON_BYTES = 256 * 1024;
 
 function pngSize(data) {

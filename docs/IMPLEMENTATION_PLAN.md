@@ -10,6 +10,8 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Decisions
 
+- License original project files under MIT and include the full license/copyright
+  notice in the release ZIP. Preserve upstream licensing for external components.
 - Use GJS and GStreamer already provided by the GNOME platform. No web runtime,
   JavaScript package manager, Python runtime dependency, or application window.
 - Run playback in a separate on-demand session D-Bus service. This keeps decoding
@@ -104,7 +106,7 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 - Review source/artwork provenance and describe UI behavior through native GNOME
   conventions. Record findings and unresolved origins in `docs/PROVENANCE.md`;
-  project licensing remains a publication decision.
+  apply MIT to original files and ship `LICENSE` with an E2E packaging check.
 - Add native Play/Pause, Stop, and Quit icons around the infobox text. Quit uses
   normal extension teardown after its input event; Stop ends only the backend.
   Replace the bottom Quit row and old left/right placement option.
