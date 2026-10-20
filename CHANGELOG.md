@@ -67,6 +67,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Current limitations
 
+- Suspend/resume remains unverified after the live test VM failed to resume;
+  the cause has not been attributed to the applet.
 - GNOME 49 is the initial supported target; no other desktop adapter is shipped.
 - Song information depends on stream metadata; pause can lag the live edge.
 - Full physical media-key routing and audible playback need desktop/VM checks.

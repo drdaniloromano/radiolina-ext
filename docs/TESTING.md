@@ -286,6 +286,12 @@ restored the idle indicator without autoplay, and Play resumed audible output.
 These results cover that stream/environment; multiple-player routing, suspend,
 and the remaining checks below are pending.
 
+The subsequent guest Suspend attempt left the live VM unresponsive. QEMU still
+reported running and rejected its wake command; keyboard and ACPI power-button
+events did not restore the console. The disposable guest required a restart.
+Suspend/resume remains unverified: this observation does not establish an applet
+cause. Validate the environment's full sleep/wake cycle before repeating this check.
+
 1. Install the built ZIP in a GNOME 49 VM, enable it, and open the indicator.
 2. Add a direct stream from [Nightride FM](https://nightride.fm/); confirm audible
    playback, pause/resume, station switching, and persistence after restart.

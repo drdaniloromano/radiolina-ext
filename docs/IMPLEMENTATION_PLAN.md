@@ -102,6 +102,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Physical Play/Pause pause/resume was also confirmed with the VM focused.
 - Guest lock/unlock was confirmed: audio stops on lock, unlock returns the idle
   indicator without autoplay, and Play resumes audio.
+- Guest suspend verification remains open after the live VM became unresponsive
+  and required restarting. Establish a working environment sleep/wake cycle
+  before attributing the failure or repeating the applet check.
 - Multiple-player media-key routing, suspend, high contrast, and custom-theme/font checks remain manual
   verification tasks. Automated tests do not install into the host session.
 - Native light/dark switching and the screenshot regression at 150% monitor scaling
