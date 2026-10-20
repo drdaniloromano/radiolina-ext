@@ -132,8 +132,13 @@
 - Remove stale applet styles during same-session updates and load versioned CSS.
   Isolated checks reproduce the old oversized Name field, verify URL containment
   and track/divider clearance, and retain native light/dark styling after updates.
-- Recover duplicate/orphaned stylesheet registrations while preserving the base
-  theme and unrelated valid extension styles.
+- Remove shared `St.Theme` replacement from stylesheet recovery. Unload distinct
+  identifiable styles only from the applet's own directory; leave foreign and
+  unidentifiable registrations intact. Already unaddressable stale CSS may need
+  a fresh Shell session.
+- Add isolated Shell regressions for theme object identity, use through cached
+  references, foreign stylesheet order/effect, and unidentified entries across
+  updates, rapid toggles, failed enable/recovery, and disable.
 - Clear native active-row state before replacing station actors and restore keyboard
   focus safely, preventing disposed-actor errors while the popup remains open.
 - Keep the popup open after activating saved/Recent stations or any inline control,

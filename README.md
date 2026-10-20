@@ -157,10 +157,13 @@ your checkout's absolute path:
 Wait for `radiolina updated`, then press Esc. Saved stations are preserved.
 The old playback service stops during this update; press Play to resume. The
 helper loads a fresh content-addressed UI module to avoid GNOME's JavaScript
-cache. Layout styles are versioned too, and startup removes the applet's older
-styles so cached sizing rules cannot widen the editor or crowd the infobox.
-Native theme colors and other extensions' valid styles are preserved. This is
-tested on GNOME 49; normal login loads the latest module too.
+cache. Layout styles are versioned too, and startup unloads identifiable older
+styles from this applet's own directory. Radio preserves the shared Shell theme
+object and leaves other extensions' styles and unidentified registrations alone.
+If earlier duplicate loads left unaddressable stale CSS, a fresh Shell session
+may be needed for correct styling or light/dark switching on the tested GNOME 49.8.
+Radio does not rebuild the shared theme to repair that development-session damage.
+Normal login loads the latest module too.
 
 Click **+**, add a station name and its **HTTP(S) audio, M3U, or XSPF URL**, then press Play. A manual
 example is `https://stream.nightride.fm/nightride.mp3`; see

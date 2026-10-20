@@ -641,32 +641,18 @@ export default class RadioExtension extends Extension {
         if (!filename) return; // Unpackaged development uses Shell's stylesheet.css.
         if (!/^radio-style-[0-9a-f]{12}\.css$/.test(filename))
             throw new Error('Invalid radio stylesheet. Rebuild and reinstall the extension.');
-        const context = St.ThemeContext.get_for_stage(global.stage);
-        let theme = context.get_theme();
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
         const prefix = `${this.dir.get_uri()}/`;
-        const files = theme.get_custom_stylesheets();
-        const ownFiles = files.filter(file => file?.get_uri().startsWith(prefix));
-        const duplicate = new Set(ownFiles.map(file => file.get_uri())).size !== ownFiles.length;
-        // GNOME 49 retains an unaddressable parsed sheet when a duplicate load is
-        // unloaded. Recreate that damaged registry from its valid files, preserving
-        // the current base/user theme and the order of unrelated extension styles.
-        if (duplicate || files.some(file => !file)) {
-            const retained = new Map();
-            for (const file of files) {
-                if (!file || file.get_uri().startsWith(prefix)) continue;
-                retained.delete(file.get_uri());
-                retained.set(file.get_uri(), file);
-            }
-            theme = new St.Theme({default_stylesheet: theme.default_stylesheet,
-                application_stylesheet: theme.application_stylesheet,
-                theme_stylesheet: theme.theme_stylesheet});
-            for (const file of retained.values()) theme.load_stylesheet(file);
-            context.set_theme(theme);
-        } else {
-            for (const file of ownFiles) theme.unload_stylesheet(file);
+        const ownFiles = new Map();
+        // A missing file mapping cannot establish ownership. Leave those entries
+        // and foreign styles alone; never rebuild the Shell's shared theme.
+        for (const file of theme.get_custom_stylesheets()) {
+            if (file?.get_uri().startsWith(prefix)) ownFiles.set(file.get_uri(), file);
         }
-        this._stylesheet = this.dir.get_child(filename);
-        theme.load_stylesheet(this._stylesheet);
+        for (const file of ownFiles.values()) theme.unload_stylesheet(file);
+        const stylesheet = this.dir.get_child(filename);
+        theme.load_stylesheet(stylesheet);
+        this._stylesheet = stylesheet;
     }
 
     _unloadStylesheet() {

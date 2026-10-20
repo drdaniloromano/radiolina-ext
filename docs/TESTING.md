@@ -169,10 +169,21 @@ Before loading, the test activates the earlier form-wide 276px entry rule and
 verifies it affects an old-style probe. New startup must remove those applet
 styles, keep the Name field narrow, and contain URL/Copy within the fixed popup.
 Add and Edit also check the 30/70 Name/URL width ratio, excluding spacing and Copy.
-An unrelated stylesheet must survive. A later update injects orphaned stylesheet
-registrations, changes the versioned CSS, and restores the original version;
-field widths must follow each version and native light/dark switching must work.
-Disable must remove the applet's styles while retaining the unrelated stylesheet.
+An unrelated stylesheet must survive. Ordinary updates change versioned CSS and
+restore the original version; field widths must follow each version and native
+light/dark switching must work. Radio operations must preserve the actual shared
+theme object, and a peer's cached reference must still load/unload effective rules.
+
+After normal theme-variant checks, the test injects duplicate identifiable applet
+styles and an unrelated unaddressable parsed sheet. It verifies that an update,
+rapid disable/re-enable, failed enable/actor recovery, and final disable preserve
+the theme object, foreign stylesheet order, and the orphan rule's effect. Radio
+must not discard unidentified entries; test enumerations tolerate missing files.
+Shell's own theme changes may legitimately replace the theme. On tested GNOME 49.8, an
+unaddressable entry can make Shell's native light/dark reload fail with a null-file
+error. Such pre-existing damage is left alone and may require a fresh Shell session,
+rather than global registry repair by Radio. Disable removes identifiable applet
+styles while retaining foreign and unidentified entries.
 
 On 2026-10-14, the user also confirmed the indicator became visible in their
 running GNOME 49.8 session after the recovery helper, without logging out.

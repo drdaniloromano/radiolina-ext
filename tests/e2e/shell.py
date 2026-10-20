@@ -290,26 +290,46 @@ class ShellE2E(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         installed = Path(os.environ['XDG_DATA_HOME']) / 'gnome-shell/extensions' / UUID
         shutil.copytree(root / 'build' / UUID, installed)
-        # Simulate an earlier same-session stylesheet still parsed after its file
-        # was replaced on disk: the old form-wide width wins over the old input class.
+        # An identifiable earlier applet stylesheet still sets the old form-wide
+        # width. Reserve damaged duplicate registries for the later lifecycle case.
         legacy_css = '.radio-form StEntry { width: 276px; } .radio-station { font-weight: bold; }'
-        wrapper = installed / 'stylesheet.css'
-        current_wrapper = wrapper.read_text()
-        wrapper.write_text(legacy_css)
         orphan_css = installed / 'legacy-session.css'
         orphan_css.write_text(legacy_css)
         unrelated_css = installed.parent / 'unrelated-test.css'
         unrelated_css.write_text('.unrelated-test-control { padding: 1px; }')
-        evaluate(f'''global._radioLegacyStyles = [{json.dumps(wrapper.as_uri())}, {json.dumps(orphan_css.as_uri())}].map(uri => Gio.File.new_for_uri(uri));
+        cache_probe_css = installed.parent / 'cached-theme-probe.css'
+        cache_probe_css.write_text('.cached-theme-probe { padding: 7px; }')
+        evaluate(f'''global._radioLegacyStyles = [Gio.File.new_for_uri({json.dumps(orphan_css.as_uri())})];
             global._radioUnrelatedStyle = Gio.File.new_for_uri({json.dumps(unrelated_css.as_uri())});
+            global._radioCacheProbeStyle = Gio.File.new_for_uri({json.dumps(cache_probe_css.as_uri())});
+            global._radioSharedTheme = global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme();
             [global._radioUnrelatedStyle, ...global._radioLegacyStyles].forEach(file =>
-                global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().load_stylesheet(file)); true''')
+                global._radioSharedTheme.load_stylesheet(file));
+            true''')
+
+        def assert_cached_theme():
+            self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme() === global._radioSharedTheme'),
+                            'Radio operations must preserve the actual shared theme object')
+            self.assertTrue(evaluate('''(() => {
+                const theme = global._radioSharedTheme;
+                const probe = new global._radioSt.Widget({style_class: 'cached-theme-probe'});
+                Main.uiGroup.add_child(probe);
+                try {
+                    theme.load_stylesheet(global._radioCacheProbeStyle);
+                    const loaded = probe.get_theme_node().get_horizontal_padding() > 0;
+                    theme.unload_stylesheet(global._radioCacheProbeStyle);
+                    return loaded && probe.get_theme_node().get_horizontal_padding() === 0;
+                } finally {
+                    theme.unload_stylesheet(global._radioCacheProbeStyle);
+                    probe.destroy();
+                }
+            })()'''), 'A peer must still be able to load/unload styles through its cached theme')
+
         legacy_width = evaluate('''(() => {const parent = new global._radioSt.BoxLayout({style_class: 'radio-form'});
             const entry = new global._radioSt.Entry({style_class: 'radio-name-entry'});
             parent.add_child(entry); Main.uiGroup.add_child(parent);
             const width = entry.get_preferred_width(-1)[1]; parent.destroy(); return width;})()''')
         self.assertGreaterEqual(legacy_width, 276, 'Legacy stylesheet must be active before testing upgrade repair')
-        wrapper.write_text(current_wrapper)
         command = (
             "if (!Main.extensionManager.lookup('gnome-radio@local')) await "
             "Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject("
@@ -320,6 +340,7 @@ class ShellE2E(unittest.TestCase):
         # Run the exact documented command through the real Looking Glass evaluator.
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
         wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner)'), 'extension and service ready')
+        assert_cached_theme()
         self.assertEqual(evaluate(f"Main.extensionManager.lookup('{UUID}').metadata.name"), 'radiolina')
         wait(lambda: evaluate(f"{INDICATOR}.accessible_name.startsWith('radiolina: ')"), 'radiolina panel identity')
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
@@ -368,12 +389,12 @@ class ShellE2E(unittest.TestCase):
             self.assertTrue(standalone_panel(), 'Peer re-enable must preserve separate containers')
         def own_styles():
             return evaluate(f'''global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme()
-                .get_custom_stylesheets().filter(file => file.get_uri().startsWith(
+                .get_custom_stylesheets().filter(file => file?.get_uri().startsWith(
                     Gio.File.new_for_path({json.dumps(str(installed))}).get_uri() + '/'))
                 .map(file => file.get_basename())''')
         packaged_metadata = json.loads((installed / 'metadata.json').read_text())
         self.assertEqual(own_styles(), [packaged_metadata['radio-stylesheet']])
-        self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => file.equal(global._radioUnrelatedStyle))'))
+        self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => file?.equal(global._radioUnrelatedStyle))'))
         self.assertTrue(evaluate(f"{INDICATOR}._icon.gicon.get_file().get_basename() === 'radio-symbolic.svg'"))
         self.assertTrue(evaluate(f"{INDICATOR}._icon.has_style_class_name('system-status-icon')"))
         self.assertTrue(evaluate(f'''(() => {{
@@ -959,17 +980,12 @@ class ShellE2E(unittest.TestCase):
         (installed / alternate_stylesheet).write_text(alternate_css)
         metadata['radio-stylesheet'] = alternate_stylesheet
         metadata_file.write_text(json.dumps(metadata))
-        # Earlier duplicate loads can also leave a parsed sheet with no file mapping.
-        # Exercise recovery of that already-damaged registry, not only valid duplicates.
-        evaluate('''(() => {const theme = global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme();
-            const legacy = global._radioLegacyStyles[1];
-            theme.load_stylesheet(legacy); theme.load_stylesheet(legacy); theme.unload_stylesheet(legacy);
-        })(); true''')
-        self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => !file)'))
+        evaluate('global._radioSharedTheme = global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme(); true')
         updater = (f"try {{ await (await import({json.dumps((root / 'scripts/live-update.js').as_uri())})).update(Main); "
                    "global._radioUpdateError = null; } catch (error) { global._radioUpdateError = String(error); throw error; }")
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(updater)}); true')
         wait(lambda: evaluate(f"{INDICATOR}?._add.accessible_name === 'Add station (updated)' && Boolean({INDICATOR}?._proxy?.g_name_owner)"), 'fresh module live update')
+        assert_cached_theme()
         self.assertEqual(evaluate(f'{INDICATOR}._name.text'), 'Edited radio')
         self.assertEqual(evaluate(f'{INDICATOR}._recentCount.text'), '2')
         self.assertTrue(evaluate(f'{INDICATOR}._details.get_children().indexOf({INDICATOR}._play) < {INDICATOR}._details.get_children().indexOf({INDICATOR}._stopButton)'))
@@ -985,6 +1001,7 @@ class ShellE2E(unittest.TestCase):
         metadata_file.write_text(json.dumps(metadata))
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(updater)}); true')
         wait(lambda: evaluate(f"{INDICATOR}?._add.accessible_name === 'Add station' && Boolean({INDICATOR}?._proxy?.g_name_owner)"), 'repeat live update restores module')
+        assert_cached_theme()
         self.assertEqual(own_styles(), [original_stylesheet])
         evaluate(f"{INDICATOR}.menu.open(); {INDICATOR}._add.emit('clicked', 1); true")
         time.sleep(0.2)
@@ -992,6 +1009,56 @@ class ShellE2E(unittest.TestCase):
         evaluate(f'{INDICATOR}.menu.open(); true')
         time.sleep(0.2)
         assert_theme_variants('after-update')
+        # Shell light/dark changes legitimately replace the theme. Cache the new
+        # object before Radio operations, then add an unrelated unaddressable sheet.
+        unrelated_orphan = installed.parent / 'unrelated-orphan.css'
+        unrelated_orphan.write_text('.unrelated-orphan-control { padding: 3px; }')
+        order_first = installed.parent / 'foreign-order-first.css'
+        order_second = installed.parent / 'foreign-order-second.css'
+        order_first.write_text('.foreign-order-control { padding: 2px; }')
+        order_second.write_text('.foreign-order-control { padding: 5px; }')
+        evaluate(f'''(() => {{
+            const theme = global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme();
+            global._radioSharedTheme = theme;
+            [{json.dumps(order_first.as_uri())}, {json.dumps(order_second.as_uri())}]
+                .forEach(uri => theme.load_stylesheet(Gio.File.new_for_uri(uri)));
+            const legacy = Gio.File.new_for_uri({json.dumps(unrelated_orphan.as_uri())});
+            theme.load_stylesheet(legacy); theme.load_stylesheet(legacy); theme.unload_stylesheet(legacy);
+            const own = global._radioLegacyStyles[0];
+            theme.load_stylesheet(own); theme.load_stylesheet(own);
+            global._radioForeignStyles = () => global._radioSharedTheme.get_custom_stylesheets()
+                .filter(file => file && !file.has_prefix(Gio.File.new_for_path({json.dumps(str(installed))})))
+                .map(file => file.get_uri()).sort();
+            global._radioForeignBefore = global._radioForeignStyles();
+            global._radioUnknownBefore = theme.get_custom_stylesheets().filter(file => !file).length;
+            global._radioOrphanProbe = new global._radioSt.Widget({{style_class: 'unrelated-orphan-control'}});
+            Main.uiGroup.add_child(global._radioOrphanProbe);
+            global._radioOrphanPadding = global._radioOrphanProbe.get_theme_node().get_horizontal_padding();
+            global._radioOrderProbe = new global._radioSt.Widget({{style_class: 'foreign-order-control'}});
+            Main.uiGroup.add_child(global._radioOrderProbe);
+            global._radioOrderPadding = global._radioOrderProbe.get_theme_node().get_horizontal_padding();
+        }})(); true''')
+        self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => !file)'))
+        self.assertGreater(evaluate('global._radioOrphanPadding'), 0)
+
+        def assert_foreign_styles():
+            assert_cached_theme()
+            self.assertEqual(evaluate('global._radioForeignStyles()'), evaluate('global._radioForeignBefore'),
+                             'Foreign stylesheet registrations must remain intact')
+            self.assertTrue(evaluate('global._radioSharedTheme.get_custom_stylesheets().filter(file => !file).length >= global._radioUnknownBefore'),
+                            'Radio must not discard unidentified entries')
+            self.assertEqual(evaluate('global._radioOrphanProbe.get_theme_node().get_horizontal_padding()'),
+                             evaluate('global._radioOrphanPadding'), 'An unaddressable foreign rule must stay effective')
+            self.assertEqual(evaluate('global._radioOrderProbe.get_theme_node().get_horizontal_padding()'),
+                             evaluate('global._radioOrderPadding'), 'Foreign CSS precedence must remain intact')
+
+        previous_owner = evaluate(f'{INDICATOR}._proxy.g_name_owner')
+        evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(updater)}); true')
+        wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner) && '
+                              f'{INDICATOR}._proxy.g_name_owner !== {json.dumps(previous_owner)}'),
+             'live update with duplicate own styles and an unrelated orphan')
+        assert_foreign_styles()
+        self.assertEqual(own_styles(), [original_stylesheet])
         self.assertTrue(standalone_panel(), 'Live updates must preserve independent ownership')
         self.assertEqual(other_panel_placement(), other_placement, 'Live updates must preserve panel order')
         self.assertTrue(evaluate(f'{INDICATOR}._groupToggle.state'))
@@ -1001,16 +1068,19 @@ class ShellE2E(unittest.TestCase):
         wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner) && '
                               f'{INDICATOR}._proxy.g_name_owner !== {json.dumps(previous_owner)}'),
              'rapid toggle starts a new service owner')
+        assert_foreign_styles()
         self.assertTrue(standalone_panel(), 'radiolina starting after other indicators must stay separate')
         # Reproduce the reported duplicate actor conflict, then verify live repair.
         evaluate(f"Main.extensionManager.createExtensionObject('{UUID}', "
                  f"Gio.File.new_for_path({json.dumps(str(installed))}), 2); "
                  f"Main.extensionManager.loadExtension(Main.extensionManager.lookup('{UUID}')); true")
         wait(lambda: evaluate(f"Boolean(Main.extensionManager.lookup('{UUID}').error)"), 'duplicate actor error reproduced')
+        assert_foreign_styles()
         repair = f"(await import({json.dumps((root / 'scripts/live-recover.js').as_uri())})).recover(Main)"
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(repair)}); true')
         wait(lambda: evaluate(f"!Main.extensionManager.lookup('{UUID}').error && "
                               f'Boolean({INDICATOR}?._proxy?.g_name_owner)'), 'live duplicate recovery')
+        assert_foreign_styles()
         self.assertTrue(standalone_panel(), 'Error recovery must preserve other indicators')
         self.assertEqual(other_panel_placement(), other_placement, 'Error recovery must preserve panel order')
         evaluate(f'{INDICATOR}.menu.open(); {INDICATOR}._settingsButton.emit("clicked", 1); true')
@@ -1028,6 +1098,8 @@ class ShellE2E(unittest.TestCase):
         wait(lambda: evaluate(f'global.stage.get_key_focus() === {INDICATOR}._quitButton'), 'Quit button has keyboard focus')
         key(0xff0d)
         wait(lambda: evaluate(f'!{INDICATOR}'), 'keyboard Quit works without the playback service')
+        assert_foreign_styles()
+        evaluate('global._radioOrphanProbe.destroy(); global._radioOrderProbe.destroy(); true')
         wait(lambda: evaluate(f'''{json.dumps(PEERS)}.every(role =>
             Main.panel.statusArea[role]?.container.get_parent() === Main.panel._rightBox)'''), 'radiolina disable preserves the other indicators')
         self.assertEqual(other_panel_placement(), other_placement, 'radiolina disable must preserve panel order')
@@ -1036,7 +1108,7 @@ class ShellE2E(unittest.TestCase):
         for role in PEERS:
             evaluate(f"Main.extensionManager.disableExtension('{role}'); true")
         self.assertEqual(own_styles(), [])
-        self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => file.equal(global._radioUnrelatedStyle))'))
+        self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => file?.equal(global._radioUnrelatedStyle))'))
         evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().unload_stylesheet(global._radioUnrelatedStyle); true')
 
 

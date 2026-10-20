@@ -126,9 +126,10 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Shared Add/Edit inputs divide their available width 30/70 for Name/URL,
   reserving the gap and optional Copy control without widening the popup.
 - Versioned layout styles and UI module identities that change for CSS-only edits.
-  Startup clears older applet styles and repairs duplicate/orphaned stylesheet
-  registrations while retaining the native theme and unrelated valid styles.
-  Upgrade checks inject the old form-wide width rule and verify compact fields.
+  Startup unloads distinct identifiable applet styles without replacing the shared
+  Shell theme. Foreign and unidentifiable entries remain untouched. Upgrade checks
+  cover compact fields, cached theme references, foreign style order, and lifecycle;
+  unaddressable stale CSS may require a fresh Shell session.
 - Font-relative infobox sizing and flexible text width, with regression coverage for
   the supplied Nightride/Mascarpone screenshot at 150% monitor scaling.
 - Mutually exclusive Stations-area views, native light/dark styling, and safe active-row
