@@ -6,20 +6,23 @@ Build radiolina, a minimal, lightweight GNOME top-bar radio applet. Avoid web ru
 
 First-release features:
 
-- Play/pause through panel controls and keyboard media keys.
+- Play/pause, resource-releasing Stop, and Quit through panel controls; play/pause
+  through keyboard media keys while the service runs.
 - Adding and editing stations from direct stream, M3U, or XSPF URLs.
-- A persistent saved-station list and station selection.
-- Stream-provided song metadata and optional song-change notifications.
+- Persistent saved stations, local filtering, selection, and configurable Recent entries.
+- Stream-provided title/artist metadata and silent native MPRIS media integration.
 
-Defer station search. Keep podcasts, accounts, and recording outside the first release until explicitly requested.
+Defer online station discovery. Keep podcasts, accounts, and recording outside the first release until explicitly requested.
 
 ## User Experience
 
-Clicking the indicator opens a compact native popup with controls and station management. Show station name, source URL in smaller text, and available song title. Clear stale metadata on stream changes.
+Clicking the indicator opens a compact native popup with fixed-width controls and station management. Show the station name in bold and available artist/title together in smaller, subdued text. Keep URLs in the editor; clear stale metadata on stream changes.
 
 Follow native GNOME popup and indicator conventions, with a clear selected state and inline actions. Keep editing inside the popup and preserve station identity and playback when renaming.
 
-Notifications default off. Notify on distinct stream-reported track changes; suppress initial, duplicate, and empty metadata.
+Update GNOME's native media card silently; do not create song-change popup notifications. Legacy notification fields remain for storage/API compatibility.
+
+Keep the indicator standalone unless an explicitly supported cooperative grouping host exists. Never reparent arbitrary third-party indicators. Follow system theme styles and use static playback-state icons.
 
 Keep controls responsive and keyboard-accessible, with clear state, accessible labels, and concise errors.
 
@@ -27,7 +30,7 @@ Keep controls responsive and keyboard-accessible, with clear state, accessible l
 
 Use GJS/GStreamer; separate playback, persistence, validation, and metadata from desktop adapters. Core functionality must not depend on Shell widgets.
 
-`src/core/` holds critical logic; `src/service/` owns playback, D-Bus/MPRIS, and storage; `extension/` owns popup/notifications. `tests/` contains unit/E2E tests. GNOME 49 is the current target; additional desktop adapters are future work.
+`src/core/` holds critical logic; `src/service/` owns playback, D-Bus/MPRIS, and storage; `extension/` owns the panel/popup and desktop integration. `tests/` contains unit/E2E tests. GNOME 49 is the current target; additional desktop adapters are future work.
 
 ## Contained Development & Commands
 

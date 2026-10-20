@@ -14,6 +14,18 @@ source metadata (including `version-name`) in the archive, and rejects unexpecte
 development/private files.
 It needs only Python's standard library; run it alone with `python3 tests/e2e/package.py`.
 
+The standalone service starts with the `#!@GJS@ -m` review marker and is launched
+explicitly through `gjs -m`. Service and Shell E2E runs execute that same entry
+point, covering startup and teardown after packaging/review changes.
+
+At the end of the isolated Shell workflow, `gnome-extensions uninstall` must remove
+extension files, preserve saved station/settings bytes, and leave no indicator or
+playback service. All installer/uninstaller commands inherit the disposable XDG
+directories and private bus; they do not target the user's desktop installation.
+The test starts GNOME's extension-management helper explicitly on its private
+Wayland display/bus for uninstall, then terminates it. Host service activation
+remains disabled.
+
 Name checks require **radiolina** in package metadata, the real service's MPRIS
 identity, and the panel's accessible name and Quit label. The Shell workflow first
 loads a development-ID fixture, saves/plays a local station, changes a preference,
@@ -51,7 +63,9 @@ persistence, and reuse of the cached image without another request.
 `make test-shell` tests actual GNOME actors in a disposable headless GNOME 49
 instance. Private settings disable hot corners and automatic locking so virtual
 input stays on the test desktop; host settings are unchanged.
-It installs after Shell startup and runs the documented first-install
+It uses `gnome-extensions install --force` on the built ZIP after Shell startup,
+checks that a repeated install replaces an overwritten runtime file, and runs
+the documented first-install
 command through the real Looking Glass evaluator, then checks invalid/valid station
 entry, a station/title infobox without a source line, play/pause, persistence, disable/re-enable, and
 rapid toggles. Search tests cover field visibility, case-insensitive name/source

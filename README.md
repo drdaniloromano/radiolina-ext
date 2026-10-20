@@ -71,6 +71,10 @@ There is no additional GUI framework or clipboard dependency. GNOME's notificati
 center keeps its native media card with title, artist, and play/pause controls.
 It updates in place without song-change popup banners or notification sounds.
 
+The extension currently uses GNOME's default `user` session mode. GNOME disables
+it when the screen locks, which stops the service and playback. Unlocking enables
+it again with saved stations loaded; playback does not resume automatically.
+
 ## Development without host dependency installation
 
 Use existing Podman and Make:
@@ -97,7 +101,8 @@ Other runtime versions are not yet verified.
 ## Desktop verification
 
 `make test-shell` exercises the actual extension inside a disposable headless
-GNOME 49 Shell: station form validation, readable native text, saved-station search,
+GNOME 49 Shell: real ZIP installation/replacement and uninstall preserving saved
+data, station form validation, readable native text, saved-station search,
 playback, song/artist updates in the native media card, absence of song-change popups
 even with an old enabled preference, recent stations, collapsed-list controls,
 favicon settings, persistence, and disable/re-enable cleanup. It uses

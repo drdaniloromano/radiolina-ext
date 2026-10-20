@@ -104,6 +104,11 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Audit runtime/package structure against EGO review guidance. Add the standalone
+  GJS service marker, keep Shell enable/disable adjacent, and reconcile contributor
+  instructions with implemented behavior. Verify cleanup and package exclusions;
+  cover real ZIP installation/replacement and uninstall preserving saved data in
+  isolated Shell. Desktop audio/media-key and suspend/lock/resume checks remain separate.
 - Document the Shell/service process boundary and playback/storage ownership in a
   README Mermaid diagram, including D-Bus state updates and MPRIS media controls.
 - Choose `0.1.0` for the first release and set `version-name` in metadata. Document

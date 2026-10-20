@@ -6,6 +6,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- Isolated Shell E2E coverage for installation of the real ZIP, forced replacement
+  of existing runtime files, and uninstall preserving saved stations/settings.
 - README architecture diagram showing process boundaries, D-Bus/MPRIS communication,
   playback, and station storage.
 - MIT license for original project files, source/artwork/tooling identifiers, and
@@ -61,12 +63,18 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 ### Current limitations
 
 - GNOME 49 is the initial supported target; no other desktop adapter is shipped.
+- Default user-session mode stops playback on screen lock; unlock does not
+  automatically resume it. Full lock/suspend/resume desktop checks remain pending.
 - Song information depends on stream metadata; pause can lag the live edge.
 - Full physical media-key routing and audible playback need desktop/VM checks.
 - No online station discovery, podcasts, accounts, or recording.
 
 ### Changed
 
+- Mark the standalone service entry point with the recommended GJS module header,
+  place Shell enable/disable methods together for lifecycle review, and align the
+  contributor guide with current controls, metadata, silent media integration,
+  local filtering, and cooperative-only grouping.
 - Set the permanent extension ID to `radiolina@drdaniloromano.github.io`, link the
   source/support repository, and disclose the editor's clipboard write in metadata.
   Package names follow the metadata ID; installation/update helpers and docs use it.

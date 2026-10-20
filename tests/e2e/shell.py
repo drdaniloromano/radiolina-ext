@@ -290,7 +290,20 @@ class ShellE2E(unittest.TestCase):
         self.assertFalse(evaluate(f"Boolean(Main.extensionManager.lookup('{UUID}'))"))
         root = Path(__file__).resolve().parents[2]
         installed = Path(os.environ['XDG_DATA_HOME']) / 'gnome-shell/extensions' / UUID
-        shutil.copytree(root / 'build' / UUID, installed)
+        bundle = root / 'build' / f'{UUID}.zip'
+
+        def install_bundle():
+            result = subprocess.run(['gnome-extensions', 'install', '--force', str(bundle)],
+                                    text=True, capture_output=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(json.loads((installed / 'metadata.json').read_text())['uuid'], UUID)
+
+        install_bundle()
+        entry = installed / 'src/service/main.js'
+        entry.write_text('Temporary overwritten-file fixture for the ZIP update check.\n')
+        install_bundle()
+        self.assertEqual(entry.read_bytes(), (root / 'src/service/main.js').read_bytes(),
+                         'Forced ZIP installation must replace existing runtime files')
         # Exercise a previous development identity in the same Shell process.
         # Disabled modules stay imported, so both paths must have distinct GTypes.
         old_uuid = 'gnome-radio@local'
@@ -1153,6 +1166,39 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(own_styles(), [])
         self.assertTrue(evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().get_custom_stylesheets().some(file => file?.equal(global._radioUnrelatedStyle))'))
         evaluate('global._radioSt.ThemeContext.get_for_stage(global.stage).get_theme().unload_stylesheet(global._radioUnrelatedStyle); true')
+        saved_before_uninstall = saved_file.read_bytes()
+        # The CLI forwards through GNOME's separate management service. Start it
+        # explicitly on our private bus/display; host service activation stays off.
+        management_script = next(Path(directory) / 'gnome-shell/org.gnome.Shell.Extensions'
+                                 for directory in GLib.get_system_data_dirs()
+                                 if (Path(directory) / 'gnome-shell/org.gnome.Shell.Extensions').is_file())
+        sockets = [path for path in Path(os.environ['XDG_RUNTIME_DIR']).glob('wayland-*') if path.is_socket()]
+        self.assertEqual(len(sockets), 1, 'The test must have one private Wayland display')
+        management_env = dict(os.environ, WAYLAND_DISPLAY=sockets[0].name, GDK_BACKEND='wayland')
+        management = subprocess.Popen(['gjs', '-m', str(management_script)], env=management_env,
+                                      stdout=log, stderr=log)
+        try:
+            wait(lambda: call('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus',
+                              'NameHasOwner', GLib.Variant('(s)', ('org.gnome.Shell.Extensions',)))[0],
+                 'private GNOME extension-management service ready')
+            result = subprocess.run(['gnome-extensions', 'uninstall', UUID],
+                                    text=True, capture_output=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        finally:
+            if management.poll() is None:
+                management.terminate()
+                try:
+                    management.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    management.kill()
+                    management.wait(timeout=5)
+        self.assertFalse(installed.exists(), 'Uninstall must remove extension files')
+        self.assertEqual(saved_file.read_bytes(), saved_before_uninstall,
+                         'Uninstall must preserve saved stations and settings')
+        self.assertFalse(evaluate(f'Boolean({INDICATOR})'))
+        self.assertFalse(call('org.freedesktop.DBus', '/org/freedesktop/DBus',
+                              'org.freedesktop.DBus', 'NameHasOwner',
+                              GLib.Variant('(s)', (BUS,)))[0], 'Uninstall must leave no playback service')
 
 
 if __name__ == '__main__':

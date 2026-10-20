@@ -682,6 +682,13 @@ export default class RadioExtension extends Extension {
         });
     }
 
+    disable() {
+        this._indicator?.destroy();
+        this._indicator = null;
+        this._unloadStylesheet();
+        this.stopService();
+    }
+
     startService() {
         if (this._starting) return this._starting;
         const indicator = this._indicator;
@@ -754,12 +761,5 @@ export default class RadioExtension extends Extension {
             process.send_signal(15);
         }
         return this._shutdown ?? Promise.resolve();
-    }
-
-    disable() {
-        this._indicator?.destroy();
-        this._indicator = null;
-        this._unloadStylesheet();
-        this.stopService();
     }
 }
