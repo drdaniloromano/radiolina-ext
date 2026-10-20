@@ -71,7 +71,7 @@ There is no additional GUI framework or clipboard dependency. GNOME's notificati
 center keeps its native media card with title, artist, and play/pause controls.
 It updates in place without song-change popup banners or notification sounds.
 
-The extension currently uses GNOME's default `user` session mode. GNOME disables
+The extension intentionally uses GNOME's default `user` session mode. GNOME disables
 it when the screen locks, which stops the service and playback. Unlocking enables
 it again with saved stations loaded; playback does not resume automatically.
 

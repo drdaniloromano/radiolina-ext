@@ -30,6 +30,10 @@ Keep controls responsive and keyboard-accessible, with clear state, accessible l
 
 Use GJS/GStreamer; separate playback, persistence, validation, and metadata from desktop adapters. Core functionality must not depend on Shell widgets.
 
+Respect GNOME's default `user` session lifecycle: screen lock stops playback;
+unlock restores the idle indicator without automatic playback. Keep lock-screen
+operation disabled.
+
 `src/core/` holds critical logic; `src/service/` owns playback, D-Bus/MPRIS, and storage; `extension/` owns the panel/popup and desktop integration. `tests/` contains unit/E2E tests. GNOME 49 is the current target; additional desktop adapters are future work.
 
 ## Contained Development & Commands

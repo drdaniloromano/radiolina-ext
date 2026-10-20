@@ -281,6 +281,10 @@ The minimal test desktop also logs missing calendar/accessibility services.
    radiolina disable/re-enable; no other extension should move or change behavior.
    Test any future cooperative host adapter's join, leave, host loss, and error
    recovery in this isolated desktop before enabling it on a user's session.
+10. While playing, lock the disposable desktop and confirm audio stops. Unlock;
+    confirm the indicator returns with saved stations/preferences intact and no
+    automatic playback. Press Play to reconnect. Repeat around suspend/resume
+    using the guest's normal lock settings; verify the same behavior when locked.
 
 Physical audio/media-key checks, high contrast, custom fonts/themes, and additional
 display scales remain manual. Native light/dark switching and 150% scaling are

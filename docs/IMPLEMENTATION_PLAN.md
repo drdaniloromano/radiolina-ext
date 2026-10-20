@@ -104,6 +104,8 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Confirm default GNOME user-session behavior: lock stops playback; unlock restores
+  an idle applet. Keep this lifecycle and document manual lock/suspend checks.
 - Audit runtime/package structure against EGO review guidance. Add the standalone
   GJS service marker, keep Shell enable/disable adjacent, and reconcile contributor
   instructions with implemented behavior. Verify cleanup and package exclusions;

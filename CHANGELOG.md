@@ -63,14 +63,14 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 ### Current limitations
 
 - GNOME 49 is the initial supported target; no other desktop adapter is shipped.
-- Default user-session mode stops playback on screen lock; unlock does not
-  automatically resume it. Full lock/suspend/resume desktop checks remain pending.
 - Song information depends on stream metadata; pause can lag the live edge.
 - Full physical media-key routing and audible playback need desktop/VM checks.
 - No online station discovery, podcasts, accounts, or recording.
 
 ### Changed
 
+- Confirm GNOME's default user-session lifecycle as the intended policy: lock
+  stops playback, and unlock restores the idle applet without automatic resume.
 - Mark the standalone service entry point with the recommended GJS module header,
   place Shell enable/disable methods together for lifecycle review, and align the
   contributor guide with current controls, metadata, silent media integration,
