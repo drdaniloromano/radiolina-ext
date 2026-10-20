@@ -6,7 +6,7 @@ import {validateUrl} from '../core/stations.js';
 import {MAX_PLAYLIST_BYTES, playlistKind, parsePlaylist} from '../core/playlists.js';
 
 export async function resolveStream(sourceUrl, cancellable) {
-    const session = new Soup.Session({timeout: 10, user_agent: 'GNOME Radio'});
+    const session = new Soup.Session({timeout: 10, user_agent: 'radiolina'});
     let timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 15000, () => {
         timeout = null;
         cancellable.cancel();

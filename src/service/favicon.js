@@ -17,7 +17,7 @@ export async function fetchFavicon(url, cancellable) {
         const size = file.query_info('standard::size', 0, null).get_size();
         if (size <= MAX_FAVICON_BYTES && validFavicon(file.load_contents(null)[1])) return file.get_uri();
     } catch { /* A missing or invalid cache entry is fetched again. */ }
-    const session = new Soup.Session({timeout: 5, user_agent: 'GNOME Radio'});
+    const session = new Soup.Session({timeout: 5, user_agent: 'radiolina'});
     let timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5000, () => {
         timeout = null;
         session.abort();

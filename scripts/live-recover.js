@@ -70,5 +70,5 @@ export async function recover(Main) {
     }
     if (extension.error)
         throw new Error(extension.error);
-    return 'GNOME Radio recovered. Close Looking Glass with Esc.';
+    return 'radiolina recovered. Close Looking Glass with Esc.';
 }

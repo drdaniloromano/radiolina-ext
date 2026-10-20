@@ -12,6 +12,10 @@ The packaging E2E check builds the real ZIP in a temporary checkout, verifies th
 wrappers, and rejects unexpected development/private files. It needs only Python's
 standard library; run it alone with `python3 tests/e2e/package.py`.
 
+Name checks require **radiolina** in package metadata, the real service's MPRIS
+identity, and the panel's accessible name and Quit label. Existing station storage
+and extension/service identifiers continue through rename and restart checks.
+
 Nine critical unit cases cover URL validation, bounded metadata sanitization,
 deduplication, saved-state validation, and private persistence/corruption safety.
 Fifteen service E2E cases cover real decoding and MPRIS controls, ICY title changes
@@ -113,14 +117,14 @@ Ownership checks use two arbitrarily named app extensions on the private desktop
 All three indicators must retain separate panel containers regardless of startup
 order, visibility, re-enable, and live updates. Being a non-system indicator does
 not opt an extension into grouping. Real pointer clicks open each app's own popup
-independently. GNOME system containers remain untouched, and disabling Radio
+independently. GNOME system containers remain untouched, and disabling radiolina
 preserves the peers. Fixtures run no clipboard code and depend on no installed apps.
 Checks compare the other visible indicators' panel order before and after preference
-changes, Radio restarts, live updates, error recovery, and Radio disable.
+changes, radiolina restarts, live updates, error recovery, and radiolina disable.
 Grouping preference checks verify the default is off, the warning text matches
 exactly, and enabling it reports the unsupported-host fallback without changing
 other actors. The preference persists across service/UI restarts and live updates.
-Visibility changes, peer reloads, toggling it off, Radio disable, and recovery from
+Visibility changes, peer reloads, toggling it off, radiolina disable, and recovery from
 an injected duplicate-indicator error must preserve independent ownership/clicks.
 Critical configuration tests cover legacy defaults and invalid preference types;
 service E2E checks cover persistence and uninterrupted playback.
@@ -229,7 +233,7 @@ The minimal test desktop also logs missing calendar/accessibility services.
 7. Click infobox **Stop** while playing; confirm the backend exits, the indicator
    and stations remain, and Play restarts the stream. Check editing after Stop and
    repeated Stop/Play clicks. Click the infobox **Quit** power icon; confirm the
-   indicator and service disappear. Re-enable Radio in Extensions or with
+   indicator and service disappear. Re-enable radiolina in Extensions or with
    `gnome-extensions enable gnome-radio@local`; saved stations/preferences must
    survive. Quit must also work when the service is unavailable. Verify normal
    extension disable still stops playback and removes the indicator.
@@ -240,8 +244,8 @@ The minimal test desktop also logs missing calendar/accessibility services.
    stream-host icons; disable it and confirm icons disappear without stopping audio.
 9. Confirm **Group with other app indicators** starts off and displays the exact
    compatibility warning. With no supported host, enabling it must report that
-   Radio stays separate. Check independent app clicks, panel order, reloads, and
-   Radio disable/re-enable; no other extension should move or change behavior.
+   radiolina stays separate. Check independent app clicks, panel order, reloads, and
+   radiolina disable/re-enable; no other extension should move or change behavior.
    Test any future cooperative host adapter's join, leave, host loss, and error
    recovery in this isolated desktop before enabling it on a user's session.
 

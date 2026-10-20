@@ -31,6 +31,7 @@ class PackageE2E(unittest.TestCase):
                                     text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             metadata = json.loads((checkout / 'extension/metadata.json').read_text())
+            self.assertEqual(metadata['name'], 'radiolina')
             with zipfile.ZipFile(checkout / 'build' / f'{metadata["uuid"]}.zip') as archive:
                 self.assertIsNone(archive.testzip())
                 self.assertEqual(archive.read('LICENSE'), (ROOT / 'LICENSE').read_bytes())

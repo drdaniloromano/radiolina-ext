@@ -18,7 +18,7 @@ const RadioIndicator = GObject.registerClass({
 },
 class RadioIndicator extends PanelMenu.Button {
     _init(extension) {
-        super._init(0.0, 'GNOME Radio');
+        super._init(0.0, 'radiolina');
         this.add_style_class_name('gnome-radio-indicator');
         this.menu.box.add_style_class_name('gnome-radio-popup');
         this._alive = true;
@@ -69,7 +69,7 @@ class RadioIndicator extends PanelMenu.Button {
         details.add_child(frame);
         this._quitButton = new St.Button({child: new St.Icon({icon_name: 'system-shutdown-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
-            accessible_name: 'Quit Radio', y_align: Clutter.ActorAlign.CENTER});
+            accessible_name: 'Quit radiolina', y_align: Clutter.ActorAlign.CENTER});
         this._quitButton.connect('clicked', () => {
             if (this._quitSource) return;
             this._quitSource = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
@@ -183,7 +183,7 @@ class RadioIndicator extends PanelMenu.Button {
             return [row, label];
         };
         [, this._groupWarning] = helpRow('Grouping may be incompatible with some extensions or panel customizations. Disable this option if icons, menus, or clicks behave unexpectedly.');
-        [this._groupUnavailableRow] = helpRow('No supported indicator group is available. Radio stays separate.');
+        [this._groupUnavailableRow] = helpRow('No supported indicator group is available. radiolina stays separate.');
         const recentOption = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
         recentOption.remove_style_class_name('popup-inactive-menu-item');
         recentOption.add_child(new St.Label({text: 'Recent stations', x_expand: true,
@@ -223,7 +223,7 @@ class RadioIndicator extends PanelMenu.Button {
             if (!this._alive)
                 return;
             if (error) {
-                this._showError('Radio service unavailable. Disable and re-enable the extension to retry.');
+                this._showError('radiolina service unavailable. Disable and re-enable the extension to retry.');
                 return;
             }
             this._propertySignal = proxy.connect('g-properties-changed', () => this._sync());
@@ -442,7 +442,7 @@ class RadioIndicator extends PanelMenu.Button {
             this._state.title = '';
             this._state.artist = '';
             this._state.error = this._backendIdle || this._pending || this._extension._starting ? '' :
-                'Radio service unavailable. Press Play to retry.';
+                'radiolina service unavailable. Press Play to retry.';
         } else if (this._proxy.State) {
             this._state = JSON.parse(this._proxy.State);
         }
@@ -464,7 +464,7 @@ class RadioIndicator extends PanelMenu.Button {
         const playing = state.status === 'Playing';
         const statusIcon = playing ? this._activeRadioIcon : this._radioIcon;
         if (!this._icon.gicon.equal(statusIcon)) this._icon.gicon = statusIcon;
-        this._icon.accessible_name = playing ? 'Radio playing' : 'Radio inactive';
+        this._icon.accessible_name = playing ? 'radiolina playing' : 'radiolina inactive';
         this._name.text = station?.name ?? 'Add your first station';
         const icon = state.favicons?.[station?.id];
         this._stationIcon.visible = Boolean(icon);
@@ -509,7 +509,7 @@ class RadioIndicator extends PanelMenu.Button {
         }
         if (resetError)
             this._showError(state.error ?? '');
-        this.accessible_name = `GNOME Radio: ${state.status}${station ? `, ${station.name}` : ''}`;
+        this.accessible_name = `radiolina: ${state.status}${station ? `, ${station.name}` : ''}`;
         const query = this._searchEntry.get_text().trim().normalize('NFKC').toLocaleLowerCase();
         const signature = JSON.stringify([state.stations, state.selected, state.status, state.recent, recentLimit, state.favicons, query]);
         if (signature !== this._stationSignature) {
@@ -706,7 +706,7 @@ export default class RadioExtension extends Extension {
             // Reconnect only after the preceding process has fully exited.
             await this._shutdown;
             if (token.cancelled || this._indicator !== indicator || !indicator?._alive)
-                throw new Error('Radio startup cancelled.');
+                throw new Error('radiolina startup cancelled.');
             if (!this._process) {
                 const args = ['gjs', '-m', `${this.path}/src/service/main.js`,
                     `--owner=${Gio.DBus.session.get_unique_name()}`];
@@ -731,12 +731,12 @@ export default class RadioExtension extends Extension {
                     token.cancel = null;
                     if (error) reject(error); else resolve();
                 };
-                token.cancel = () => finish(new Error('Radio startup cancelled.'));
+                token.cancel = () => finish(new Error('radiolina startup cancelled.'));
                 watch = Gio.bus_watch_name_on_connection(Gio.DBus.session, BUS,
                     Gio.BusNameWatcherFlags.NONE, () => finish(), null);
                 timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10000, () => {
                     timeout = null;
-                    finish(new Error('Radio service did not start.'));
+                    finish(new Error('radiolina service did not start.'));
                     return GLib.SOURCE_REMOVE;
                 });
             });

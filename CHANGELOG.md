@@ -12,7 +12,7 @@
   symbolic icon buttons; removed the bottom textual Quit action and placement switch.
 - Infobox Stop exits the playback service and clears track metadata while retaining
   the indicator and saved state. Play and station/settings actions restart it on
-  demand; pending restarts are cancellable. Quit disables Radio and stops its service.
+  demand; pending restarts are cancellable. Quit disables radiolina and stops its service.
 - Persisted **Group with other app indicators** preference, off by default, with
   the compatibility warning beside it. No cooperative host is currently supported;
   enabling it explicitly reports the standalone fallback and never moves other apps.
@@ -63,11 +63,16 @@
 
 ### Changed
 
+- Name the app **radiolina** in Extensions, panel accessibility labels, MPRIS,
+  network user-agent strings, update helpers, and documentation. Retain existing
+  extension/service identifiers and storage paths for compatibility.
+- Remove the GNOME prefix from the app name; propose `radiolina-ext` for the
+  repository. Record the existing broadcaster's use of radiolina for naming review.
 - Describe popup, inline actions, and panel spacing through native GNOME behavior;
   remove incidental references to an example extension from docs and test comments.
 - Record the source/artwork provenance review and its limits; original project
   files use MIT without changing external components' licensing.
-- Keep Radio's panel button independent; grouping requires an explicitly supported
+- Keep radiolina's panel button independent; grouping requires an explicitly supported
   cooperative host. Add regression checks preserving other indicators' ownership
   and independent input handling through visibility changes and extension reloads.
 - Use compact icon-only indicator spacing: clear icon padding and margins,

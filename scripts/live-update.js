@@ -62,5 +62,5 @@ export async function update(Main) {
     await manager._callExtensionEnable(UUID);
     manager._updateCanChange(extension);
     if (extension.error) throw new Error(extension.error);
-    return 'GNOME Radio updated. Close Looking Glass with Esc.';
+    return 'radiolina updated. Close Looking Glass with Esc.';
 }

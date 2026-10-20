@@ -2,7 +2,7 @@
 
 ## Purpose & First-Release Scope
 
-Build a minimal, lightweight GNOME top-bar radio applet. Avoid web runtimes, polling, unnecessary dependencies, and background work. Measure idle CPU/memory when changing architecture.
+Build radiolina, a minimal, lightweight GNOME top-bar radio applet. Avoid web runtimes, polling, unnecessary dependencies, and background work. Measure idle CPU/memory when changing architecture.
 
 First-release features:
 

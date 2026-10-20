@@ -247,6 +247,7 @@ class ServiceE2E(unittest.TestCase):
         self.assertFalse(self.prop(PLAYER, 'CanPlay'))
 
     def test_actual_playback_and_media_controls_share_state(self):
+        self.assertEqual(self.prop('org.mpris.MediaPlayer2', 'Identity'), 'radiolina')
         self.add()
         self.call('PlayPause')
         self.wait(lambda: self.state()['status'] == 'Playing', 'audio playing')

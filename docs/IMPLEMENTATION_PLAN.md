@@ -2,7 +2,7 @@
 
 ## Objective and constraints
 
-Deliver a lightweight GNOME 49 top-bar radio applet: saved custom streams,
+Deliver radiolina, a lightweight GNOME 49 top-bar radio applet: saved custom streams,
 play/pause and media keys, a compact native popup, and stream title/artist metadata
 without song-change notifications. Online station discovery,
 accounts, podcasts, and recording are deferred; saved stations can be filtered locally.
@@ -58,7 +58,7 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 - Station/list actions and all inline buttons keep the popup open; Escape, outside
   clicks, and indicator toggling retain normal dismissal behavior. The infobox's Quit
-  action disables Radio, stops its service, and preserves saved stations/preferences.
+  action disables radiolina, stops its service, and preserves saved stations/preferences.
 - Station Play/Edit/Remove controls appear on hover or keyboard focus without layout shifts.
 - Recent defaults to three visible entries; Settings changes persist without
   interrupting playback or erasing history. Inputs and form actions use two compact rows.
@@ -104,6 +104,11 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Set the public-facing name to **radiolina**, including panel accessibility,
+  media identity, user-agent strings, update helpers, and docs. Preserve existing
+  extension/service identifiers and storage paths across the rename.
+  Propose `radiolina-ext` as the repository name and review name availability
+  separately before publication.
 - Review source/artwork provenance and describe UI behavior through native GNOME
   conventions. Record findings and unresolved origins in `docs/PROVENANCE.md`;
   apply MIT to original files and ship `LICENSE` with an E2E packaging check.

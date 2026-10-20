@@ -257,7 +257,7 @@ class ShellE2E(unittest.TestCase):
                 time.sleep(0.1)
                 compact = evaluate(f'[{INDICATOR}.width, {INDICATOR}._icon.width, {INDICATOR}.height]')
                 reference = evaluate('[global._radioSpacingReference.width, global._radioSpacingIcon.width, global._radioSpacingReference.height]')
-                self.assertEqual(compact, reference, 'Radio indicator must preserve native button height and compact icon spacing')
+                self.assertEqual(compact, reference, 'radiolina indicator must preserve native button height and compact icon spacing')
                 self.assertTrue(standalone_panel(), 'Theme changes must preserve other app containers')
                 evaluate('global._radioSpacingIcon.set_style(null); true')
                 time.sleep(0.1)
@@ -320,6 +320,8 @@ class ShellE2E(unittest.TestCase):
         # Run the exact documented command through the real Looking Glass evaluator.
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
         wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner)'), 'extension and service ready')
+        self.assertEqual(evaluate(f"Main.extensionManager.lookup('{UUID}').metadata.name"), 'radiolina')
+        wait(lambda: evaluate(f"{INDICATOR}.accessible_name.startsWith('radiolina: ')"), 'radiolina panel identity')
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
         self.assertEqual(evaluate(f"Main.extensionManager.lookup('{UUID}').error"), '')
         self.assertTrue(evaluate(f'{INDICATOR}.container.get_parent() === Main.panel._rightBox'))
@@ -393,7 +395,7 @@ class ShellE2E(unittest.TestCase):
             return [i._play, i._stopButton, i._infoFrame, i._quitButton]
                 .every((actor, index, controls) => actor.get_parent() === i._details && actor.mapped &&
                     (index === 0 || children.indexOf(actor) > children.indexOf(controls[index - 1]))) &&
-                i._quitButton.accessible_name === 'Quit Radio';
+                i._quitButton.accessible_name === 'Quit radiolina';
         }})()'''), 'Infobox order must be Play/Pause, Stop, text info, Quit without a bottom Quit row')
         self.assertEqual(evaluate(f'{INDICATOR}._settingsButton.child.icon_name'), 'preferences-system-symbolic')
         evaluate(f"{INDICATOR}._settingsButton.emit('clicked', 1); true")
@@ -757,9 +759,9 @@ class ShellE2E(unittest.TestCase):
         wait(lambda: evaluate("global._radioMediaCard.title === 'Next song' && "
                               "global._radioMediaCard.body === 'Fixture artist'"), 'media card metadata updated')
         self.assertTrue(evaluate(f'{media_card} === global._radioMediaCard'))
-        self.assertFalse(evaluate("Main.messageTray.getSources().some(source => source.title === 'GNOME Radio')"))
-        self.assertFalse(evaluate("Main.messageTray._notification?.source?.title === 'GNOME Radio'"))
-        self.assertFalse(evaluate("Main.messageTray._notificationQueue.some(notification => notification.source.title === 'GNOME Radio')"))
+        self.assertFalse(evaluate("Main.messageTray.getSources().some(source => source.title === 'radiolina')"))
+        self.assertFalse(evaluate("Main.messageTray._notification?.source?.title === 'radiolina'"))
+        self.assertFalse(evaluate("Main.messageTray._notificationQueue.some(notification => notification.source.title === 'radiolina')"))
         self.assertTrue(evaluate(f"typeof {INDICATOR}._notificationSource === 'undefined'"))
         evaluate(f'{INDICATOR}.menu.open(); true')
         time.sleep(0.2)
@@ -802,20 +804,20 @@ class ShellE2E(unittest.TestCase):
         evaluate(f"{INDICATOR}._play.emit('clicked', 1); true")
         wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing'"), 'playback after stop')
         evaluate(f'{INDICATOR}.menu.close(); {INDICATOR}.menu.open(); true')
-        self.assertEqual(evaluate(f'{INDICATOR}._quitButton.accessible_name'), 'Quit Radio')
+        self.assertEqual(evaluate(f'{INDICATOR}._quitButton.accessible_name'), 'Quit radiolina')
         self.assertFalse(evaluate(f'{INDICATOR}._settingsSection.actor.visible'))
         self.assertEqual(evaluate(f'{INDICATOR}.menu.actor.width'), popup_width)
         panel_click(f'{INDICATOR}._quitButton')
         wait(lambda: evaluate(f'!{INDICATOR}'), 'pointer Quit removes the indicator while playing')
         self.assertFalse(evaluate(f"new Gio.Settings({{schema_id: 'org.gnome.shell'}}).get_strv('enabled-extensions').includes('{UUID}')"),
-                         'Quit must persistently disable Radio')
+                         'Quit must persistently disable radiolina')
         wait(lambda: not call('org.freedesktop.DBus', '/org/freedesktop/DBus',
                              'org.freedesktop.DBus', 'NameHasOwner',
                              GLib.Variant('(s)', (BUS,)))[0], 'playback process stopped')
         evaluate(f"Main.extensionManager.enableExtension('{UUID}'); true")
         wait(lambda: evaluate(f"{INDICATOR}?._name.text === 'Edited radio'"), 'clean re-enable and edit persistence')
         self.assertTrue(standalone_panel(), 'Pre-existing indicators must not become implicit grouping hosts')
-        self.assertEqual(other_panel_placement(), other_placement, 'Radio restart must preserve panel order')
+        self.assertEqual(other_panel_placement(), other_placement, 'radiolina restart must preserve panel order')
         self.assertTrue(evaluate(f'{INDICATOR}._groupToggle.state'), 'Grouping preference persists across service/UI restart')
         self.assertFalse(evaluate(f'{INDICATOR}._stationContainer.visible'))
         wait(lambda: evaluate(f'{INDICATOR}._recentButtons.size > 0'), 'recent rows persisted')
@@ -999,7 +1001,7 @@ class ShellE2E(unittest.TestCase):
         wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner) && '
                               f'{INDICATOR}._proxy.g_name_owner !== {json.dumps(previous_owner)}'),
              'rapid toggle starts a new service owner')
-        self.assertTrue(standalone_panel(), 'Radio starting after other indicators must stay separate')
+        self.assertTrue(standalone_panel(), 'radiolina starting after other indicators must stay separate')
         # Reproduce the reported duplicate actor conflict, then verify live repair.
         evaluate(f"Main.extensionManager.createExtensionObject('{UUID}', "
                  f"Gio.File.new_for_path({json.dumps(str(installed))}), 2); "
@@ -1027,8 +1029,8 @@ class ShellE2E(unittest.TestCase):
         key(0xff0d)
         wait(lambda: evaluate(f'!{INDICATOR}'), 'keyboard Quit works without the playback service')
         wait(lambda: evaluate(f'''{json.dumps(PEERS)}.every(role =>
-            Main.panel.statusArea[role]?.container.get_parent() === Main.panel._rightBox)'''), 'Radio disable preserves the other indicators')
-        self.assertEqual(other_panel_placement(), other_placement, 'Radio disable must preserve panel order')
+            Main.panel.statusArea[role]?.container.get_parent() === Main.panel._rightBox)'''), 'radiolina disable preserves the other indicators')
+        self.assertEqual(other_panel_placement(), other_placement, 'radiolina disable must preserve panel order')
         self.assertTrue(evaluate('global._radioSystemParents.every(([role, parent]) => Main.panel.statusArea[role].container.get_parent() === parent)'),
                         'Native indicators must retain their original containers through recovery and disable')
         for role in PEERS:

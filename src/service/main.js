@@ -306,7 +306,7 @@ const owner = Gio.bus_own_name(Gio.BusType.SESSION, BUS, Gio.BusNameOwnerFlags.D
         playerExport = wrap(xml, 'org.mpris.MediaPlayer2.Player', mpris);
         playerExport.export(connection, MPRIS_PATH);
         rootExport = wrap(xml, 'org.mpris.MediaPlayer2', {
-            Identity: 'GNOME Radio', CanQuit: true, CanRaise: true, HasTrackList: false,
+            Identity: 'radiolina', CanQuit: true, CanRaise: true, HasTrackList: false,
             SupportedUriSchemes: [], SupportedMimeTypes: [],
             Raise() { appExport.emit_signal('Raise', null); }, Quit: app.Quit,
         });

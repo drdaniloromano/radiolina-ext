@@ -1,4 +1,4 @@
-# GNOME Radio
+# radiolina
 
 A lightweight internet radio indicator for **GNOME Shell 49**. Click its top-bar
 icon for a native popup with play/pause, saved stations, and an inline add/edit form.
@@ -11,20 +11,24 @@ Set its visible count from **1–10** in Settings; the default is **3**.
 The full saved list starts collapsed; use the arrow beside **Stations** to expand it. The toolbar
 also has Search, **+**, and Settings buttons. Media controls are exported through MPRIS.
 
+This preview displays as **radiolina**. Installation commands still use the
+extension identifier `gnome-radio@local`; existing `gnome-radio` configuration
+and cache paths preserve saved stations and preferences across the rename.
+
 The panel icon shows **signal marks while playing** and a **plain radio while
 paused or inactive**. Both symbols inherit the theme's foreground color. Connecting,
 stopped, and failed playback use the inactive symbol. Both icons are static;
 playback status is shown by the signal marks, without animation.
 The top-bar icon has no extra padding or margins while retaining native button
 padding and icon sizing.
-Radio uses its own panel button and popup by default. In Settings, **Group with
+radiolina uses its own panel button and popup by default. In Settings, **Group with
 other app indicators** is **off by default**. Its warning reads:
 
 > Grouping may be incompatible with some extensions or panel customizations. Disable this option if icons, menus, or clicks behave unexpectedly.
 
 Enabling the preference requires an explicitly supported cooperative host.
-No host integration is currently shipped, so Radio stays separate and shows
-**No supported indicator group is available. Radio stays separate.** It does not
+No host integration is currently shipped, so radiolina stays separate and shows
+**No supported indicator group is available. radiolina stays separate.** It does not
 inspect, move, restyle, or change input handling for other extensions' indicators.
 
 The indicator and popup controls use GNOME Shell's standard styles, including
@@ -56,9 +60,9 @@ Recent section remain visible. All widgets inherit GNOME's current light/dark th
 Station selection, list actions, playback, settings switches, and form buttons keep the popup
 open. Dismiss it with Escape, a click outside, or another click on the indicator.
 The power icon at the right of the infobox is **Quit**. It stops playback and removes
-Radio from the panel, preserving saved stations and preferences. There is no bottom
-Quit row. To reopen Radio, run
-`gnome-extensions enable gnome-radio@local` or enable GNOME Radio in Extensions.
+radiolina from the panel, preserving saved stations and preferences. There is no bottom
+Quit row. To reopen radiolina, run
+`gnome-extensions enable gnome-radio@local` or enable radiolina in Extensions.
 There is no additional GUI framework or clipboard dependency. GNOME's notification
 center keeps its native media card with title, artist, and play/pause controls.
 It updates in place without song-change popup banners or notification sounds.
@@ -150,7 +154,7 @@ your checkout's absolute path:
 (await import('file:///path/to/gnome-radio-applet/scripts/live-update.js')).update(Main)
 ```
 
-Wait for `GNOME Radio updated`, then press Esc. Saved stations are preserved.
+Wait for `radiolina updated`, then press Esc. Saved stations are preserved.
 The old playback service stops during this update; press Play to resume. The
 helper loads a fresh content-addressed UI module to avoid GNOME's JavaScript
 cache. Layout styles are versioned too, and startup removes the applet's older
@@ -219,11 +223,11 @@ replacement. Corrupt configuration is reported and preserved for repair. Station
 URLs must not include embedded credentials. Source URLs remain available in the
 editor and through Copy, and can still be used to filter the saved list.
 
-You can edit this JSON text file manually. Quit Radio first and back up the file;
+You can edit this JSON text file manually. Quit radiolina first and back up the file;
 then edit the `stations` array, preserving the other settings. Each entry has the
 form `{"id":"my_radio","name":"My radio","url":"https://example.com/live.mp3"}`.
 Keep IDs and URLs unique; `selected` must name an existing ID (or be empty), and
-`recent` may contain only existing IDs. Re-enable Radio to load the edited file.
+`recent` may contain only existing IDs. Re-enable radiolina to load the edited file.
 Plain text files with one URL per line do not currently have a saved-list importer.
 Song changes update the infobox and persistent native media card silently. Open
 GNOME's clock/notification center to see the card; it remains while paused and
@@ -261,3 +265,7 @@ allow MIT-licensed code while requiring distribution under terms compatible with
 GNOME Shell's GPL. GNOME Shell and separately installed dependencies retain their
 own licenses. See the [provenance review](docs/PROVENANCE.md) for the material
 inspected and the limits of that review.
+
+GNOME® is a registered trademark of the GNOME Foundation. This project is
+independent and not endorsed by the Foundation. See the
+[trademark guidelines](https://foundation.gnome.org/trademark-guidelines/).
