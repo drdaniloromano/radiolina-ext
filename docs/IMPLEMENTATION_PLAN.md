@@ -104,10 +104,13 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   indicator without autoplay, and Play resumes audio.
 - Native light/dark readability and layout were confirmed by the maintainer for
   the popup, expanded Stations, and Add/Edit form in the GNOME 49.1 VM.
+- Native high contrast with the dark preference was also confirmed, including
+  readable text/icons, visible keyboard focus and contained controls. Restore
+  guest theme preferences after the checks.
 - Guest suspend verification remains open after the live VM became unresponsive
   and required restarting. Establish a working environment sleep/wake cycle
   before attributing the failure or repeating the applet check.
-- Multiple-player media-key routing, suspend, high contrast, and custom-theme/font checks remain manual
+- Multiple-player media-key routing, suspend, and custom-theme/font checks remain manual
   verification tasks. Automated tests do not install into the host session.
 - Native light/dark switching and the screenshot regression at 150% monitor scaling
   are covered by the real Shell workflow, with bounded metadata/control geometry.

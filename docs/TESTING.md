@@ -286,6 +286,9 @@ restored the idle indicator without autoplay, and Play resumed audible output.
 The maintainer also confirmed readable text/icons and contained fields/buttons
 in the popup, expanded Stations list, and Add/Edit form in native light and dark
 modes, switching the guest's system preference without restarting the applet.
+Native high contrast with the dark preference also passed the maintainer's visual
+check of these views, including visible keyboard focus during Tab navigation and
+no clipping. The guest's original theme preferences were restored afterward.
 These results cover that stream/environment; multiple-player routing, suspend,
 and the remaining checks below are pending.
 

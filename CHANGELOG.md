@@ -7,7 +7,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 ### Added
 
 - Record maintainer-confirmed native light/dark readability and layout for the
-  popup, expanded Stations list, and Add/Edit form in the GNOME 49.1 VM.
+  popup, expanded Stations list, and Add/Edit form in the GNOME 49.1 VM, plus
+  native high-contrast readability and keyboard-focus visibility.
 - Record maintainer-confirmed audible Nightride FM playback and physical
   Play/Pause pause/resume, plus lock/unlock without autoplay and subsequent Play
   recovery, in the disposable GNOME 49.1 desktop. Remaining manual checks stay open.
