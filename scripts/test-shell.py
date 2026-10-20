@@ -31,7 +31,13 @@ export default class Test extends Extension {
                XDG_CONFIG_HOME=str(base / 'config'), XDG_CACHE_HOME=str(base / 'cache'),
                GSETTINGS_BACKEND='keyfile', GIO_USE_VFS='local',
                GNOME_RADIO_TEST_AUDIO='1', LIBGL_ALWAYS_SOFTWARE='1',
+               LP_NUM_THREADS='2',
                GST_REGISTRY=str(base / 'gst-registry.bin'))
+    # No wallpaper decoder is needed to exercise popup actors. Keep software
+    # rendering bounded and avoid competing with the user's desktop workload.
+    for key in ('picture-uri', 'picture-uri-dark'):
+        subprocess.run(['gsettings', 'set', 'org.gnome.desktop.background', key, ''],
+                       env=env, check=True)
     subprocess.run(['gsettings', 'set', 'org.gnome.shell', 'enabled-extensions', "['radio-test@local']"],
                    env=env, check=True)
     # The headless virtual pointer starts at (0, 0). Its first motion can trigger

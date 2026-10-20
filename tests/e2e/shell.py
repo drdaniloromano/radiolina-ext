@@ -72,6 +72,9 @@ class ShellE2E(unittest.TestCase):
                                        sessionMode: Main.sessionMode.currentMode,
                                        focus: String(global.stage.get_key_focus()),
                                        quitFocused: global.stage.get_key_focus() === {INDICATOR}?._quitButton,
+                                       playbackHover: {INDICATOR}?._play?.hover,
+                                       playbackPseudo: {INDICATOR}?._play?.get_style_pseudo_class(),
+                                       pointer: global.get_pointer(),
                                        themeVariant: Main.getStyleVariant(),
                                        themeStyle: global._radioSt?.ThemeContext.get_for_stage(global.stage).get_theme().default_stylesheet?.get_uri(),
                                    }})''',)))
@@ -248,15 +251,20 @@ class ShellE2E(unittest.TestCase):
         def assert_circle_alignment():
             positions = evaluate(f'''(() => {{const i = {INDICATOR};
                 const left = actor => actor.get_transformed_position()[0];
+                const top = actor => actor.get_transformed_position()[1];
                 const headings = [i._recentHeading, i._stationsHeading];
                 const rows = [...i._recentButtons.values(), ...i._stationButtons.values()]
                     .filter(row => !row.marker && row.label.mapped).map(row => row.label);
-                return {{variant: Main.getStyleVariant(), circle: left(i._play),
+                return {{variant: Main.getStyleVariant(), circle: left(i._playCircle),
+                    gaps: {{left: left(i._playCircle) - left(i.menu._boxPointer.bin),
+                        top: top(i._playCircle) - top(i.menu._boxPointer.bin)}},
                     references: [...headings, ...rows].map(actor => ({{text: actor.text, left: left(actor)}}))}};
             }})()''')
             for reference in positions['references']:
                 self.assertAlmostEqual(positions['circle'], reference['left'], delta=1,
                                        msg=f'Play/Pause circle must align with headings and station text: {positions}')
+            self.assertAlmostEqual(positions['gaps']['left'], positions['gaps']['top'], delta=1,
+                                   msg=f'Play/Pause circle must have equal top and left popup insets: {positions}')
             Path('workspace/play-circle-alignment.json').write_text(json.dumps(positions, indent=2) + '\n')
 
         def assert_theme_variants(prefix):
@@ -294,10 +302,48 @@ class ShellE2E(unittest.TestCase):
                     return name.get_font().get_weight() >= 700 &&
                         track.get_font().get_size() < name.get_font().get_size() &&
                         track.get_foreground_color().to_string() === name.get_foreground_color().to_string() &&
+                        i._playCircle.get_theme_node().get_foreground_color().to_string() ===
+                            name.get_foreground_color().to_string() &&
                         i._title.get_paint_opacity() > 0 &&
                         i._title.get_paint_opacity() < i._name.get_paint_opacity();
                 }})()'''), 'Infobox must show a bold name and smaller, subdued theme-colored track text')
                 self.assertEqual(evaluate(f'{INDICATOR}._details.height'), info_height)
+                evaluate(f'{INDICATOR}.menu.actor.grab_key_focus(); true')
+                quit_x, quit_y = evaluate(f'''(() => {{const a = {INDICATOR}._quitButton;
+                    const [x, y] = a.get_transformed_position(); const [w, h] = a.get_transformed_size();
+                    return [x + w / 2, y + h / 2];}})()''')
+                pointer(quit_x, quit_y)
+                self.assertTrue(evaluate(f'global.stage.get_actor_at_pos(global._radioClutter.PickMode.REACTIVE, '
+                                        f'{quit_x}, {quit_y}) === {INDICATOR}._quitButton'),
+                                'Quit must remain separate from the combined playback control')
+                wait(lambda: evaluate(f'!{INDICATOR}._play.has_style_pseudo_class("hover") && '
+                                      f'!{INDICATOR}._play.has_style_pseudo_class("focus")'),
+                     'playback button is unfocused and unhovered before sampling its native color')
+                time.sleep(0.15)
+                idle_color = evaluate(f'{INDICATOR}._play.get_theme_node().get_background_color().to_string()')
+                for target in ('_playCircle', '_name', '_title'):
+                    if not evaluate(f'{INDICATOR}.{target}.mapped'):
+                        continue
+                    x, y = evaluate(f'''(() => {{const a = {INDICATOR}.{target};
+                        const [x, y] = a.get_transformed_position(); const [w, h] = a.get_transformed_size();
+                        return [x + w / 2, y + h / 2];}})()''')
+                    pointer(x, y)
+                    wait(lambda: evaluate(f'{INDICATOR}._play.has_style_pseudo_class("hover")'),
+                         'circle and metadata share one native hover state')
+                    self.assertTrue(evaluate(f'''(() => {{const picked = global.stage.get_actor_at_pos(
+                        global._radioClutter.PickMode.REACTIVE, {x}, {y});
+                        return picked === {INDICATOR}._play || {INDICATOR}._play.contains(picked);
+                    }})()'''), 'Circle and text must belong to the same playback button')
+                wait(lambda: evaluate(f'{INDICATOR}._play.get_theme_node().get_background_color().to_string() !== '
+                                      f'{json.dumps(idle_color)}'),
+                     'native hover highlights the whole playback button')
+                success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
+                    'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
+                        (False, False, str(Path(f'workspace/playback-hover-{variant}.png').resolve()))))
+                self.assertTrue(success)
+                pointer(quit_x, quit_y)
+                wait(lambda: evaluate(f'!{INDICATOR}._play.has_style_pseudo_class("hover")'),
+                     'playback hover clears when pointer leaves')
                 self.assertEqual(evaluate(f'{INDICATOR}.menu.actor.width'), popup_width)
                 assert_circle_alignment()
                 success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
@@ -375,7 +421,7 @@ class ShellE2E(unittest.TestCase):
                     assert_fit('i._nameEntry, i._urlEntry, i._save, i._cancel')
                     screenshot('editor', variant)
                     click(f'{INDICATOR}._settingsButton')
-                    assert_fit('i._faviconToggle, i._groupToggle, i._groupWarning, '
+                    assert_fit('i._showStopToggle, i._faviconToggle, i._groupToggle, i._groupWarning, '
                                'i._recentLess, i._recentMore, i._recentCount')
                     screenshot('settings', variant)
             finally:
@@ -609,7 +655,7 @@ class ShellE2E(unittest.TestCase):
         self.assertTrue(evaluate(f"{INDICATOR}._icon.has_style_class_name('system-status-icon')"))
         self.assertTrue(evaluate(f'''(() => {{
             const i = {INDICATOR};
-            return [i._play, i._searchButton, i._add].every(button =>
+            return [i._playCircle, i._searchButton, i._add].every(button =>
                 button.has_style_class_name('icon-button') &&
                 !button.has_style_class_name('flat') &&
                 !button.has_style_class_name('radio-icon-button'));
@@ -626,15 +672,19 @@ class ShellE2E(unittest.TestCase):
         popup_width = evaluate(f'{INDICATOR}.menu.actor.width')
         self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
             const children = i._details.get_children();
-            return [i._play, i._stopButton, i._infoFrame, i._quitButton]
+            return [i._play, i._quitButton]
                 .every((actor, index, controls) => actor.get_parent() === i._details && actor.mapped &&
                     (index === 0 || children.indexOf(actor) > children.indexOf(controls[index - 1]))) &&
+                !i._stopButton.visible && !i._stopButton.can_focus && !i._stopButton.reactive &&
+                !i._infoFrame.reactive && !i._playCircle.can_focus &&
+                i._play.contains(i._infoFrame) && i._play.contains(i._playCircle) &&
                 i._quitButton.accessible_name === 'Quit radiolina';
-        }})()'''), 'Infobox order must be Play/Pause, Stop, text info, Quit without a bottom Quit row')
+        }})()'''), 'Default infobox must omit Stop and disable text playback before adding a station')
         self.assertEqual(evaluate(f'{INDICATOR}._settingsButton.child.icon_name'), 'preferences-system-symbolic')
         evaluate(f"{INDICATOR}._settingsButton.emit('clicked', 1); true")
         self.assertTrue(evaluate(f'{INDICATOR}._settingsSection.actor.visible'))
         self.assertFalse(evaluate(f'{INDICATOR}._faviconToggle.state'))
+        self.assertFalse(evaluate(f'{INDICATOR}._showStopToggle.state'))
         self.assertFalse(evaluate(f'{INDICATOR}._groupToggle.state'))
         self.assertEqual(evaluate(f'{INDICATOR}._groupWarning.text'), GROUP_WARNING)
         self.assertFalse(evaluate(f'{INDICATOR}._groupUnavailableRow.visible'))
@@ -768,6 +818,54 @@ class ShellE2E(unittest.TestCase):
         evaluate(f"{INDICATOR}._play.emit('clicked', 1); true")
         wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending"),
              'popup recovers playback after stream failure')
+        # The complete text area is a native playback button; hiding Stop is a
+        # persisted display preference and must not stop audio or resize the popup.
+        click(f'{INDICATOR}._title')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Paused' && !{INDICATOR}._pending"),
+             'clicking track title pauses playback without closing popup')
+        click(f'{INDICATOR}._name')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending"),
+             'clicking station name resumes playback')
+        click(f'{INDICATOR}._playCircle')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Paused' && !{INDICATOR}._pending"),
+             'clicking the playback circle activates its containing button exactly once')
+        click(f'{INDICATOR}._name')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending"),
+             'text resumes playback after clicking the circle')
+        evaluate(f'{INDICATOR}._play.grab_key_focus(); true')
+        key(0x20)
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Paused' && !{INDICATOR}._pending"),
+             'Space activates the focused text playback control')
+        key(0xff0d)
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending"),
+             'Enter activates the focused text playback control')
+        self.assertTrue(evaluate(f'{INDICATOR}._play.accessible_name.startsWith("Pause ")'))
+        self.assertFalse(evaluate(f'{INDICATOR}._stopButton.visible'))
+        success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
+            'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
+                (False, False, str(Path('workspace/info-playback-focus.png').resolve()))))
+        self.assertTrue(success)
+        evaluate(f'{INDICATOR}.menu.actor.grab_key_focus(); true')
+        pointer(0, 700)
+        success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
+            'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
+                (False, False, str(Path('workspace/stop-hidden-default.png').resolve()))))
+        self.assertTrue(success)
+        click(f'{INDICATOR}._settingsButton')
+        click(f'{INDICATOR}._showStopToggle')
+        wait(lambda: evaluate(f'{INDICATOR}._state.showStopButton && {INDICATOR}._stopButton.mapped && '
+                              f'!{INDICATOR}._pending'), 'Stop can be shown from Settings')
+        self.assertEqual(evaluate(f'{INDICATOR}.menu.actor.width'), popup_width)
+        self.assertEqual(evaluate(f'{INDICATOR}._details.height'), info_height)
+        self.assertEqual(evaluate(f'{INDICATOR}._state.status'), 'Playing')
+        click(f'{INDICATOR}._showStopToggle')
+        wait(lambda: evaluate(f'!{INDICATOR}._state.showStopButton && !{INDICATOR}._stopButton.visible && '
+                              f'!{INDICATOR}._pending'), 'Stop can be hidden without changing playback')
+        self.assertEqual(evaluate(f'{INDICATOR}._state.status'), 'Playing')
+        click(f'{INDICATOR}._showStopToggle')
+        wait(lambda: evaluate(f'{INDICATOR}._state.showStopButton && !{INDICATOR}._pending'),
+             'enable Stop for subsequent resource/lifecycle workflows')
+        click(f'{INDICATOR}._settingsButton')
         # Reproduce the supplied long-title screenshot, including fractional scaling.
         identifier = evaluate(f'{INDICATOR}._state.selected')
         call(BUS, APP, IFACE, 'UpdateStation', GLib.Variant('(sss)',
@@ -783,11 +881,12 @@ class ShellE2E(unittest.TestCase):
             const bounds = actor => {{const [x, y] = actor.get_transformed_position();
                 const [w, h] = actor.get_transformed_size(); return {{x, y, right: x + w, bottom: y + h}};}};
             const box = bounds(i._details);
-            const name = bounds(i._name), title = bounds(i._title), play = bounds(i._play);
+            const name = bounds(i._name), title = bounds(i._title), play = bounds(i._playCircle);
             return [name, title, play].every(item => item.x >= box.x && item.y >= box.y &&
                 item.right <= box.right + 0.1 && item.bottom <= box.bottom + 0.1) &&
-                play.right <= bounds(i._stopButton).x && bounds(i._stopButton).right <= title.x &&
-                title.right <= bounds(i._quitButton).x &&
+                play.right <= title.x && title.right <= bounds(i._play).right &&
+                bounds(i._play).right <= bounds(i._stopButton).x &&
+                bounds(i._stopButton).right <= bounds(i._quitButton).x &&
                 title.bottom < bounds(i._infoSeparator._separator).y;
         }})()'''), 'Metadata and playback must fit without crossing the separator or popup edge')
         self.assertEqual(evaluate(f'{INDICATOR}._details.height'), info_height)
@@ -796,6 +895,9 @@ class ShellE2E(unittest.TestCase):
         call(BUS, APP, IFACE, 'UpdateStation', GLib.Variant('(sss)',
              (identifier, 'Fixture radio', ServiceE2E.url + '/icy')))
         Streams.title = 'First song'
+        # Discard queued fixture audio/metadata after the long typography sweep.
+        call(BUS, APP, IFACE, 'Stop')
+        call(BUS, APP, IFACE, 'PlayPause')
         wait(lambda: evaluate(f"{INDICATOR}._title.text === 'First song'"), 'restore fixture metadata')
         identifier = evaluate(f'{INDICATOR}._state.selected')
         wait(lambda: evaluate(f'{INDICATOR}._recentButtons.has({json.dumps(identifier)})'), 'recent row after playback')
@@ -1190,10 +1292,10 @@ class ShellE2E(unittest.TestCase):
             {INDICATOR}._state.status === 'Stopped' && !{INDICATOR}._title.visible'''))
         self.assertEqual(evaluate(f'{INDICATOR}._state.selected'), stopped_selection)
         self.assertTrue(standalone_panel())
-        click(f'{INDICATOR}._play')
+        click(f'{INDICATOR}._name')
         wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending && "
                               f'{INDICATOR}._proxy.g_name_owner !== {json.dumps(stopped_owner)}'),
-             'Play starts a fresh backend and reconnects after Stop')
+             'clicking station information starts a fresh backend and reconnects after Stop')
         # Stop again while a restart is waiting for the old process to exit.
         evaluate(f'''{INDICATOR}._stopPlayback(); {INDICATOR}._play.emit('clicked', 1);
             {INDICATOR}._stopButton.emit('clicked', 1); true''')
@@ -1271,6 +1373,7 @@ class ShellE2E(unittest.TestCase):
         assert_cached_theme()
         self.assertEqual(evaluate(f'{INDICATOR}._name.text'), 'Edited radio')
         self.assertEqual(evaluate(f'{INDICATOR}._recentCount.text'), '2')
+        self.assertTrue(evaluate(f'{INDICATOR}._showStopToggle.state && {INDICATOR}._stopButton.visible'))
         self.assertTrue(evaluate(f'{INDICATOR}._details.get_children().indexOf({INDICATOR}._play) < {INDICATOR}._details.get_children().indexOf({INDICATOR}._stopButton)'))
         self.assertEqual(evaluate(f'{INDICATOR}._recentButtons.size'), 2)
         self.assertEqual(own_styles(), [alternate_stylesheet])

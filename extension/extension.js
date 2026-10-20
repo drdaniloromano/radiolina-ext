@@ -57,11 +57,19 @@ class RadioIndicator extends PanelMenu.Button {
         info.add_child(this._stationIcon);
         info.add_child(box);
         const frame = new St.Bin({child: info, style_class: 'gnome-radio-info-frame',
-            x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+            x_expand: true,
+            y_align: Clutter.ActorAlign.CENTER});
         this._infoFrame = frame;
         this._playIcon = new St.Icon({icon_name: 'media-playback-start-symbolic'});
-        this._play = new St.Button({child: this._playIcon, style_class: 'icon-button',
-            can_focus: true, accessible_name: 'Play', y_align: Clutter.ActorAlign.CENTER});
+        this._playCircle = new St.Bin({child: this._playIcon, style_class: 'icon-button',
+            reactive: true, can_focus: false, track_hover: false,
+            y_align: Clutter.ActorAlign.CENTER});
+        const playback = new St.BoxLayout({style_class: 'gnome-radio-playback-content', x_expand: true});
+        playback.add_child(this._playCircle);
+        playback.add_child(frame);
+        this._play = new St.Button({child: playback, style_class: 'button flat gnome-radio-playback',
+            x_expand: true, can_focus: true, track_hover: true, accessible_name: 'Play radio',
+            y_align: Clutter.ActorAlign.CENTER});
         this._play.connect('clicked', () => this._call('PlayPause', null));
         details.add_child(this._play);
         this._stopButton = new St.Button({child: new St.Icon({icon_name: 'media-playback-stop-symbolic'}),
@@ -69,7 +77,6 @@ class RadioIndicator extends PanelMenu.Button {
             accessible_name: 'Stop and release playback resources', y_align: Clutter.ActorAlign.CENTER});
         this._stopButton.connect('clicked', () => this._stopPlayback());
         details.add_child(this._stopButton);
-        details.add_child(frame);
         this._quitButton = new St.Button({child: new St.Icon({icon_name: 'system-shutdown-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             accessible_name: 'Quit radiolina', y_align: Clutter.ActorAlign.CENTER});
@@ -168,6 +175,11 @@ class RadioIndicator extends PanelMenu.Button {
         stationContainer.hide();
 
         this._settingsSection = new PopupMenu.PopupMenuSection();
+        this._showStopToggle = new PopupMenu.PopupSwitchMenuItem('Show Stop button', false);
+        this._showStopToggle.connect('toggled', (_item, enabled) => {
+            if (!this._syncingSettings) this._call('SetShowStopButton', new GLibVariant('(b)', [enabled]));
+        });
+        this._settingsSection.addMenuItem(this._showStopToggle);
         this._faviconToggle = new PopupMenu.PopupSwitchMenuItem('Fetch station favicons', false);
         this._faviconToggle.connect('toggled', (_item, enabled) => {
             if (!this._syncingSettings) this._call('SetFetchFavicons', new GLibVariant('(b)', [enabled]));
@@ -488,11 +500,14 @@ class RadioIndicator extends PanelMenu.Button {
         this._title.text = [state.artist, state.title].filter(Boolean).join(' — ');
         this._title.visible = Boolean(station && this._title.text);
         this._playIcon.icon_name = active ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
-        this._play.accessible_name = active ? 'Pause' : 'Play';
-        this._play.reactive = ready && Boolean(station);
+        this._play.accessible_name = `${active ? 'Pause' : 'Play'} ${station?.name ?? 'radio'}`;
+        // _call ignores repeats while pending. Keep the native input/focus target
+        // intact until its pointer or keyboard gesture has finished.
+        this._play.reactive = Boolean(station);
         this._play.can_focus = this._play.reactive;
-        this._play.opacity = this._play.reactive ? 255 : 100;
-        this._stopButton.reactive = !this._backendIdle &&
+        this._playCircle.opacity = ready && station ? 255 : 100;
+        this._stopButton.visible = Boolean(state.showStopButton);
+        this._stopButton.reactive = this._stopButton.visible && !this._backendIdle &&
             Boolean(this._proxy?.g_name_owner || this._extension._starting);
         this._stopButton.can_focus = this._stopButton.reactive;
         this._stopButton.opacity = this._stopButton.reactive ? 255 : 100;
@@ -508,6 +523,8 @@ class RadioIndicator extends PanelMenu.Button {
         this._save.reactive = ready;
         this._save.can_focus = ready;
         this._syncingSettings = true;
+        this._showStopToggle.setToggleState(Boolean(state.showStopButton));
+        this._showStopToggle.setSensitive(ready);
         this._faviconToggle.setToggleState(Boolean(state.fetchFavicons));
         this._faviconToggle.setSensitive(ready);
         this._groupToggle.setToggleState(Boolean(state.groupWithAppIndicators));

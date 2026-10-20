@@ -51,11 +51,13 @@ export function validateConfig(config) {
     if (!Array.isArray(recent) || recent.length > MAX_RECENT_LIMIT || new Set(recent).size !== recent.length ||
         recent.some(id => !ids.has(id)) ||
         (config.fetchFavicons !== undefined && typeof config.fetchFavicons !== 'boolean') ||
+        (config.showStopButton !== undefined && typeof config.showStopButton !== 'boolean') ||
         (config.playButtonOnLeft !== undefined && typeof config.playButtonOnLeft !== 'boolean') ||
         (config.groupWithAppIndicators !== undefined && typeof config.groupWithAppIndicators !== 'boolean'))
         throw new Error('Invalid recent stations or display settings.');
     const recentLimit = validateRecentLimit(config.recentLimit === undefined ? DEFAULT_RECENT_LIMIT : config.recentLimit);
     return {...config, recent, recentLimit, fetchFavicons: config.fetchFavicons ?? false,
+        showStopButton: config.showStopButton ?? false,
         playButtonOnLeft: config.playButtonOnLeft ?? false,
         groupWithAppIndicators: config.groupWithAppIndicators ?? false};
 }
@@ -63,7 +65,7 @@ export function validateConfig(config) {
 export function emptyConfig() {
     return {version: 1, stations: [], selected: '', notifications: false, recent: [],
         recentLimit: DEFAULT_RECENT_LIMIT, fetchFavicons: false, playButtonOnLeft: false,
-        groupWithAppIndicators: false};
+        groupWithAppIndicators: false, showStopButton: false};
 }
 
 export class MetadataTracker {

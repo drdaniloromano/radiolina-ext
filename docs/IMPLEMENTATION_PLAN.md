@@ -23,7 +23,10 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Persist the ten most recently played unique stations, a visible Recent limit
   (1–10, default 3), and an opt-in favicon preference. Expand saved stations on
   demand; keep Recent visible by default. Lowering the limit preserves history.
-- Use fixed Play/Pause, Stop, text info, Quit controls in the infobox. Stop exits
+- Combine the playback circle and text info in one native Play/Pause button with
+  shared hover/focus feedback, followed by optional Stop and Quit. Stop is
+  hidden by default and enabled through a persisted Settings switch. Clicking the
+  station/track area also toggles playback with native keyboard activation. Stop exits
   the backend; Play and station/settings operations restart it on demand. Retain
   cached station state in Shell and cancel stale startup/call completions.
 - Fetch bounded PNG/ICO favicons asynchronously in the service only when enabled,
@@ -73,6 +76,8 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   covering separators or displacing playback. Native light/dark changes update widgets.
 - Saved list/search, Add/Edit, and Settings replace one another; only one is visible.
 - Controls retain their fixed order and box dimensions with or without metadata.
+  Stop is hidden by default; changing its visibility must preserve playback and
+  popup dimensions. Station/track text toggles Play/Pause by pointer or Enter/Space.
   Stop must release the backend while keeping the popup usable; subsequent Play,
   editing, and rapid Stop/restart cycles must recover without orphan processes.
 - Typing in the popup or Ctrl+F opens the saved-station filter without dropping the

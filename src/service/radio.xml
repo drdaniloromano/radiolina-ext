@@ -9,6 +9,7 @@
     <method name="Stop"/>
     <method name="SetNotifications"><arg name="enabled" type="b" direction="in"/></method>
     <method name="SetFetchFavicons"><arg name="enabled" type="b" direction="in"/></method>
+    <method name="SetShowStopButton"><arg name="enabled" type="b" direction="in"/></method>
     <method name="SetRecentLimit"><arg name="limit" type="u" direction="in"/></method>
     <method name="SetPlayButtonOnLeft"><arg name="enabled" type="b" direction="in"/></method>
     <method name="SetGroupWithAppIndicators"><arg name="enabled" type="b" direction="in"/></method>

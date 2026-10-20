@@ -74,6 +74,11 @@ test('rejects invalid persisted state and duplicate stations', () => {
     rejects(() => validateConfig({...config, version: 2}));
     assert(validateConfig({version: 1, stations: [], selected: '', notifications: false}).recent.length === 0);
     assert(!validateConfig({version: 1, stations: [], selected: '', notifications: false}).fetchFavicons);
+    assert(!config.showStopButton);
+    assert(!validateConfig({version: 1, stations: [], selected: '', notifications: false}).showStopButton);
+    for (const showStopButton of ['yes', null, 0])
+        rejects(() => validateConfig({...config, showStopButton}));
+    assert(validateConfig({...config, showStopButton: true}).showStopButton);
     assert(!validateConfig({version: 1, stations: [], selected: '', notifications: false}).playButtonOnLeft);
     rejects(() => validateConfig({...config, playButtonOnLeft: 'yes'}));
     assert(!validateConfig({version: 1, stations: [], selected: '', notifications: false}).groupWithAppIndicators);

@@ -225,6 +225,9 @@ const app = {
     SetFetchFavicons(enabled) {
         changeConfig({...config, fetchFavicons: enabled});
     },
+    SetShowStopButton(enabled) {
+        changeConfig({...config, showStopButton: enabled});
+    },
     SetRecentLimit(limit) {
         changeConfig({...config, recentLimit: validateRecentLimit(limit)});
     },

@@ -6,6 +6,11 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- Persisted **Show Stop button** setting, off by default. Hiding/showing the
+  optional infobox control preserves playback and popup dimensions.
+- A single Play/Pause button containing the playback circle and station/track
+  information, with a shared native hover/focus highlight and Enter/Space
+  activation while keeping the popup open. Optional Stop and Quit follow it.
 - Isolated Shell checks for larger text and an alternate serif font in light/dark
   mode, covering transport, saved-row actions, search, Add/Edit, and settings.
 - Record maintainer-confirmed native light/dark readability and layout for the
@@ -24,8 +29,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
   the full license/copyright notice in the extension ZIP.
 - E2E packaging check for license inclusion, source fidelity, and exclusion of
   machine-local and development files; included in `make test` / `make container-test`.
-- Fixed infobox order **Play/Pause | Stop | station/track info | Quit** using native
-  symbolic icon buttons; removed the bottom textual Quit action and placement switch.
+- Native symbolic infobox playback, Stop, and Quit controls; removed the bottom
+  textual Quit action and placement switch.
 - Infobox Stop exits the playback service and clears track metadata while retaining
   the indicator and saved state. Play and station/settings actions restart it on
   demand; pending restarts are cancellable. Quit disables radiolina and stops its service.
@@ -165,6 +170,10 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 - Use a single infobox inset to align the Play/Pause circle's outer edge with
   section headings and station-row text, preserving native button padding/shape.
+- Reduce and balance the Play/Pause circle's top and left gaps from the popup
+  border, keeping headings and station rows aligned with the circle.
+- Reduce disposable Shell-test resource use with two software-rendering threads
+  and no wallpaper decoding; host settings remain unchanged.
 - Let the live updater finish disabling radiolina's former development identity
   before activating the new ID, including when the new ZIP is installed but not
   yet loaded. Cover that transition with preserved station data and one indicator.

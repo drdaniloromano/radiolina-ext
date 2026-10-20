@@ -2,13 +2,15 @@
 /* Native theme colors; customize layout, compact sizing, and metadata hierarchy. */
 #panel .panel-button.gnome-radio-indicator .system-status-icon { padding: 0; margin: 0; }
 .gnome-radio-popup { width: 380px; }
-.gnome-radio-now-playing { margin: 0; padding: 4px 14px 1px 12px; spacing: 8px; }
-.gnome-radio-info-frame { height: 3em; min-width: 0; }
+.gnome-radio-now-playing { margin: 0; padding: 4px 14px 1px 6px; spacing: 8px; }
+.gnome-radio-playback { padding: 0; min-width: 0; font-weight: normal; }
+.gnome-radio-playback-content { spacing: 8px; }
+.gnome-radio-info-frame { height: 3em; min-width: 0; padding: 0 3px; font-weight: normal; }
 .gnome-radio-details { spacing: 2px; }
 .gnome-radio-info-content { spacing: 6px; }
 .gnome-radio-station { font-weight: bold; }
 .gnome-radio-song { font-size: 0.85em; }
-.gnome-radio-toolbar { padding: 4px 12px; spacing: 6px; }
+.gnome-radio-toolbar { padding: 4px 12px 4px 6px; spacing: 6px; }
 .gnome-radio-recent-heading { padding-top: 1px; }
 .gnome-radio-stations-toolbar { padding-top: 3px; }
 .gnome-radio-entry { padding: 4px 8px 5px; }
@@ -21,7 +23,7 @@
 .gnome-radio-error-row { padding: 4px 12px; }
 .gnome-radio-stations { max-height: 240px; min-width: 300px; }
 .gnome-radio-compact-button { padding: 6px; min-width: 16px; min-height: 16px; }
-.gnome-radio-station-row { padding-top: 3px; padding-bottom: 3px; }
+.gnome-radio-station-row { padding-top: 3px; padding-bottom: 3px; padding-left: 6px; }
 .gnome-radio-station-content { max-width: 235px; }
 .gnome-radio-section-heading { font-weight: bold; }
 .gnome-radio-setting-help { width: 300px; font-size: 0.85em; }

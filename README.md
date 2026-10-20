@@ -54,7 +54,11 @@ The infobox also keeps a fixed height: the name centers alone and moves up to ma
 room for track information when available. Its height follows the theme's font
 size; the text column uses the remaining width so long metadata cannot push the
 play button out of the popup. Errors appear separately below it.
-The infobox has a fixed order: **Play/Pause | Stop | station/track info | Quit**.
+The infobox has a fixed order: **Play/Pause with station/track info | optional Stop | Quit**.
+Enable **Show Stop button** in Settings to display Stop; it is **off by default**
+and the preference persists. Clicking the station name or track information also
+toggles Play/Pause. The circle and information form one button with a shared native
+hover highlight and keyboard focus; Enter/Space activates it.
 Stop closes the stream and exits the playback service while keeping the indicator
 and saved stations available. Play starts a fresh service and reconnects to the live
 stream. Editing stations or changing settings also starts the service on demand.

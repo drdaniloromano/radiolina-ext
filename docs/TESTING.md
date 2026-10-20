@@ -64,6 +64,10 @@ to three, rejects values outside 1–10, persists across restart, and changes wi
 interrupting playback or truncating history. Legacy files default safely to
 empty history, three visible entries, and disabled favicons. The legacy
 playback-position field remains validated/persistent but no longer reorders the UI.
+Display-setting checks cover the default-hidden Stop control, persistence of
+`showStopButton` across backend restart, and changing it without interrupting
+playback. Critical configuration tests default missing legacy fields to false and
+reject non-boolean persisted values.
 Image tests reject oversized PNG dimensions,
 malformed ICO ranges, SVG, and oversized payloads. Favicon service tests verify no
 requests by default, malformed/oversized responses, cancellation, preference
@@ -71,7 +75,9 @@ persistence, and reuse of the cached image without another request.
 
 `make test-shell` tests actual GNOME actors in a disposable headless GNOME 49
 instance. Private settings disable hot corners and automatic locking so virtual
-input stays on the test desktop; host settings are unchanged.
+input stays on the test desktop; host settings are unchanged. The private desktop
+disables wallpaper decoding and limits llvmpipe software rendering to two threads
+to reduce test resource usage.
 It uses `gnome-extensions install --force` on the built ZIP after Shell startup,
 checks that a repeated install replaces an overwritten runtime file, and runs
 the documented first-install
@@ -88,7 +94,8 @@ Leaving a hovered or pointer-selected row must hide Play/Edit/Remove in both lis
 even if native menu handling retained focus on that row. Keyboard-only focus still
 reveals its actions. Light/dark checks align the Play/Pause circle's outer left
 edge with section headings and visible unmarked station-row text; the saved list
-and Recent rows are checked too. Coordinates are saved in
+and Recent rows are checked too. The circle's top and left gaps from the popup
+body must also match. Coordinates are saved in
 `workspace/play-circle-alignment.json`.
 Escape closes the popup and resets search. Hover screenshot: `workspace/hover.png`.
 Layout checks
@@ -120,6 +127,17 @@ the popup open. Enter activation of a station also preserves the popup and expan
 list. These checks exercise native click gestures and automatic menu dismissal,
 rather than only emitting actor signals. The virtual pointer must reach both target
 coordinates before clicking. Escape and outside clicks still close/reset the popup.
+The playback circle, station name, and track title form one native Play/Pause button; real
+pointer clicks and focused Enter/Space activation must toggle once and keep the
+popup open. Hovering the circle or either label must target that same button,
+highlight the entire container with the native theme, and clear on pointer exit
+after pointer and keyboard playback activation in light/dark modes
+(`workspace/playback-hover-light.png` / `playback-hover-dark.png`). Pending commands
+must preserve the native input target while suppressing duplicate actions.
+Stop starts hidden and outside the focus chain. Its Settings switch
+must show/hide it without interrupting audio or resizing the popup; enabled state
+must survive live updates, and the existing Stop/restart workflows still pass.
+Screenshots: `workspace/stop-hidden-default.png` and `workspace/info-playback-focus.png`.
 
 Run `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` for
 the screenshot regression at an actual temporary 150% virtual-monitor configuration.
@@ -360,7 +378,8 @@ cause. Validate the environment's full sleep/wake cycle before repeating this ch
    Copy from the editor and Remove from both lists; check current-station removal
    stops playback. Confirm the fixed transport order and readable ellipsized metadata.
 6. Disconnect networking; verify a useful error and successful manual retry.
-7. Click infobox **Stop** while playing; confirm the backend exits, the indicator
+7. Enable **Show Stop button** in Settings (off by default), then click infobox
+   **Stop** while playing; confirm the backend exits, the indicator
    and stations remain, and Play restarts the stream. Check editing after Stop and
    repeated Stop/Play clicks. Click the infobox **Quit** power icon; confirm the
    indicator and service disappear. Re-enable radiolina in Extensions or with
