@@ -6,6 +6,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- README architecture diagram showing process boundaries, D-Bus/MPRIS communication,
+  playback, and station storage.
 - MIT license for original project files, source/artwork/tooling identifiers, and
   the full license/copyright notice in the extension ZIP.
 - E2E packaging check for license inclusion, source fidelity, and exclusion of

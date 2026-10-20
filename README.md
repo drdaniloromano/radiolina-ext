@@ -258,6 +258,29 @@ legacy notification flags no longer cause desktop popups.
 
 ## Architecture and repository layout
 
+```mermaid
+flowchart TB
+    subgraph shell["GNOME Shell process"]
+        ui["Indicator and popup"]
+    end
+    subgraph backend["Separate GJS playback process"]
+        service["Station state, D-Bus API and MPRIS"]
+        player["GStreamer playback"]
+        store["Validated station storage"]
+        service --> player
+        service --> store
+    end
+    ui -->|D-Bus commands| service
+    service -->|D-Bus state updates| ui
+    media["Media keys and native media card"] <-->|MPRIS| service
+    stream["Radio stream"] -->|Audio and track metadata| player
+    store --> config["stations.json"]
+```
+
+The popup sends commands to the service, which owns playback and saved station
+state. Service property changes update the interface without polling. GStreamer
+runs in the service process; GNOME's media controls use its MPRIS interface.
+
 - `src/core/`: critical validation, bounded playlist/image parsing, and metadata deduplication.
 - `src/service/`: playback, async playlist/favicon loading, atomic persistence, D-Bus and MPRIS.
 - `extension/`: native Shell popup and bundled symbolic SVGs in

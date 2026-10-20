@@ -104,6 +104,8 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Document the Shell/service process boundary and playback/storage ownership in a
+  README Mermaid diagram, including D-Bus state updates and MPRIS media controls.
 - Choose `0.1.0` for the first release and set `version-name` in metadata. Document
   version increments and `v<version>` tags; keep the changelog unreleased until
   final checks pass. Leave numeric submission versions to extensions.gnome.org.
