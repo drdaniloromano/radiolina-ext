@@ -119,6 +119,10 @@ continues normally. This does not establish a universal kill order: other OOM
 managers, including [systemd-oomd](https://www.freedesktop.org/software/systemd/man/latest/systemd-oomd.service.html),
 use their own policies. No system-wide configuration or OOM-daemon dependency is added.
 
+If the playback service dies unexpectedly, the indicator remains available and
+shows a retry message. Press Play to start a fresh service and reconnect to the
+saved station; playback does not restart automatically.
+
 ## Desktop verification
 
 `make test-shell` exercises the actual extension inside a disposable headless

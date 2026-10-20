@@ -22,6 +22,21 @@ denied control access with working playback. An abrupt SIGKILL followed by resta
 must preserve saved stations and allow playback without generating memory pressure.
 Other OOM managers' selection policies are outside this kernel-control test.
 
+The default-build Shell workflow (`make test-shell OOM_SCORE_ADJ=500`) also records
+Shell's score before any extension backend starts. It verifies the playback PID
+against the private D-Bus owner's PID, checks its score is 500, then sends SIGKILL
+only to that child. The same Shell process and indicator must survive, clear stale
+metadata, show retry feedback, and remain responsive to real panel clicks. There
+must be no automatic restart. A real Play click must create a different PID/bus
+owner, restore fixture playback and metadata, and reapply score 500. Shell and test
+runner scores, saved station selection, and configuration bytes must remain unchanged.
+Passing measurements are written to ignored `workspace/shell-oom-recovery.json`.
+This simulates sudden process death without allocating memory; it does not test
+kernel victim selection or systemd-oomd behavior under actual memory pressure.
+Verified on GNOME 49.7: Shell retained its inherited score of 200, while both
+the terminated playback service and its replacement had score 500. The full
+Shell workflow passed, including indicator interaction and playback/metadata recovery.
+
 The standalone service starts with the `#!@GJS@ -m` review marker and is launched
 explicitly through `gjs -m`. Service and Shell E2E runs execute that same entry
 point, covering startup and teardown after packaging/review changes.
@@ -51,7 +66,7 @@ that its runtime is active in the current desktop session.
 
 Nine critical unit cases cover URL validation, bounded metadata sanitization,
 deduplication, saved-state validation, and private persistence/corruption safety.
-Sixteen service E2E cases cover real decoding and MPRIS controls, ICY title changes
+Eighteen service E2E cases cover real decoding and MPRIS controls, ICY title changes
 and legacy track-change signals, station CRUD/restart, HTTP failure/recovery, corrupt
 configuration preservation, idle resource sampling, and Shell-owner loss.
 The stalled-transport case disables the HTTP source's own timeout in a disposable

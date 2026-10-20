@@ -19,6 +19,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 - Apply a one-time, best-effort kernel OOM preference only inside the service.
   Build-time adjustment defaults to 500 (0–1000 or `inherit`); failure is nonfatal.
   Never change Shell's score, host OOM settings, or other managers' selection policies.
+  Verify the default service score and unchanged Shell score on the actual isolated
+  desktop. Abrupt service loss must preserve the indicator and saved configuration;
+  one explicit Play action must recover playback without an automatic restart loop.
 - Pause uses GStreamer's PAUSED state and resumes the same pipeline, satisfying
   MPRIS PlayPause semantics. There is no disk recording or dedicated time-shift
   buffer; resuming can briefly lag the live edge. Stop releases the connection.

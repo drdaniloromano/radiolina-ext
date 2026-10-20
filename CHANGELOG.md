@@ -6,6 +6,10 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Added
 
+- Isolated GNOME verification that the default playback service alone receives
+  `oom_score_adj=500`, Shell's original score is preserved, and a targeted SIGKILL
+  leaves the same indicator usable. One real Play click restores playback and
+  metadata in a fresh service without changing saved configuration or exhausting RAM.
 - Build-time playback-service OOM adjustment (`--oom-score-adj`, Make
   `OOM_SCORE_ADJ`), default 500, accepting 0–1000 or `inherit`. Unsupported or
   denied kernel controls leave playback operational; Shell's score is untouched.

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import shutil
+import signal
 import tempfile
 import time
 import unittest
@@ -42,6 +43,9 @@ class ShellE2E(unittest.TestCase):
             log.close()
             self.assertNotIn('has been already disposed', text, 'Popup interactions must not retain destroyed station actors')
         self.addCleanup(cleanup)
+        shell_oom = Path(f'/proc/{shell.pid}/oom_score_adj')
+        shell_oom_before = shell_oom.read_text()
+        runner_oom_before = Path('/proc/self/oom_score_adj').read_text()
 
         def call(name, path, interface, method, params=None):
             return bus.call_sync(name, path, interface, method, params, None,
@@ -1310,6 +1314,77 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(evaluate(f'{INDICATOR}._state.status'), 'Stopped')
         click(f'{INDICATOR}._play')
         wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending"), 'resume after stopped station editing')
+        # Simulate abrupt backend death, not memory exhaustion. Resolve and verify
+        # the Shell-owned child's PID on this private bus before sending SIGKILL.
+        click(f'{INDICATOR}._recentButtons.get({json.dumps(identifier)}).label')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending && "
+                              f'{INDICATOR}._state.selected === {json.dumps(identifier)} && '
+                              f'Boolean({INDICATOR}._state.title)'),
+             'metadata-capable saved stream is playing before abrupt termination')
+        crashed_pid = int(evaluate(f'{INDICATOR}._extension._process.get_identifier()'))
+        crashed_owner = evaluate(f'{INDICATOR}._proxy.g_name_owner')
+        self.assertNotIn(crashed_pid, (shell.pid, os.getpid()))
+        self.assertEqual(call('org.freedesktop.DBus', '/org/freedesktop/DBus',
+                              'org.freedesktop.DBus', 'GetConnectionUnixProcessID',
+                              GLib.Variant('(s)', (BUS,)))[0], crashed_pid)
+        crashed_oom = int(Path(f'/proc/{crashed_pid}/oom_score_adj').read_text())
+        self.assertEqual(crashed_oom, 500)
+        self.assertEqual(shell_oom.read_text(), shell_oom_before,
+                         'Starting playback must not change GNOME Shell OOM policy')
+        saved_before_crash = saved_file.read_bytes()
+        selected_before_crash = evaluate(f'{INDICATOR}._state.selected')
+        evaluate(f'''global._radioCrashIndicator = {INDICATOR};
+            global._radioCrashProcess = {INDICATOR}._extension._process; true''')
+        os.kill(crashed_pid, signal.SIGKILL)
+        wait(lambda: evaluate(f'!{INDICATOR}._proxy.g_name_owner && !{INDICATOR}._extension._process'),
+             'SIGKILL releases the service bus name and reaps its child')
+        wait(lambda: not Path(f'/proc/{crashed_pid}').exists(), 'abruptly terminated backend PID disappears')
+        self.assertIsNone(shell.poll(), 'Killing playback must leave the same Shell process alive')
+        self.assertTrue(evaluate('global._radioCrashProcess.get_if_signaled() && '
+                                 'global._radioCrashProcess.get_term_sig() === 9'))
+        wait(lambda: evaluate(f'''{INDICATOR} === global._radioCrashIndicator && {INDICATOR}._alive &&
+            {INDICATOR}._state.status === 'Stopped' && !{INDICATOR}._title.visible &&
+            !{INDICATOR}._state.title && !{INDICATOR}._state.artist &&
+            {INDICATOR}._play.reactive && !{INDICATOR}._pending &&
+            {INDICATOR}._errorRow.visible && {INDICATOR}._error.text.includes('Press Play to retry')'''),
+             'indicator survives with cleared metadata, retry feedback, and working Play')
+        self.assertTrue(standalone_panel())
+        self.assertEqual(evaluate(f'{INDICATOR}._state.selected'), selected_before_crash)
+        self.assertEqual(saved_file.read_bytes(), saved_before_crash)
+        self.assertEqual(shell_oom.read_text(), shell_oom_before)
+        # No automatic respawn or playback loop: recovery is a deliberate click.
+        time.sleep(0.3)
+        self.assertTrue(evaluate(f'!{INDICATOR}._extension._process && !{INDICATOR}._extension._starting'))
+        panel_click(INDICATOR)
+        wait(lambda: evaluate(f'!{INDICATOR}.menu.isOpen'), 'surviving indicator closes normally')
+        panel_click(INDICATOR)
+        wait(lambda: evaluate(f'{INDICATOR}.menu.isOpen'), 'surviving indicator reopens normally')
+        click(f'{INDICATOR}._playCircle')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && !{INDICATOR}._pending && "
+                              f'{INDICATOR}._proxy.g_name_owner !== {json.dumps(crashed_owner)} && '
+                              f'Boolean({INDICATOR}._state.title)'),
+             'one real Play click starts a fresh backend and restores fixture playback/metadata')
+        recovered_pid = int(evaluate(f'{INDICATOR}._extension._process.get_identifier()'))
+        self.assertNotEqual(recovered_pid, crashed_pid)
+        self.assertEqual(call('org.freedesktop.DBus', '/org/freedesktop/DBus',
+                              'org.freedesktop.DBus', 'GetConnectionUnixProcessID',
+                              GLib.Variant('(s)', (BUS,)))[0], recovered_pid)
+        recovered_oom = int(Path(f'/proc/{recovered_pid}/oom_score_adj').read_text())
+        self.assertEqual(recovered_oom, 500)
+        self.assertEqual(shell_oom.read_text(), shell_oom_before)
+        self.assertEqual(Path('/proc/self/oom_score_adj').read_text(), runner_oom_before)
+        self.assertEqual(saved_file.read_bytes(), saved_before_crash)
+        self.assertTrue(evaluate(f'{INDICATOR} === global._radioCrashIndicator && !{INDICATOR}._errorRow.visible'))
+        evidence = {'shell_pid': shell.pid, 'shell_oom_before': int(shell_oom_before),
+                    'shell_oom_after': int(shell_oom.read_text()), 'terminated_service_pid': crashed_pid,
+                    'recovered_service_pid': recovered_pid,
+                    'service_oom_before': crashed_oom, 'service_oom_after': recovered_oom,
+                    'signal': 'SIGKILL', 'indicator_preserved': True, 'saved_config_unchanged': True,
+                    'playback_and_metadata_restored': True}
+        Path('workspace/shell-oom-recovery.json').write_text(json.dumps(evidence, indent=2) + '\n')
+        print(f'OOM/crash recovery: service 500 -> 500; Shell {int(shell_oom_before)} unchanged; '
+              'indicator survived SIGKILL and one Play click restored playback/metadata')
+        evaluate('global._radioCrashIndicator = null; global._radioCrashProcess = null; true')
         pointer(20, 700)
         evaluate('global._radioPointer.notify_button(GLib.get_monotonic_time(), 1, global._radioClutter.ButtonState.PRESSED); '
                  'global._radioPointer.notify_button(GLib.get_monotonic_time(), 1, global._radioClutter.ButtonState.RELEASED); true')
