@@ -97,7 +97,9 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
   no desktop notifications, persistence, disable/re-enable, and rapid toggles.
 - Idle service sample: about 37 MiB RSS and 0.000s CPU over one second in the
   container. This is a short service-only sample, not a full-desktop benchmark.
-- Physical media keys, audible output, high contrast, and custom-theme/font checks remain manual
+- Audible Nightride FM playback was confirmed by the maintainer in the disposable
+  Fedora 43/GNOME 49.1 VM through SPICE on 2026-10-20.
+- Physical media keys, pause/resume, high contrast, and custom-theme/font checks remain manual
   verification tasks. Automated tests do not install into the host session.
 - Native light/dark switching and the screenshot regression at 150% monitor scaling
   are covered by the real Shell workflow, with bounded metadata/control geometry.
