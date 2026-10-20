@@ -63,9 +63,17 @@
 
 ### Changed
 
+- Set the permanent extension ID to `radiolina@drdaniloromano.github.io`, link the
+  source/support repository, and disclose the editor's clipboard write in metadata.
+  Package names follow the metadata ID; installation/update helpers and docs use it.
+  Remove the manually assigned submission counter, which extensions.gnome.org manages.
+- Preserve station storage and service identifiers across the ID transition.
+  Scope indicator GType names to the full module URI, allowing the old and new
+  installation paths to load sequentially in one Shell session. Cover the transition,
+  saved selection/history/preferences, and old-backend shutdown in the Shell E2E test.
 - Name the app **radiolina** in Extensions, panel accessibility labels, MPRIS,
   network user-agent strings, update helpers, and documentation. Retain existing
-  extension/service identifiers and storage paths for compatibility.
+  service identifiers and storage paths for compatibility.
 - Remove the GNOME prefix from the app name; propose `radiolina-ext` for the
   repository. Record the existing broadcaster's use of radiolina for naming review.
 - Describe popup, inline actions, and panel spacing through native GNOME behavior;

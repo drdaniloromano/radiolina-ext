@@ -5,7 +5,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {ExtensionState} from 'resource:///org/gnome/shell/misc/extensionUtils.js';
 
-const UUID = 'gnome-radio@local';
+const UUID = 'radiolina@drdaniloromano.github.io';
 const BUS = 'org.mpris.MediaPlayer2.GnomeRadio';
 async function stopService() {
     await new Promise((resolve, reject) => {

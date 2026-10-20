@@ -12,7 +12,8 @@ import unittest
 
 from service import BUS, APP, IFACE, ServiceE2E, Streams, Gio, GLib, pump
 
-UUID = 'gnome-radio@local'
+ROOT = Path(__file__).resolve().parents[2]
+UUID = json.loads((ROOT / 'extension/metadata.json').read_text())['uuid']
 INDICATOR = f"Main.panel.statusArea['{UUID}']"
 PEERS = ['radio-peer-one@test', 'radio-peer-two@test']
 GROUP_WARNING = 'Grouping may be incompatible with some extensions or panel customizations. Disable this option if icons, menus, or clicks behave unexpectedly.'
@@ -290,6 +291,35 @@ class ShellE2E(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         installed = Path(os.environ['XDG_DATA_HOME']) / 'gnome-shell/extensions' / UUID
         shutil.copytree(root / 'build' / UUID, installed)
+        # Exercise a previous development identity in the same Shell process.
+        # Disabled modules stay imported, so both paths must have distinct GTypes.
+        old_uuid = 'gnome-radio@local'
+        old_indicator = f"Main.panel.statusArea['{old_uuid}']"
+        previous = installed.parent / old_uuid
+        shutil.copytree(installed, previous)
+        old_metadata = json.loads((previous / 'metadata.json').read_text())
+        old_metadata['uuid'] = old_uuid
+        (previous / 'metadata.json').write_text(json.dumps(old_metadata))
+        load_previous = (
+            f"await Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject("
+            f"'{old_uuid}', Gio.File.new_for_path({json.dumps(str(previous))}), 2)); "
+            f"Main.extensionManager.enableExtension('{old_uuid}')"
+        )
+        evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(load_previous)}); true')
+        wait(lambda: evaluate(f'Boolean({old_indicator}?._proxy?.g_name_owner)'), 'development identity ready')
+        saved_id = call(BUS, APP, IFACE, 'AddStation', GLib.Variant('(ss)',
+            ('Migration station', ServiceE2E.url + '/icy')))[0]
+        call(BUS, APP, IFACE, 'SetRecentLimit', GLib.Variant('(u)', (7,)))
+        call(BUS, APP, IFACE, 'PlayPause')
+        wait(lambda: evaluate(f"{old_indicator}._state.status === 'Playing'"), 'development station plays')
+        old_pid = int(evaluate(f'{old_indicator}._extension._process.get_identifier()'))
+        evaluate(f"Main.extensionManager.disableExtension('{old_uuid}'); true")
+        wait(lambda: evaluate(f'!{old_indicator}'), 'development indicator disabled')
+        wait(lambda: not call('org.freedesktop.DBus', '/org/freedesktop/DBus',
+            'org.freedesktop.DBus', 'NameHasOwner', GLib.Variant('(s)', (BUS,)))[0], 'development service stopped')
+        wait(lambda: not Path(f'/proc/{old_pid}').exists(), 'development backend process exited')
+        saved_file = Path(os.environ['XDG_CONFIG_HOME']) / 'gnome-radio/stations.json'
+        saved_bytes = saved_file.read_bytes()
         # An identifiable earlier applet stylesheet still sets the old form-wide
         # width. Reserve damaged duplicate registries for the later lifecycle case.
         legacy_css = '.radio-form StEntry { width: 276px; } .radio-station { font-weight: bold; }'
@@ -331,15 +361,28 @@ class ShellE2E(unittest.TestCase):
             const width = entry.get_preferred_width(-1)[1]; parent.destroy(); return width;})()''')
         self.assertGreaterEqual(legacy_width, 276, 'Legacy stylesheet must be active before testing upgrade repair')
         command = (
-            "if (!Main.extensionManager.lookup('gnome-radio@local')) await "
+            f"if (!Main.extensionManager.lookup('{UUID}')) await "
             "Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject("
-            "'gnome-radio@local', Gio.File.new_for_path(GLib.get_user_data_dir() + "
-            "'/gnome-shell/extensions/gnome-radio@local'), 2)); "
-            "Main.extensionManager.enableExtension('gnome-radio@local')"
+            f"'{UUID}', Gio.File.new_for_path(GLib.get_user_data_dir() + "
+            f"'/gnome-shell/extensions/{UUID}'), 2)); "
+            f"Main.extensionManager.enableExtension('{UUID}')"
         )
         # Run the exact documented command through the real Looking Glass evaluator.
         evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
         wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner)'), 'extension and service ready')
+        wait(lambda: evaluate(f'{INDICATOR}._state.selected === {json.dumps(saved_id)} && '
+                             f'{INDICATOR}._state.recentLimit === 7'), 'saved selection and settings survive new identity')
+        self.assertEqual(evaluate(f'{INDICATOR}._state.stations'),
+                         [{'id': saved_id, 'name': 'Migration station', 'url': ServiceE2E.url + '/icy'}])
+        self.assertEqual(evaluate(f'{INDICATOR}._state.recent'), [saved_id])
+        self.assertEqual(saved_file.read_bytes(), saved_bytes, 'Loading the new ID must not rewrite saved data')
+        self.assertFalse(evaluate(f'Boolean({old_indicator})'))
+        self.assertFalse(evaluate(f"new Gio.Settings({{schema_id: 'org.gnome.shell'}}).get_strv('enabled-extensions').includes('{old_uuid}')"))
+        # Restore an empty/default profile for the existing station/UI workflow.
+        call(BUS, APP, IFACE, 'RemoveStation', GLib.Variant('(s)', (saved_id,)))
+        call(BUS, APP, IFACE, 'SetRecentLimit', GLib.Variant('(u)', (3,)))
+        wait(lambda: evaluate(f'{INDICATOR}._state.stations.length === 0 && '
+                             f'{INDICATOR}._state.recentLimit === 3'), 'migration fixture cleared')
         assert_cached_theme()
         self.assertEqual(evaluate(f"Main.extensionManager.lookup('{UUID}').metadata.name"), 'radiolina')
         wait(lambda: evaluate(f"{INDICATOR}.accessible_name.startsWith('radiolina: ')"), 'radiolina panel identity')

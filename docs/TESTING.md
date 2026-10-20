@@ -9,12 +9,19 @@ test dependencies; the host source mount is read-only.
 
 The packaging E2E check builds the real ZIP in a temporary checkout, verifies that
 `LICENSE` and the packaged runtime match source, checks MIT identifiers on generated
-wrappers, and rejects unexpected development/private files. It needs only Python's
-standard library; run it alone with `python3 tests/e2e/package.py`.
+wrappers, verifies the permanent UUID, support URL, clipboard disclosure, and
+source metadata in the archive, and rejects unexpected development/private files.
+It needs only Python's standard library; run it alone with `python3 tests/e2e/package.py`.
 
 Name checks require **radiolina** in package metadata, the real service's MPRIS
-identity, and the panel's accessible name and Quit label. Existing station storage
-and extension/service identifiers continue through rename and restart checks.
+identity, and the panel's accessible name and Quit label. The Shell workflow first
+loads a development-ID fixture, saves/plays a local station, changes a preference,
+and disables it. It waits for the old backend to exit, then loads
+`radiolina@drdaniloromano.github.io` in the same session. Saved station identity,
+selection, recent history, and preferences must survive without rewriting the
+configuration. Only the new indicator is present; the old ID remains disabled.
+This also exercises separate GType identities for cached modules at different
+installation paths. Service identifiers and storage paths remain compatible.
 
 Nine critical unit cases cover URL validation, bounded metadata sanitization,
 deduplication, saved-state validation, and private persistence/corruption safety.
@@ -245,7 +252,7 @@ The minimal test desktop also logs missing calendar/accessibility services.
    and stations remain, and Play restarts the stream. Check editing after Stop and
    repeated Stop/Play clicks. Click the infobox **Quit** power icon; confirm the
    indicator and service disappear. Re-enable radiolina in Extensions or with
-   `gnome-extensions enable gnome-radio@local`; saved stations/preferences must
+   `gnome-extensions enable radiolina@drdaniloromano.github.io`; saved stations/preferences must
    survive. Quit must also work when the service is unavailable. Verify normal
    extension disable still stops playback and removes the indicator.
 8. Play four or more saved stations; verify only three Recent rows appear by default,

@@ -11,9 +11,13 @@ Set its visible count from **1–10** in Settings; the default is **3**.
 The full saved list starts collapsed; use the arrow beside **Stations** to expand it. The toolbar
 also has Search, **+**, and Settings buttons. Media controls are exported through MPRIS.
 
-This preview displays as **radiolina**. Installation commands still use the
-extension identifier `gnome-radio@local`; existing `gnome-radio` configuration
-and cache paths preserve saved stations and preferences across the rename.
+The permanent extension identifier is `radiolina@drdaniloromano.github.io`.
+Existing `gnome-radio` configuration and cache paths preserve saved stations and
+preferences when switching from the development installation.
+
+Source: [radiolina-ext](https://github.com/drdaniloromano/radiolina-ext).
+Report problems through [GitHub Issues](https://github.com/drdaniloromano/radiolina-ext/issues),
+including your GNOME Shell version and steps to reproduce the problem.
 
 The panel icon shows **signal marks while playing** and a **plain radio while
 paused or inactive**. Both symbols inherit the theme's foreground color. Connecting,
@@ -62,7 +66,7 @@ open. Dismiss it with Escape, a click outside, or another click on the indicator
 The power icon at the right of the infobox is **Quit**. It stops playback and removes
 radiolina from the panel, preserving saved stations and preferences. There is no bottom
 Quit row. To reopen radiolina, run
-`gnome-extensions enable gnome-radio@local` or enable radiolina in Extensions.
+`gnome-extensions enable radiolina@drdaniloromano.github.io` or enable radiolina in Extensions.
 There is no additional GUI framework or clipboard dependency. GNOME's notification
 center keeps its native media card with title, artist, and play/pause controls.
 It updates in place without song-change popup banners or notification sounds.
@@ -81,7 +85,7 @@ Development packages are installed **inside the Fedora 43 image only**. Tests ru
 with external networking disabled, a read-only source mount, temporary XDG paths,
 a private D-Bus session, a local generated MP3/ICY server, and a silent audio sink.
 No Python/npm packages or GNOME extensions are installed on the host. The package
-is written to `build/gnome-radio@local.zip`.
+is written to `build/radiolina@drdaniloromano.github.io.zip`.
 
 If the required tools are already present, `make build` and `make test` work
 locally without installing anything. Runtime needs GJS 1.86, GLib/Gio (including
@@ -109,21 +113,36 @@ process/settings isolation, not a full VM or security sandbox.
 
 Only when ready to install into your own GNOME 49 session:
 
+If you previously installed the development ID, disable it first:
+
 ```sh
-gnome-extensions install --force build/gnome-radio@local.zip
-# Log out and back in if this is a new extension, then:
-gnome-extensions enable gnome-radio@local
+gnome-extensions disable gnome-radio@local
 ```
+
+Wait for its indicator to disappear and playback to stop, then install the new ID:
+
+```sh
+gnome-extensions install --force build/radiolina@drdaniloromano.github.io.zip
+# Log out and back in if this is a new extension, then:
+gnome-extensions enable radiolina@drdaniloromano.github.io
+```
+
+Both IDs share `~/.config/gnome-radio/stations.json`, including saved stations,
+selection, recent history, and preferences. Keep the old ID disabled; do not run
+both installations together. After verifying the new installation, you may remove
+the old extension with `gnome-extensions uninstall gnome-radio@local`. Keep the
+configuration directory to retain your data. The isolated Shell test covers this
+ID transition without logging out.
 
 ### First install without logging out (GNOME 49)
 
-If the files are installed but `gnome-extensions info gnome-radio@local` reports
+If the files are installed but `gnome-extensions info radiolina@drdaniloromano.github.io` reports
 that the extension does not exist, load it in the current session using GNOME's
 Looking Glass console. Press **Alt+F2**, enter **lg**, and press Enter. Paste this
 single line in the evaluator and press Enter:
 
 ```js
-if (!Main.extensionManager.lookup('gnome-radio@local')) await Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject('gnome-radio@local', Gio.File.new_for_path(GLib.get_user_data_dir() + '/gnome-shell/extensions/gnome-radio@local'), 2)); Main.extensionManager.enableExtension('gnome-radio@local')
+if (!Main.extensionManager.lookup('radiolina@drdaniloromano.github.io')) await Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject('radiolina@drdaniloromano.github.io', Gio.File.new_for_path(GLib.get_user_data_dir() + '/gnome-shell/extensions/radiolina@drdaniloromano.github.io'), 2)); Main.extensionManager.enableExtension('radiolina@drdaniloromano.github.io')
 ```
 
 Press Esc to close Looking Glass. The indicator should appear, and its enabled

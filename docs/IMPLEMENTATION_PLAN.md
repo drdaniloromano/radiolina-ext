@@ -104,10 +104,16 @@ Keep playback independent of Shell so future desktop adapters can reuse it.
 
 ## Subsequent completed work
 
+- Set the permanent extension ID to `radiolina@drdaniloromano.github.io`, add
+  repository/support links in metadata/docs, and declare the Copy URL clipboard
+  write. Build package paths from metadata; use the same ID in update helpers.
+  Keep existing storage/service identifiers. Verify saved data and old-service
+  shutdown through a same-session development-ID transition in isolated Shell.
+  Include the full module URI in GType identity to distinguish installation paths.
 - Set the public-facing name to **radiolina**, including panel accessibility,
   media identity, user-agent strings, update helpers, and docs. Preserve existing
-  extension/service identifiers and storage paths across the rename.
-  Propose `radiolina-ext` as the repository name and review name availability
+  service identifiers and storage paths across the rename.
+  Use `radiolina-ext` as the repository name and review name availability
   separately before publication.
 - Review source/artwork provenance and describe UI behavior through native GNOME
   conventions. Record findings and unresolved origins in `docs/PROVENANCE.md`;

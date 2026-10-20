@@ -9,7 +9,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / 'build'
-UUID = 'gnome-radio@local'
+metadata = json.loads((ROOT / 'extension/metadata.json').read_text())
+UUID = metadata['uuid']
 destination = BUILD / UUID
 if destination.exists():
     shutil.rmtree(destination)
@@ -28,7 +29,6 @@ runtime = f'radio-{runtime_hash}.js'
 (destination / runtime).write_bytes(source)
 (destination / 'extension.js').write_text('// SPDX-License-Identifier: MIT\n'
                                          f"export {{default}} from './{runtime}';\n")
-metadata = json.loads((destination / 'metadata.json').read_text())
 metadata['radio-runtime'] = runtime
 metadata['radio-stylesheet'] = stylesheet
 (destination / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')

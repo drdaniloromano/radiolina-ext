@@ -14,7 +14,7 @@ const BUS = 'org.mpris.MediaPlayer2.GnomeRadio';
 const PATH = '/org/gnome/Radio';
 
 const RadioIndicator = GObject.registerClass({
-    GTypeName: `GnomeRadioIndicator_${Gio.File.new_for_uri(import.meta.url).get_basename().replace(/\W/g, '_')}`,
+    GTypeName: `RadiolinaIndicator_${GLib.compute_checksum_for_string(GLib.ChecksumType.SHA256, import.meta.url, -1).slice(0, 16)}`,
 },
 class RadioIndicator extends PanelMenu.Button {
     _init(extension) {

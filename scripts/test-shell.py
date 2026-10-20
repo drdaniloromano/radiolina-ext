@@ -12,10 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='gnome-radio-shell-') as directory:
     base = Path(directory)
     data = base / 'data'
-    extension = data / 'gnome-shell/extensions/gnome-radio@local'
-    extension.parent.mkdir(parents=True)
+    extensions = data / 'gnome-shell/extensions'
+    extensions.mkdir(parents=True)
     # Install the applet after Shell starts, to test first-install live loading.
-    bootstrap = extension.parent / 'radio-test@local'
+    bootstrap = extensions / 'radio-test@local'
     bootstrap.mkdir()
     (bootstrap / 'metadata.json').write_text(json.dumps({
         'uuid': 'radio-test@local', 'name': 'Private test bootstrap',

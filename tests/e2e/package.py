@@ -32,11 +32,16 @@ class PackageE2E(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             metadata = json.loads((checkout / 'extension/metadata.json').read_text())
             self.assertEqual(metadata['name'], 'radiolina')
+            self.assertEqual(metadata['uuid'], 'radiolina@drdaniloromano.github.io')
+            self.assertEqual(metadata['url'], 'https://github.com/drdaniloromano/radiolina-ext')
+            self.assertIn('writes a station URL to the clipboard', metadata['description'])
+            self.assertNotIn('version', metadata)
             with zipfile.ZipFile(checkout / 'build' / f'{metadata["uuid"]}.zip') as archive:
                 self.assertIsNone(archive.testzip())
                 self.assertEqual(archive.read('LICENSE'), (ROOT / 'LICENSE').read_bytes())
                 self.assertTrue(archive.read('LICENSE').startswith(b'MIT License\n'))
                 packaged = json.loads(archive.read('metadata.json'))
+                self.assertEqual({key: packaged[key] for key in metadata}, metadata)
                 sources = {str(path.relative_to(checkout / 'extension')): path
                            for path in (checkout / 'extension').rglob('*') if path.is_file()}
                 sources.update({'src/' + str(path.relative_to(checkout / 'src')): path
