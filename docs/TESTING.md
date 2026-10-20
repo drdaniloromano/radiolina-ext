@@ -86,8 +86,10 @@ keyboard focus reveals and retains the actions through child focus. Row Play is
 checked while already playing, while paused, and when switching to another station.
 Leaving a hovered or pointer-selected row must hide Play/Edit/Remove in both lists,
 even if native menu handling retained focus on that row. Keyboard-only focus still
-reveals its actions. Light/dark checks also align the Play/Pause button's left edge
-with the Recent heading below it.
+reveals its actions. Light/dark checks align the Play/Pause circle's outer left
+edge with section headings and visible unmarked station-row text; the saved list
+and Recent rows are checked too. Coordinates are saved in
+`workspace/play-circle-alignment.json`.
 Escape closes the popup and resets search. Hover screenshot: `workspace/hover.png`.
 Layout checks
 verify the input aligns with the Stations heading and native search

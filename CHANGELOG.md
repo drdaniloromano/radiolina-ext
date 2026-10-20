@@ -163,6 +163,8 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Fixed
 
+- Use a single infobox inset to align the Play/Pause circle's outer edge with
+  section headings and station-row text, preserving native button padding/shape.
 - Let the live updater finish disabling radiolina's former development identity
   before activating the new ID, including when the new ZIP is installed but not
   yet loaded. Cover that transition with preserved station data and one indicator.

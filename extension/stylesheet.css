@@ -2,7 +2,7 @@
 /* Native theme colors; customize layout, compact sizing, and metadata hierarchy. */
 #panel .panel-button.gnome-radio-indicator .system-status-icon { padding: 0; margin: 0; }
 .gnome-radio-popup { width: 380px; }
-.gnome-radio-now-playing { margin: 0 6px; padding: 4px 8px 1px 6px; spacing: 8px; }
+.gnome-radio-now-playing { margin: 0; padding: 4px 14px 1px 12px; spacing: 8px; }
 .gnome-radio-info-frame { height: 3em; min-width: 0; }
 .gnome-radio-details { spacing: 2px; }
 .gnome-radio-info-content { spacing: 6px; }

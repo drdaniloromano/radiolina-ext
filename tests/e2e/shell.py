@@ -245,6 +245,20 @@ class ShellE2E(unittest.TestCase):
                             abs(geometry['boxWidth'] - geometry['available']) < 1,
                             f'Form must fill available width and contain inputs and Copy: {geometry}')
 
+        def assert_circle_alignment():
+            positions = evaluate(f'''(() => {{const i = {INDICATOR};
+                const left = actor => actor.get_transformed_position()[0];
+                const headings = [i._recentHeading, i._stationsHeading];
+                const rows = [...i._recentButtons.values(), ...i._stationButtons.values()]
+                    .filter(row => !row.marker && row.label.mapped).map(row => row.label);
+                return {{variant: Main.getStyleVariant(), circle: left(i._play),
+                    references: [...headings, ...rows].map(actor => ({{text: actor.text, left: left(actor)}}))}};
+            }})()''')
+            for reference in positions['references']:
+                self.assertAlmostEqual(positions['circle'], reference['left'], delta=1,
+                                       msg=f'Play/Pause circle must align with headings and station text: {positions}')
+            Path('workspace/play-circle-alignment.json').write_text(json.dumps(positions, indent=2) + '\n')
+
         def assert_theme_variants(prefix):
             original_scheme = evaluate("new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('color-scheme')")
             colors = []
@@ -285,9 +299,7 @@ class ShellE2E(unittest.TestCase):
                 }})()'''), 'Infobox must show a bold name and smaller, subdued theme-colored track text')
                 self.assertEqual(evaluate(f'{INDICATOR}._details.height'), info_height)
                 self.assertEqual(evaluate(f'{INDICATOR}.menu.actor.width'), popup_width)
-                self.assertAlmostEqual(evaluate(f'{INDICATOR}._play.get_transformed_position()[0]'),
-                                       evaluate(f'{INDICATOR}._recentHeading.get_transformed_position()[0]'),
-                                       delta=1, msg='Play/Pause must align with the section text below')
+                assert_circle_alignment()
                 success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
                     'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
                         (False, False, str(Path(f'workspace/{prefix}-{variant}.png').resolve()))))
@@ -606,8 +618,11 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(evaluate(f'{INDICATOR}._name.text'), 'Add your first station')
         self.assertFalse(evaluate(f'{INDICATOR}._stationContainer.visible'))
         self.assertEqual(evaluate(f'{INDICATOR}._recentButtons.size'), 0)
+        pointer(0, 700)
+        evaluate(f'{json.dumps(PEERS)}.forEach(role => Main.panel.statusArea[role]?.menu.close()); true')
         evaluate(f'{INDICATOR}.menu.open(); true')
-        time.sleep(0.2)
+        wait(lambda: evaluate(f'{INDICATOR}._play.mapped && {INDICATOR}._quitButton.mapped'),
+             'radio popup mapped after peer panel checks')
         popup_width = evaluate(f'{INDICATOR}.menu.actor.width')
         self.assertTrue(evaluate(f'''(() => {{const i = {INDICATOR};
             const children = i._details.get_children();
@@ -864,6 +879,7 @@ class ShellE2E(unittest.TestCase):
         pointer(0, 700)
         self.assertEqual(evaluate(f'{row}.edit.opacity'), 0)
         self.assertFalse(evaluate(f'{row}.play.reactive || {row}.remove.reactive || {row}.edit.can_focus'))
+        assert_circle_alignment()
         before_width = evaluate(f'{row}.label.width')
         x, y = evaluate(f'''(() => {{const actor = {row}.select;
             const [x, y] = actor.get_transformed_position(); return [x + 20, y + actor.get_transformed_size()[1] / 2];}})()''')
@@ -898,6 +914,7 @@ class ShellE2E(unittest.TestCase):
             'org.gnome.Shell.Screenshot', 'Screenshot', GLib.Variant('(bbs)',
                 (False, False, str(Path('workspace/row-actions-hidden.png').resolve()))))
         self.assertTrue(success)
+        assert_circle_alignment()
         evaluate(f'{row}.select.grab_key_focus(); true')
         self.assertTrue(evaluate(f'{row}.play.can_focus && {row}.edit.opacity === 255'))
         evaluate(f'{row}.edit.grab_key_focus(); true')
