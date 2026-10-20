@@ -36,6 +36,9 @@ operation disabled.
 
 `src/core/` holds critical logic; `src/service/` owns playback, D-Bus/MPRIS, and storage; `extension/` owns the panel/popup and desktop integration. `tests/` contains unit/E2E tests. GNOME 49 is the current target; additional desktop adapters are future work.
 
+See [architecture and build configuration](docs/DEVELOPMENT.md) for lasting design
+decisions and [testing](docs/TESTING.md) for coverage and isolation requirements.
+
 ## Contained Development & Commands
 
 Keep dependencies/artifacts contained; do not install development packages globally. Prefer an isolated GNOME VM for visual/audio checks.
@@ -60,7 +63,11 @@ Cover edit persistence, invalid/duplicate URLs, playlist parsing/bounds, and can
 
 ## Documentation, Commits & Pull Requests
 
-Keep `README.md`, `CHANGELOG.md`, and plan current with behavior/tooling changes. Use focused imperative commits, e.g. `Add station menu`. PRs describe purpose, verification, limitations, linked issues, and UI screenshots.
+Keep the [README](README.md), [user guide](docs/USER_GUIDE.md),
+[development guide](docs/DEVELOPMENT.md), [testing guide](docs/TESTING.md), and
+[changelog](CHANGELOG.md) current with behavior/tooling changes. Use focused
+imperative commits, e.g. `Add station menu`. PRs describe purpose, verification,
+limitations, linked issues, and UI screenshots.
 
 Every finalized release must have a matching Git tag `v{release}`, for example
 `v0.1.0`, pointing to its reviewed release commit. Create the tag when finalizing

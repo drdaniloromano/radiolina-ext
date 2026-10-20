@@ -78,7 +78,7 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 - MPRIS play/pause/stop controls and metadata for desktop media integration.
 - Container build/package/test commands, deterministic service E2E tests, critical
   unit tests, and disposable headless Shell E2E tooling.
-- Contributor guide and implementation plan.
+- Contributor guide and developer documentation.
 - Documented and tested GNOME 49 first-install loading through Looking Glass
   without logging out or restarting the current Shell session.
 
@@ -93,6 +93,9 @@ Planned first release: **0.1.0**. Final verification and publication are pending
 
 ### Changed
 
+- Make the README a concise project landing page, consolidate user operations and
+  architecture/build guidance into two focused guides, shorten the testing guide,
+  and retire the public implementation plan while preserving design decisions.
 - Require a matching `v{release}` Git tag for each finalized release; planned
   versions remain Unreleased until final checks and release completion.
 - Confirm GNOME's default user-session lifecycle as the intended policy: lock
