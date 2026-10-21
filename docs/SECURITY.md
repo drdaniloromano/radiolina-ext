@@ -74,8 +74,12 @@ Review one finding at a time; agents must follow this procedure too:
    loaded library alone does not establish that the vulnerable operation runs;
    absence in one trace does not prove that it cannot run.
 4. **Record a bounded decision.** Save a dated review under ignored
-   `workspace/`, including reviewer, report reference, identities above, source
-   links, commands/results, reasoning, limitations, classification and next action.
+   `workspace/security-reviews/`, one Markdown report per advisory review.
+   Start filenames with the UTC review time for chronological sorting:
+   `YYYY-MM-DDTHH-MM-SSZ--desktop-or-container--ADVISORY-ID.md`. Include reviewer,
+   report reference, identities above, source links, commands/results, reasoning,
+   limitations, classification and next action. Mark partial reviews explicitly;
+   keep later reassessments as new dated reports referencing the earlier decision.
    Use **affected**, **vendor-fixed**, **justified not-applicable**, or **unknown**.
    Justified not-applicable requires evidence that the vulnerable operation's
    prerequisites cannot occur in the reviewed paths. Missing evidence stays unknown.
@@ -89,6 +93,39 @@ Machine-specific findings belong in the private review, not `AGENTS.md` or a
 public claim that all installations are safe. Manual decisions do not rewrite the
 raw report or turn `release_approved` into an automatic approval. Do not run
 exploit samples or resource-exhaustion probes on the maintainer's desktop.
+
+## Review conclusions and resolution guidance
+
+These **2026-10-21 Unreleased** notes describe the reviewed application paths,
+not the security status of every installation. Detailed environment evidence and
+unfinished reviews remain private. The dependency review is still open.
+
+- **AV1 encoder: justified not-applicable to current playback paths.**
+  [CVE-2026-56208](https://bugzilla.redhat.com/show_bug.cgi?id=2544505) requires
+  AV1 video encoding with look-ahead processing. The explicit audio pipelines
+  neither construct nor configure that encoder. The
+  [upstream fix](https://aomedia.googlesource.com/aom/%2B/243f8ae84b%5E!/)
+  changes encoder buffer handling. This conclusion does not mark an installed
+  `libaom` package fixed or cover other applications using it. Update affected
+  environments through their vendor; reassess if playback/encoding paths change.
+- **libsoup HTTP/2: potentially applicable; resolution remains unverified.**
+  [CVE-2026-15712](https://bugzilla.redhat.com/show_bug.cgi?id=2500132) concerns
+  malformed GOAWAY frames in client HTTP/2 processing. `HttpSession` uses
+  `Soup.Session`; protocol parsing precedes the app's media-byte inspection, so
+  URL/format validation cannot establish protection from this defect. Fedora
+  identifies `libsoup3-3.6.6-5.fc43` as fixed; other distributions require their
+  own vendor/backport confirmation. Install a vendor-fixed package through the
+  distribution's supported update process, then restart the playback service and
+  rerun inventory plus relevant transport tests in isolation. Do not mark the
+  finding resolved until the installed build and fresh review confirm it;
+  deterministic tests alone do not establish exploit resistance. Other CVEs in
+  the same advisory still need individual applicability checks.
+
+Third-party codec packages and repositories without advisory coverage remain a
+separate open item. Do not equate missing vendor results with absence of flaws,
+remove those repositories automatically, or substitute Fedora patch status for
+another vendor's package. Changes to the host or development image require a
+separate agreed update step.
 
 ## Future distribution automation
 

@@ -6,7 +6,8 @@
 
 - Document a repeatable agent/maintainer advisory-triage procedure with snapshot
   identity, primary-source and reachability evidence, private decision records,
-  explicit uncertainty and reassessment after source or environment changes.
+  sortable UTC report filenames, explicit uncertainty and reassessment after
+  source or environment changes.
 - Add opt-in Fedora/RPM dependency inventory and DNF5 security-advisory reports,
   with private temporary caches, noninteractive queries, explicit coverage gaps
   and source/environment fingerprints. Document manual upstream/backport review
@@ -37,6 +38,12 @@
 
 ### Verification
 
+- Record scoped dependency-review conclusions and vendor resolution guidance in
+  [security review notes](docs/SECURITY.md#review-conclusions-and-resolution-guidance):
+  the AV1 encoder issue is outside the current playback paths; libsoup HTTP/2
+  handling remains potentially applicable pending installed-fix verification.
+  Third-party coverage and other advisory checks remain open. Keep dated
+  environment reports private; this records no package update or release approval.
 - Cover private report permissions, recursive package inventory, Fedora's keyed-map
   and array advisory schemas, findings, partial failures, missing/undownloaded feeds,
   unsupported/expired distributions and disabled update coverage with offline tools.
