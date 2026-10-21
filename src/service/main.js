@@ -38,38 +38,12 @@ let rootExport;
 let volume = 1;
 let loadGeneration = 0;
 let loadCancellable = null;
-let favicons = {};
-let faviconSignature = '';
-let faviconCancellable = null;
-function refreshFavicons() {
-    const signature = JSON.stringify([config.fetchFavicons, config.stations.map(s => [s.id, s.url])]);
-    if (signature === faviconSignature) return;
-    faviconSignature = signature;
-    faviconCancellable?.cancel();
-    const cancellable = new Gio.Cancellable();
-    faviconCancellable = cancellable;
-    favicons = {};
-    if (!config.fetchFavicons) return;
-    const stations = [...config.stations];
-    (async () => {
-        const {faviconUrl, fetchFavicon} = await import('./favicon.js');
-        const origins = new Map();
-        for (const saved of stations) {
-            if (cancellable.is_cancelled()) return;
-            const url = faviconUrl(saved.url);
-            if (!origins.has(url)) origins.set(url, await fetchFavicon(url, cancellable));
-            if (cancellable.is_cancelled()) return;
-            const icon = origins.get(url);
-            if (icon) { favicons[saved.id] = icon; publish(); }
-        }
-    })().catch(() => { if (!cancellable.is_cancelled()) console.warn('Favicon unavailable.'); });
-}
 function station() {
     return config.stations.find(item => item.id === config.selected);
 }
 function publish() {
     appExport?.emit_property_changed('State', new GLib.Variant('s', JSON.stringify({
-        ...config, favicons, status, title: metadata.title, artist: metadata.artist, error: errorText,
+        ...config, status, title: metadata.title, artist: metadata.artist, error: errorText,
     })));
     playerExport?.emit_property_changed('PlaybackStatus', new GLib.Variant('s', mpris.PlaybackStatus));
     playerExport?.emit_property_changed('Metadata', new GLib.Variant('a{sv}', mpris.Metadata));
@@ -105,7 +79,6 @@ function changeConfig(next) {
     store.save(next); // Save before changing in-memory state.
     config = next;
     errorText = '';
-    refreshFavicons();
     publish();
 }
 function play() {
@@ -157,7 +130,7 @@ function pause() {
 }
 const app = {
     get State() {
-        return JSON.stringify({...config, favicons, status, title: metadata.title, artist: metadata.artist, error: errorText});
+        return JSON.stringify({...config, status, title: metadata.title, artist: metadata.artist, error: errorText});
     },
     AddStation(name, url) {
         const normalized = validateUrl(url);
@@ -221,8 +194,9 @@ const app = {
     SetNotifications(enabled) {
         changeConfig({...config, notifications: enabled});
     },
-    SetFetchFavicons(enabled) {
-        changeConfig({...config, fetchFavicons: enabled});
+    SetFetchFavicons(_enabled) {
+        // Compatibility for older clients; retired icons cannot be enabled.
+        changeConfig({...config, fetchFavicons: false});
     },
     SetShowStopButton(enabled) {
         changeConfig({...config, showStopButton: enabled});
@@ -312,7 +286,6 @@ const owner = Gio.bus_own_name(Gio.BusType.SESSION, BUS, Gio.BusNameOwnerFlags.D
             Raise() { appExport.emit_signal('Raise', null); }, Quit: app.Quit,
         });
         rootExport.export(connection, MPRIS_PATH);
-        refreshFavicons();
     }, null, () => loop.quit());
 const signals = [2, 15].map(signal => GLibUnix.signal_add_full(GLib.PRIORITY_DEFAULT, signal, () => {
     loop.quit();
@@ -327,7 +300,6 @@ try {
     signals.forEach(id => GLib.source_remove(id));
     loadGeneration++;
     loadCancellable?.cancel();
-    faviconCancellable?.cancel();
     if (parentWatch !== null)
         Gio.bus_unwatch_name(parentWatch);
     player.stop();

@@ -425,7 +425,7 @@ class ShellE2E(unittest.TestCase):
                     assert_fit('i._nameEntry, i._urlEntry, i._save, i._cancel')
                     screenshot('editor', variant)
                     click(f'{INDICATOR}._settingsButton')
-                    assert_fit('i._showStopToggle, i._faviconToggle, i._groupToggle, i._groupWarning, '
+                    assert_fit('i._showStopToggle, i._groupToggle, i._groupWarning, '
                                'i._recentLess, i._recentMore, i._recentCount')
                     screenshot('settings', variant)
             finally:
@@ -687,7 +687,7 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(evaluate(f'{INDICATOR}._settingsButton.child.icon_name'), 'preferences-system-symbolic')
         evaluate(f"{INDICATOR}._settingsButton.emit('clicked', 1); true")
         self.assertTrue(evaluate(f'{INDICATOR}._settingsSection.actor.visible'))
-        self.assertFalse(evaluate(f'{INDICATOR}._faviconToggle.state'))
+        self.assertFalse(evaluate(f'Boolean({INDICATOR}._faviconToggle || {INDICATOR}._stationIcon)'))
         self.assertFalse(evaluate(f'{INDICATOR}._showStopToggle.state'))
         self.assertFalse(evaluate(f'{INDICATOR}._groupToggle.state'))
         self.assertEqual(evaluate(f'{INDICATOR}._groupWarning.text'), GROUP_WARNING)
@@ -911,14 +911,13 @@ class ShellE2E(unittest.TestCase):
         click(f'{INDICATOR}._recentButtons.get({json.dumps(identifier)}).label')
         evaluate(f"{INDICATOR}._expandButton.emit('clicked', 1); true")
         self.assertTrue(evaluate(f'{INDICATOR}._stationContainer.visible'))
-        evaluate(f"{INDICATOR}._settingsButton.emit('clicked', 1); {INDICATOR}._faviconToggle.toggle(); true")
-        wait(lambda: evaluate(f'{INDICATOR}._stationIcon.visible && {INDICATOR}._state.fetchFavicons'), 'favicon setting and cached station icon')
-        self.assertTrue(evaluate(f'{INDICATOR}._stationButtons.get({json.dumps(identifier)}).select.get_children().some(child => child.gicon?.get_file?.())'))
+        evaluate(f"{INDICATOR}._settingsButton.emit('clicked', 1); true")
+        self.assertFalse(evaluate(f'Boolean({INDICATOR}._faviconToggle || {INDICATOR}._stationIcon)'))
         time.sleep(0.2)
         success, _filename = call('org.gnome.Shell.Screenshot', '/org/gnome/Shell/Screenshot',
                                   'org.gnome.Shell.Screenshot', 'Screenshot',
                                   GLib.Variant('(bbs)', (False, False, str(Path('workspace/settings.png').resolve()))))
-        self.assertTrue(success, 'Favicon settings screenshot')
+        self.assertTrue(success, 'Native settings without favicon option')
         self.assertFalse(evaluate(f'Boolean({INDICATOR}._playPositionToggle)'))
         call(BUS, APP, IFACE, 'SetPlayButtonOnLeft', GLib.Variant('(b)', (True,)))
         self.assertTrue(evaluate(f'{INDICATOR}._details.get_children().indexOf({INDICATOR}._play) < {INDICATOR}._details.get_children().indexOf({INDICATOR}._stopButton)'))
@@ -929,8 +928,6 @@ class ShellE2E(unittest.TestCase):
                                   'org.gnome.Shell.Screenshot', 'Screenshot',
                                   GLib.Variant('(bbs)', (False, False, str(Path('workspace/play-left.png').resolve()))))
         self.assertTrue(success, 'Fixed transport layout ignores the legacy placement setting')
-        evaluate(f"{INDICATOR}._faviconToggle.toggle(); true")
-        wait(lambda: evaluate(f'!{INDICATOR}._stationIcon.visible && !{INDICATOR}._state.fetchFavicons'), 'favicon setting disabled')
         evaluate(f"{INDICATOR}._settingsButton.emit('clicked', 1); true")
         self.assertEqual(evaluate(f'{INDICATOR}._icon.gicon.get_file().get_basename()'), 'radio-active-symbolic.svg')
         self.assertTrue(evaluate(f"!{INDICATOR}._icon.get_transition('radio-playback') && {INDICATOR}._icon.opacity === 255"))
@@ -1390,6 +1387,67 @@ class ShellE2E(unittest.TestCase):
         evaluate('global._radioPointer.notify_button(GLib.get_monotonic_time(), 1, global._radioClutter.ButtonState.PRESSED); '
                  'global._radioPointer.notify_button(GLib.get_monotonic_time(), 1, global._radioClutter.ButtonState.RELEASED); true')
         wait(lambda: evaluate(f'!{INDICATOR}.menu.isOpen'), 'outside click still dismisses popup')
+
+        # Exercise repeated ownership teardown without forcing Shell garbage collection.
+        lifecycle_samples = []
+        panel_count = None
+        for cycle in range(10):
+            pid = evaluate(f'{INDICATOR}._extension._process.get_identifier()')
+            evaluate(f'''(() => {{
+                global._radioRetired = {INDICATOR};
+                global._radioDestroyed = 0; global._radioMenuDestroyed = 0;
+                global._radioRetired.connect('destroy', () => global._radioDestroyed++);
+                global._radioRetired.menu.actor.connect('destroy', () => global._radioMenuDestroyed++);
+                Main.extensionManager.disableExtension('{UUID}');
+            }})(); true''')
+            wait(lambda: evaluate(f'!{INDICATOR}') and not Path(f'/proc/{pid}').exists(),
+                 'repeated disable reaps service')
+            self.assertTrue(evaluate('global._radioDestroyed === 1 && global._radioMenuDestroyed === 1 && '
+                '!global._radioRetired._alive && global._radioRetired._cancellable.is_cancelled() && '
+                '!global._radioRetired._proxy && !global._radioRetired._quitSource && '
+                '!global._radioRetired._extension._starting && !global._radioRetired._extension._startToken'))
+            self.assertEqual(own_styles(), [])
+            count = evaluate('Main.panel._rightBox.get_children().length')
+            if panel_count is None:
+                panel_count = count
+            self.assertEqual(count, panel_count, 'Disabled indicators must not accumulate panel actors')
+            if cycle % 2:
+                evaluate(f'''(() => {{
+                    // Model an owned previous child still completing shutdown.
+                    global._radioRetired._extension._shutdown = new Promise(resolve =>
+                        {{ global._radioReleaseStartup = resolve; }});
+                    Main.extensionManager.enableExtension('{UUID}');
+                }})(); true''')
+                wait(lambda: evaluate(f'Boolean({INDICATOR}?._extension._starting) && '
+                                      f'!{INDICATOR}._extension._process'), 'backend start waits for owned shutdown')
+                evaluate(f"global._radioCancelled = {INDICATOR}; "
+                         f"Main.extensionManager.disableExtension('{UUID}'); "
+                         'global._radioReleaseStartup(); global._radioReleaseStartup = null; true')
+                wait(lambda: evaluate(f'!{INDICATOR} && !global._radioCancelled._extension._starting && '
+                                      '!global._radioCancelled._extension._process'),
+                     'repeated immediate startup cancellation')
+                self.assertTrue(evaluate('!global._radioCancelled._alive && '
+                    'global._radioCancelled._cancellable.is_cancelled() && '
+                    '!global._radioCancelled._extension._startToken'))
+                self.assertEqual(evaluate('Main.panel._rightBox.get_children().length'), panel_count)
+            lifecycle_samples.append({'cycle': cycle + 1, 'retired_pid': pid,
+                                      'disabled_panel_children': count})
+            evaluate(f"global._radioRetired = null; global._radioCancelled = null; "
+                     f"Main.extensionManager.enableExtension('{UUID}'); true")
+            wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner) && '
+                                  f'!{INDICATOR}._extension._starting'), 'repeated enable ready')
+            self.assertEqual(evaluate(f'{INDICATOR}._state.status'), 'Stopped', 'Enable must not autoplay')
+        self.assertEqual(shell_oom.read_text(), shell_oom_before)
+        Path('workspace/shell-resource-lifecycle.json').write_text(json.dumps({
+            'cycles': lifecycle_samples, 'cancelled_starts': 5, 'forced_gc': False,
+            'shell_score_unchanged': True}, indent=2) + '\n')
+        print('Resource lifecycle: 10 disable/enable cycles and 5 cancelled starts; '
+              'owned actors/services removed and Shell OOM score unchanged')
+        evaluate(f'{INDICATOR}.menu.open(); true')
+        time.sleep(0.2)
+        click(f'{INDICATOR}._playCircle')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && {INDICATOR}._state.title"),
+             'explicit playback after lifecycle cycles')
         evaluate(f'{INDICATOR}.menu.open(); {INDICATOR}._setStationsExpanded(true); true')
         time.sleep(0.2)
         extra_ids = []

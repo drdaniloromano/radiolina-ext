@@ -56,7 +56,7 @@ export function validateConfig(config) {
     const recentLimit = validateRecentLimit(config.recentLimit === undefined ? DEFAULT_RECENT_LIMIT : config.recentLimit);
     return {version: 1, stations: config.stations.map(({id, name, url}) => ({id, name, url})),
         selected: config.selected, notifications: config.notifications,
-        recent: [...recent], recentLimit, fetchFavicons: config.fetchFavicons ?? false,
+        recent: [...recent], recentLimit, fetchFavicons: false, // Legacy setting is accepted but inactive.
         showStopButton: config.showStopButton ?? false,
         playButtonOnLeft: config.playButtonOnLeft ?? false,
         groupWithAppIndicators: config.groupWithAppIndicators ?? false};

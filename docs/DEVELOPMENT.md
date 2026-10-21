@@ -34,9 +34,9 @@ recording, account system, or podcast subsystem.
 | Location | Responsibility |
 | --- | --- |
 | [extension/](../extension/) | Native popup/indicator, symbolic SVGs, layout CSS, desktop adapter. |
-| [src/core/](../src/core/) | URL/config validation, bounded playlist/image parsing, metadata sanitization and deduplication. |
+| [src/core/](../src/core/) | URL/config validation, bounded playlist parsing, metadata sanitization and deduplication. |
 | [src/core/validation/](../src/core/validation/) | Shared URL/redirect, configuration schema/text, and bounded byte-level audio/container admission policy. |
-| [src/service/](../src/service/) | GStreamer, async playlists/favicons, atomic storage, D-Bus/MPRIS, process-local resource policy. |
+| [src/service/](../src/service/) | GStreamer, async playlists, atomic storage, D-Bus/MPRIS, process-local resource policy. |
 | [radio.xml](../src/service/radio.xml) | App command/state contract; `State` is JSON in a D-Bus string property. |
 | [tests/unit/](../tests/unit/) | Critical validation, metadata, parsing, and storage cases. |
 | [tests/e2e/](../tests/e2e/) | Production service and actual Shell workflows using local fixtures. |
@@ -129,8 +129,7 @@ the ZIP or installed onto the host by the build scripts.
 Python, Make, container engines, fixture encoders, and the OpenSSL command are
 development tools, not installed-extension runtime dependencies. OpenSSL generates
 temporary TLS-test certificates; tests trust their private CA only in a disposable
-service copy and leave system trust unchanged. Optional favicon fetching is off
-by default and uses native Shell image loading; additional codecs are needed only
+service copy and leave system trust unchanged. Additional codecs are needed only
 for the formats you play. Packaging does not verify a destination PC's runtime.
 
 ### Per-format native elements
@@ -256,7 +255,7 @@ See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recove
 | Stations | Up to 200; names up to 80 characters; unique ASCII IDs up to 128 characters and HTTP(S) URLs up to 2,048 characters without credentials/fragments. |
 | Playlists | 256 KiB, three documents, five redirects, 15-second resolution deadline; first usable HTTP(S) entry. Reject circular sources, HLS, and XML declarations/DTDs. |
 | Audio identification | 64 KiB prefix, within the 15-second source-loading deadline; explicit audio container/codec policy, with no second audio GET. ID3/MP4 headers must fit; MP4 must be streamable. |
-| Favicons | Origin `/favicon.ico`, sequential host-deduplicated requests, PNG/ICO only, 256 KiB and bounded dimensions, three redirects, five seconds; cached, cancellable, no refresh polling. |
+| Legacy favicons | Fetching and image loading are removed. Accept the old boolean field and D-Bus setter as inactive compatibility inputs; never read/write the old cache. |
 | Recent | Ten retained unique played stations; 1–10 shown, default three. Lowering the display limit preserves history. |
 
 Configuration schema/defaults live in
@@ -280,6 +279,14 @@ CPU seconds over one second. A separate paused ICY fixture measured 49.0 MiB RSS
 showed native descriptors being reclaimed after idle/diagnostic GC in a disposable
 copy; no production GC timer was added and long-duration leak freedom is not established.
 
+After favicon retirement, an opt-in ten-minute probe completed 101 playback,
+pause, switch, failure and cancellation cycles without forced GC. Sampled RSS
+was 47.4 MiB after warm-up, peaked at 49.1 MiB and ended at 48.9 MiB; descriptors
+ranged from 10 to 16, ending at 12, with 12 threads and no fixture connections.
+The last 30 seconds consumed 0.000 service CPU seconds; Quit reaped the process.
+PSS changed with concurrent shared mappings, so these are bounded observations,
+not proof of leak freedom or incremental Shell-memory budgets.
+
 ## URL privacy and diagnostics
 
 MPRIS omits `xesam:url` entirely, including for public streams: secrets can occur
@@ -291,8 +298,8 @@ the application `State` no longer exports `resolvedUrl`.
 [UserError/publicErrorMessage](../src/core/errors.js) marks code-authored public
 messages and sanitizes/bounds them to 384 characters. Never put URLs, server text,
 user input or a native error's message into `UserError`. Boundary handlers replace
-unexpected/native errors with fixed fallbacks. Playback and optional-icon warnings
-also use fixed messages; codec/HTTP-status/validation guidance remains specific.
+unexpected/native errors with fixed fallbacks. Playback warnings also use fixed
+messages; codec/HTTP-status/validation guidance remains specific.
 No raw-error opt-in logger or polling is introduced. External native debugging is
 outside this policy and its output must be reviewed before sharing.
 

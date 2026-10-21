@@ -4,7 +4,6 @@ import GLib from 'gi://GLib';
 import {cleanText, validateUrl, validateConfig, emptyConfig, MetadataTracker} from '../../src/core/stations.js';
 import {Store} from '../../src/service/store.js';
 import {parsePlaylist, MAX_PLAYLIST_BYTES} from '../../src/core/playlists.js';
-import {validFavicon, MAX_FAVICON_BYTES} from '../../src/core/favicons.js';
 import {validateRedirect} from '../../src/core/validation/urls.js';
 import {inspectMedia, validateIcyInterval, MAX_PROBE_BYTES} from '../../src/core/validation/media.js';
 import {MAX_CONFIG_BYTES, MAX_STATION_ID_LENGTH} from '../../src/core/validation/config.js';
@@ -137,27 +136,7 @@ test('rejects invalid persisted state and duplicate stations', () => {
     rejects(() => validateConfig({...config, recent: ['missing']}));
     rejects(() => validateConfig({...config, recent: ['a', 'a']}));
     rejects(() => validateConfig({...config, fetchFavicons: 'yes'}));
-});
-test('bounds untrusted favicon images and rejects active or oversized formats', () => {
-    assert(!validFavicon(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>')));
-    assert(!validFavicon(new Uint8Array(MAX_FAVICON_BYTES + 1)));
-    const png = new Uint8Array(24);
-    png.set([137, 80, 78, 71, 13, 10, 26, 10]);
-    const view = new DataView(png.buffer);
-    view.setUint32(12, 0x49484452); view.setUint32(16, 16); view.setUint32(20, 16);
-    assert(validFavicon(png));
-    const wrapped = new Uint8Array(22 + png.length);
-    wrapped.set([0, 0, 1, 0, 1, 0, 16, 16]);
-    const directory = new DataView(wrapped.buffer);
-    directory.setUint32(14, png.length, true); directory.setUint32(18, 22, true);
-    wrapped.set(png, 22);
-    assert(validFavicon(wrapped));
-    view.setUint32(16, 65535);
-    assert(!validFavicon(png));
-    const ico = new Uint8Array(40);
-    ico.set([0, 0, 1, 0, 1, 0]);
-    new DataView(ico.buffer).setUint32(14, 100, true);
-    assert(!validFavicon(ico));
+    assert(!validateConfig({...config, fetchFavicons: true}).fetchFavicons, 'Retired setting stays inactive');
 });
 test('bounds saved station IDs and rejects unknown config or station fields', () => {
     const id = 'x'.repeat(MAX_STATION_ID_LENGTH);

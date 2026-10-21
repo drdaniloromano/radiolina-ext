@@ -261,7 +261,7 @@ class ValidationE2E(ServiceFixture):
         self.shutdown()
         secret = 'https://radio.example/path-secret?token=query-secret\nraw-backend-secret ' + 'x' * 8192
         payload = json.dumps(secret)
-        for mode in ('http', 'player', 'save', 'startup', 'favicon'):
+        for mode in ('http', 'player', 'save', 'startup'):
             with self.subTest(mode=mode):
                 runtime = Path(self.directory.name, mode + '-runtime')
                 shutil.copytree(ROOT / 'src', runtime)
@@ -283,10 +283,6 @@ class ValidationE2E(ServiceFixture):
                     method = 'save(config)' if mode == 'save' else 'load()'
                     content = path.read_text().replace(method + ' {',
                         method + f' {{ throw new Error({payload});', 1)
-                else:
-                    path = runtime / 'service/favicon.js'
-                    content = path.read_text().replace('export function faviconUrl(source) {',
-                        f'export function faviconUrl(source) {{ throw new Error({payload});', 1)
                 self.assertNotEqual(content, path.read_text(), 'Fixture trap must be injected')
                 path.write_text(content)
                 self.service_entry = runtime / 'service/main.js'
@@ -296,13 +292,6 @@ class ValidationE2E(ServiceFixture):
                         self.add('/plain-' + mode)
                     self.assertNotIn('secret', str(failure.exception))
                     self.assertLess(len(str(failure.exception)), 600)
-                elif mode == 'favicon':
-                    self.add('/plain-favicon')
-                    self.call('SetFetchFavicons', '(b)', (True,))
-                    def logged():
-                        self.log.seek(0)
-                        return 'Favicon unavailable.' in self.log.read()
-                    self.wait(logged, 'safe optional favicon warning')
                 else:
                     self.play_url(self.url + '/plain-' + mode, error=True)
                 self.assertNotIn('secret', self.state()['error'])

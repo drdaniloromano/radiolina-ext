@@ -16,7 +16,7 @@ Validation hardening on the development branch is listed under **Unreleased**.
 - Inline station editing, local filtering, and configurable Recent entries.
 - Stream-provided artist/title metadata and GNOME's native media card, without
   song-change notification banners.
-- Native light/dark styling, static playback-state icons, optional Stop and favicons.
+- Native light/dark styling, static playback-state icons, and optional Stop.
 - Separate playback service; Stop releases it and Quit removes the indicator.
 
 ## Requirements
@@ -58,7 +58,7 @@ for installation without logging out, updates, and migration from the developmen
    the playback service is running.
 3. Expand **Stations** to browse; type or press **Ctrl+F** to filter saved stations.
    Hover or focus a row for Play, Edit, and Remove.
-4. Open Settings to change the Recent count, fetch favicons, or show Stop.
+4. Open Settings to change the Recent count or show Stop.
 
 Pause retains the playback pipeline. Optional **Stop** exits the service while
 leaving the indicator available; **Quit** disables the extension. Screen lock

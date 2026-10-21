@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: MIT
 """Real GJS + GStreamer + D-Bus tests with local MP3/ICY streams, no internet."""
 import http.server
-import struct
-import zlib
 import json
 import os
 import shutil
@@ -31,41 +29,18 @@ def pump():
         context.iteration(False)
 
 
-def fixture_favicon():
-    def chunk(kind, data):
-        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
-    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 6, 0, 0, 0)) +
-            chunk(b'IDAT', zlib.compress(b'\x00\x40\x90\xe0\xff')) + chunk(b'IEND', b''))
-
-
 class Streams(http.server.BaseHTTPRequestHandler):
     requests = []
     title = 'First song'
     audio = b''
     slow_started = threading.Event()
     stall_streams = threading.Event()
-    favicon_requests = 0
-    favicon_mode = 'png'
-    favicon = fixture_favicon()
-
     def log_message(self, *_args):
         pass
 
     def do_GET(self):
         Streams.requests.append(self.path)
         path = self.path.split('?')[0]
-        if path == '/favicon.ico':
-            Streams.favicon_requests += 1
-            mode = Streams.favicon_mode
-            if mode == 'slow': time.sleep(1)
-            body = Streams.favicon if mode in ('png', 'slow') else b'<html>no icon</html>'
-            self.send_response(200)
-            self.send_header('Content-Type', 'image/png')
-            self.send_header('Content-Length', str(256 * 1024 + 1 if mode == 'huge' else len(body)))
-            self.end_headers()
-            try: self.wfile.write(body)
-            except (BrokenPipeError, ConnectionResetError): pass
-            return
         playlists = {
             '/station.m3u': ('audio/x-mpegurl', '#EXTM3U\nfile:///etc/passwd\n/plain.mp3\n'),
             '/station.xspf': ('application/xspf+xml', '<playlist xmlns="http://xspf.org/ns/0/"><trackList><track><location>/icy</location></track></trackList></playlist>'),
@@ -165,8 +140,6 @@ class ServiceFixture(unittest.TestCase):
         Streams.requests.clear()
         Streams.slow_started.clear()
         Streams.stall_streams.clear()
-        Streams.favicon_requests = 0
-        Streams.favicon_mode = 'png'
         self.tracks = []
         self.subscription = self.bus.signal_subscribe(
             BUS, IFACE, 'TrackChanged', APP, None, Gio.DBusSignalFlags.NONE,
@@ -448,36 +421,27 @@ class ServiceE2E(ServiceFixture):
         self.call('RemoveStation', '(s)', (ids[2],))
         self.assertNotIn(ids[2], self.state()['recent'])
 
-    def test_optional_favicons_bounds_cache_and_cancellation(self):
+    def test_retired_favicons_remain_inactive_for_legacy_settings_and_clients(self):
         identifier = self.add('/plain.mp3')
+        self.shutdown()
+        saved = Path(self.directory.name, 'gnome-radio/stations.json')
+        config = json.loads(saved.read_text())
+        config['fetchFavicons'] = True
+        saved.write_text(json.dumps(config))
+        cache = Path(self.directory.name, 'gnome-radio/favicons/legacy.ico')
+        cache.parent.mkdir(parents=True)
+        cache.write_bytes(b'legacy cache sentinel')
+        self.start()
         self.assertFalse(self.state()['fetchFavicons'])
-        self.assertEqual(Streams.favicon_requests, 0)
-        for mode in ('html', 'huge'):
-            Streams.favicon_mode = mode
-            count = Streams.favicon_requests
-            self.call('SetFetchFavicons', '(b)', (True,))
-            self.wait(lambda: Streams.favicon_requests > count, 'bounded favicon request')
-            time.sleep(0.2); pump()
-            self.assertEqual(self.state()['favicons'], {})
-            self.call('SetFetchFavicons', '(b)', (False,))
-        Streams.favicon_mode = 'slow'
-        count = Streams.favicon_requests
+        self.assertNotIn('favicons', self.state())
         self.call('SetFetchFavicons', '(b)', (True,))
-        self.wait(lambda: Streams.favicon_requests > count, 'slow icon started')
-        self.call('SetFetchFavicons', '(b)', (False,))
-        time.sleep(1.1); pump()
-        self.assertEqual(self.state()['favicons'], {})
-        Streams.favicon_mode = 'png'
-        self.call('SetFetchFavicons', '(b)', (True,))
-        self.wait(lambda: identifier in self.state()['favicons'], 'favicon cached')
-        self.assertTrue(self.state()['favicons'][identifier].startswith('file://'))
-        count = Streams.favicon_requests
-        self.shutdown(); self.start()
-        self.wait(lambda: identifier in self.state()['favicons'], 'favicon read from cache')
-        self.assertEqual(Streams.favicon_requests, count)
-        self.assertTrue(self.state()['fetchFavicons'])
-        self.call('SetFetchFavicons', '(b)', (False,))
-        self.assertEqual(self.state()['favicons'], {})
+        self.call('UpdateStation', '(sss)', (identifier, 'Renamed', self.url + '/other.mp3'))
+        self.media('Play')
+        self.wait(lambda: self.state()['status'] == 'Playing', 'legacy settings do not block playback')
+        self.assertFalse(self.state()['fetchFavicons'])
+        self.assertNotIn('/favicon.ico', Streams.requests)
+        self.assertEqual(cache.read_bytes(), b'legacy cache sentinel')
+        self.assertFalse(json.loads(saved.read_text())['fetchFavicons'])
 
     def test_network_failure_is_recoverable(self):
         bad = self.add('/missing', 'Unavailable')

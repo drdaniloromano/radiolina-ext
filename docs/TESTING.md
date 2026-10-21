@@ -7,7 +7,9 @@ Run from the repository root; use existing tools rather than installing host dep
 | Command | Purpose |
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
-| `make container-test` | Offline packaging E2E, 14 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
+| `make container-test` | Offline packaging E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
+| `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
+| `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
@@ -30,7 +32,7 @@ extension runtime dependency. Container packaging supplies no host runtime libra
 ## Isolation requirements
 
 - Container tests use `--network=none`, explicit read-only source mounts, private XDG paths
-  and D-Bus, generated local MP3/ICY/image fixtures, and synchronized silent audio.
+  and D-Bus, generated local MP3/ICY fixtures, and synchronized silent audio.
   Private workspace/credentials/Git are excluded from the build context and mounts;
   only packaging exposes `build/` writable. Public streams never gate automated checks.
 - Shell E2E needs an already installed GNOME 49 Shell/rendering backend. Its private
@@ -55,10 +57,10 @@ Logs, screenshots, and measurements go to ignored `workspace/`, including
 | Area | Required coverage |
 | --- | --- |
 | Package | Source fidelity, MIT/license inclusion, UUID/version/support/clipboard metadata, private/development exclusions; valid/invalid OOM build settings without source-default changes. |
-| Critical unit | URL/config validation, 128-character IDs, unknown-field rejection, exact 1 MiB/overflow bounded reads and closure, invalid UTF-8 preservation, canonical private storage and legacy defaults; metadata, playlist and image bounds. No numerical coverage threshold. |
-| Service E2E | Real decoding/MPRIS, CRUD/edit persistence, rejected-file preservation/write blocking/compact error state and playback after manual repair, Recent, favicons/cancellation, HTTP failures/deadlines, stale-load cancellation, idle resources, Shell-owner loss, OOM overrides/inheritance/denial/restart. |
+| Critical unit | URL/config validation, 128-character IDs, unknown-field rejection, exact 1 MiB/overflow bounded reads and closure, invalid UTF-8 preservation, canonical private storage and legacy defaults; metadata/playlist bounds and safe diagnostics. No numerical coverage threshold. |
+| Service E2E | Real decoding/MPRIS, CRUD/edit persistence, rejected-file preservation/write blocking/compact error state and playback after manual repair, Recent, inactive legacy favicon flag/setter without requests or cache changes, HTTP failures/deadlines, stale-load cancellation, idle resources, Shell-owner loss, OOM overrides/inheritance/denial/restart. |
 | Transport/media E2E | Actual same-response decoding, misleading extensions/headers, HTML/HLS/video rejection before decoder construction, bounded ID3/ICY/gzip playlists, five-hop redirect boundary, credentials/fragments/schemes, trusted local TLS upgrade/downgrade and playlist-entry policy. |
-| Privacy | Token-bearing path/query URLs reach actual playback unchanged; MPRIS properties/signals omit URLs and State omits final redirects. Full saved/editor URLs and private mode persist. Disposable native/JS error traps cover HTTP, player bus, startup, saves and icons without exposing injected secrets in application errors/logs; public-message unit bounds remain enforced. |
+| Privacy | Token-bearing path/query URLs reach actual playback unchanged; MPRIS properties/signals omit URLs and State omits final redirects. Full saved/editor URLs and private mode persist. Disposable native/JS error traps cover HTTP, player bus, startup and saves without exposing injected secrets in application errors/logs; public-message unit bounds remain enforced. |
 | Shell E2E | Real ZIP install/replacement/uninstall and legacy-ID migration; saved bytes preserved; native pointer/keyboard controls, shared playback hover/focus, row-action exit, search, 30/70 editor, mutually exclusive views, optional Stop, fixed dimensions/aligned spacing, state icons, silent native media card, service crash/recovery. |
 | Theme/lifecycle | Native light/dark changes, 100%/150% display scales, Serif 12 with 125% text scaling, cached-module/CSS updates, delayed startup/cancellation/early exit, rapid Stop/restart, disable/enable, foreign indicator/style ownership, unsupported grouping fallback. |
 
@@ -73,6 +75,23 @@ and video locally. TLS tests trust an ephemeral CA only inside a disposable serv
 copy, with certificate verification enabled. The default image exercises AAC's
 missing-codec error, not positive AAC decoding; that requires a suitable installed
 decoder and real AAC fixture. Native parser security is not established by these cases.
+
+## Resource cleanup
+
+The separate ten-minute resource probe samples RSS/PSS, CPU, descriptors/sockets,
+threads and active fixture connections. It warms up for 30 seconds, cycles until
+510 seconds, then observes 90 seconds idle. No GC hook or production timer is
+added. Early safety ceilings are 256 MiB RSS, 256 descriptors and 64 threads;
+final idle allowances are warm-up +24 descriptors, +4 threads, +32 MiB PSS and
+under 0.5 CPU seconds in the last 30 seconds. These are regression tolerances,
+not universal budgets or proof of leak freedom. Output is JSON-prefixed stdout;
+redirect it to ignored `workspace/`. Shell checks additionally repeat ten
+disable/enable cycles and five pending-backend-start cancellations.
+
+Completed probe: 101 cycles in 600.482 s, peak sampled RSS 49.1 MiB/16 descriptors;
+final idle 12 descriptors/12 threads, no fixture connections and 0.000 CPU seconds
+over the last 30 seconds. The full GNOME 49.8 workflow passed in 85.699 s with
+all lifecycle repetitions and OOM recovery; no runtime GC timer was needed.
 
 ## OOM isolation and crash recovery
 
@@ -117,7 +136,7 @@ Run on each advertised GNOME version in a disposable desktop:
    search, hover/focus Play/Edit/Remove, editor Copy, validation, and rename/source
    changes during playback. Actions keep the popup open; normal dismissal still works.
 5. Play four stations; verify default three-entry Recent, 1–10 settings, retained
-   history/order, optional favicon fetch/cache/disable, and default-hidden Stop.
+   history/order, absent favicon controls, and default-hidden Stop.
    Stations, Add/Edit, and Settings must replace one another.
 6. Disconnect/reconnect networking. Expect a useful persistent error, cleared
    metadata, responsive controls, and successful explicit Play retry.

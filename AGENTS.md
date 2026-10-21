@@ -25,6 +25,7 @@ Update GNOME's native media card silently; do not create song-change popup notif
 Keep the indicator standalone unless an explicitly supported cooperative grouping host exists. Never reparent arbitrary third-party indicators. Follow system theme styles and use static playback-state icons.
 
 Keep controls responsive and keyboard-accessible, with clear state, accessible labels, and concise errors.
+Do not fetch station favicons. Legacy saved flags remain accepted but inactive.
 
 ## Architecture & Portability
 
@@ -57,6 +58,8 @@ Keep dependencies/artifacts contained; do not install development packages globa
 
 - `make container-build`: build the development image.
 - `make container-test`: offline service E2E and critical unit tests.
+- `make container-resources`: opt-in ten-minute Linux resource probe with local
+  fixtures and no forced garbage collection; keep it outside the normal suite.
 - `make container-package`: create the extension ZIP in `build/`.
 - Add `CONTAINER_ENGINE=docker` to container commands to select Docker instead of
   the default Podman. Keep private files out of build contexts and runtime mounts;

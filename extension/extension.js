@@ -45,8 +45,6 @@ class RadioIndicator extends PanelMenu.Button {
         details.remove_style_class_name('popup-menu-item');
         details.add_style_class_name('gnome-radio-now-playing');
         this._details = details;
-        this._stationIcon = new St.Icon({icon_size: 16, y_align: Clutter.ActorAlign.CENTER});
-        this._stationIcon.hide();
         const box = new St.BoxLayout({vertical: true, style_class: 'gnome-radio-details', x_expand: true,
             y_align: Clutter.ActorAlign.CENTER});
         this._name = this._label('Add your first station', 'gnome-radio-station');
@@ -54,7 +52,6 @@ class RadioIndicator extends PanelMenu.Button {
         this._title.opacity = 178;
         [this._name, this._title].forEach(label => box.add_child(label));
         const info = new St.BoxLayout({style_class: 'gnome-radio-info-content', x_expand: true});
-        info.add_child(this._stationIcon);
         info.add_child(box);
         const frame = new St.Bin({child: info, style_class: 'gnome-radio-info-frame',
             x_expand: true,
@@ -180,11 +177,6 @@ class RadioIndicator extends PanelMenu.Button {
             if (!this._syncingSettings) this._call('SetShowStopButton', new GLibVariant('(b)', [enabled]));
         });
         this._settingsSection.addMenuItem(this._showStopToggle);
-        this._faviconToggle = new PopupMenu.PopupSwitchMenuItem('Fetch station favicons', false);
-        this._faviconToggle.connect('toggled', (_item, enabled) => {
-            if (!this._syncingSettings) this._call('SetFetchFavicons', new GLibVariant('(b)', [enabled]));
-        });
-        this._settingsSection.addMenuItem(this._faviconToggle);
         this._groupToggle = new PopupMenu.PopupSwitchMenuItem('Group with other app indicators', false);
         this._groupToggle.connect('toggled', (_item, enabled) => {
             if (!this._syncingSettings) this._call('SetGroupWithAppIndicators', new GLibVariant('(b)', [enabled]));
@@ -494,9 +486,6 @@ class RadioIndicator extends PanelMenu.Button {
         if (!this._icon.gicon.equal(statusIcon)) this._icon.gicon = statusIcon;
         this._icon.accessible_name = playing ? 'radiolina playing' : 'radiolina inactive';
         this._name.text = station?.name ?? 'Add your first station';
-        const icon = state.favicons?.[station?.id];
-        this._stationIcon.visible = Boolean(icon);
-        if (icon) this._stationIcon.gicon = new Gio.FileIcon({file: Gio.File.new_for_uri(icon)});
         this._title.text = [state.artist, state.title].filter(Boolean).join(' — ');
         this._title.visible = Boolean(station && this._title.text);
         this._playIcon.icon_name = active ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
@@ -525,8 +514,6 @@ class RadioIndicator extends PanelMenu.Button {
         this._syncingSettings = true;
         this._showStopToggle.setToggleState(Boolean(state.showStopButton));
         this._showStopToggle.setSensitive(ready);
-        this._faviconToggle.setToggleState(Boolean(state.fetchFavicons));
-        this._faviconToggle.setSensitive(ready);
         this._groupToggle.setToggleState(Boolean(state.groupWithAppIndicators));
         this._groupToggle.setSensitive(ready);
         // No cooperative host integration is supported yet. A saved preference
@@ -544,7 +531,7 @@ class RadioIndicator extends PanelMenu.Button {
             this._showError(state.error ?? '');
         this.accessible_name = `radiolina: ${state.status}${station ? `, ${station.name}` : ''}`;
         const query = this._searchEntry.get_text().trim().normalize('NFKC').toLocaleLowerCase();
-        const signature = JSON.stringify([state.stations, state.selected, state.status, state.recent, recentLimit, state.favicons, query]);
+        const signature = JSON.stringify([state.stations, state.selected, state.status, state.recent, recentLimit, query]);
         if (signature !== this._stationSignature) {
             this._stationSignature = signature;
             const focus = global.stage.get_key_focus();
@@ -609,9 +596,6 @@ class RadioIndicator extends PanelMenu.Button {
             accessible_name: playing ? 'Playing' : paused ? 'Paused' : 'Selected station'});
             item.add_child(marker);
         }
-        const uri = this._state.favicons?.[saved.id];
-        if (uri) item.add_child(new St.Icon({gicon: new Gio.FileIcon({file: Gio.File.new_for_uri(uri)}),
-            icon_size: 16, y_align: Clutter.ActorAlign.CENTER}));
         const label = this._label(`${saved.name}${playing ? ' (playing)' : ''}`, 'gnome-radio-station-content');
         label.x_expand = true;
         label.y_align = Clutter.ActorAlign.CENTER;

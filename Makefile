@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-.PHONY: build test test-shell container-build container-test container-package
+.PHONY: build test test-shell test-resources container-build container-test container-resources container-package
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
@@ -14,6 +14,9 @@ build:
 test:
 	python3 scripts/test.py
 
+test-resources:
+	python3 scripts/test-resources.py
+
 test-shell: build
 	python3 scripts/test-shell.py
 
@@ -23,6 +26,11 @@ container-build:
 container-test:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \
 	$(CONTAINER_ENGINE) run $(CONTAINER_RUN_FLAGS) $$user_flags $(CONTAINER_SOURCES) $(IMAGE)
+
+container-resources:
+	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \
+	$(CONTAINER_ENGINE) run $(CONTAINER_RUN_FLAGS) $$user_flags $(CONTAINER_SOURCES) \
+	$(IMAGE) python3 scripts/test-resources.py
 
 container-package:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \

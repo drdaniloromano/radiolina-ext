@@ -113,10 +113,6 @@ Escape, outside clicks, and clicking the indicator dismiss it.
 
 - **Recent stations:** 1–10 visible entries; default 3.
 - **Show Stop button:** off by default; persists without changing playback.
-- **Fetch station favicons:** off by default. Requests `/favicon.ico` from each
-  saved stream's origin, deduplicating hosts and reusing cached PNG/ICO files.
-  It does not discover homepages or use a third-party icon provider. Disabling
-  cancels requests and hides icons; missing icons leave text usable.
 - **Group with other app indicators:** off by default. No cooperative host is
   currently supported, so enabling it reports that radiolina stays standalone.
   It does not move, restyle, or change input handling for other indicators.
@@ -155,9 +151,8 @@ the `v0.3.0` tag retains its original behavior.
 A manual example is `https://stream.nightride.fm/nightride.mp3`; see
 [Nightride's stream server](https://stream.nightride.fm/) for stream endpoints.
 
-Configuration is `${XDG_CONFIG_HOME:-~/.config}/gnome-radio/stations.json`;
-favicon cache is `${XDG_CACHE_HOME:-~/.cache}/gnome-radio/favicons/`. The legacy
-names intentionally preserve existing data. Corrupt configuration is reported
+Configuration is `${XDG_CONFIG_HOME:-~/.config}/gnome-radio/stations.json`.
+The legacy directory name intentionally preserves existing data. Corrupt configuration is reported
 and retained for repair rather than overwritten.
 
 To edit stations manually, Quit radiolina and back up the JSON file first. Edit
@@ -183,6 +178,12 @@ without newer optional settings still receive their defaults. A rejected file
 is left untouched and settings/station writes are blocked: back it up, repair it,
 then restart radiolina. These limits address local configuration resource use;
 they do not establish protection against malicious same-user processes.
+
+Favicon fetching and its setting are removed in the Unreleased build. The legacy
+`fetchFavicons` boolean is accepted but always inactive, including through older
+clients. Existing cache files under `${XDG_CACHE_HOME:-~/.cache}/gnome-radio/favicons/`
+are left untouched and no longer read or written. You may delete that directory
+after quitting radiolina if you want to reclaim its space.
 
 ## URL privacy
 

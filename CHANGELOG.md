@@ -4,9 +4,12 @@
 
 ### Changed
 
+- Remove favicon settings, fetching, image parsing and display. Legacy saved flags
+  and the old setter remain accepted but inactive; leave existing cache files
+  untouched. Station management and playback retain their saved data.
 - Omit stream URLs from MPRIS and stop exporting final redirect URLs in app state.
   Preserve full saved URLs for playback/editor/explicit Copy. Use bounded,
-  explicitly code-authored public errors or fixed fallbacks and safe playback/icon
+  explicitly code-authored public errors or fixed fallbacks and safe playback
   warnings; document plaintext storage, session-bus and clipboard privacy limits.
 - Bound saved configuration reads to 1 MiB before JSON parsing, limit station IDs
   to 128 characters, and reject unknown configuration/station fields in the shared
@@ -27,6 +30,14 @@
 
 ### Verification
 
+- Add an opt-in contained ten-minute resource probe without forced GC, with
+  warm-up/idle comparisons and early RSS/descriptor/thread safety ceilings.
+  Extend isolated GNOME checks with ten disable/enable cycles and five cancelled
+  starts, asserting owned actors, startup state and child processes are removed.
+- Pass 101 resource cycles over ten minutes without forced GC: peak sampled RSS
+  49.1 MiB, at most 16 descriptors; final idle has no fixture connections and
+  consumes 0.000 CPU seconds over 30 seconds. Full GNOME 49.8 workflow passes,
+  including repeated lifecycle/cancellation checks and unchanged Shell OOM score.
 - Check URL omission from media properties/signals, token-bearing direct/redirect
   playback, saved URL fidelity, and injected native/JS failures across application
   errors and logs. Keep decoder admission checks independent of diagnostic text.
