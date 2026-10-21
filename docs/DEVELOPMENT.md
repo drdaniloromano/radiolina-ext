@@ -199,6 +199,13 @@ make container-package CONTAINER_ENGINE=docker
 ```
 
 Development packages stay in the Fedora 43 image defined by [Dockerfile](../Dockerfile).
+The image upgrades its base packages before installing development tools. Ordinary
+builds may reuse cached layers. Before security/release verification, use
+`make container-refresh` to pull the base and rebuild without cache, followed by
+`make container-test` and `make container-security-check`. Add
+`CONTAINER_ENGINE=docker` for Docker, or `IMAGE=localhost/radiolina-review:43` to
+keep a separate review image. Podman uses `--pull=always`; Docker uses `--pull`.
+This updates only the selected container image, never the host's packages.
 Building the image needs network access. [.dockerignore](../.dockerignore), supported
 by both engines, excludes everything except the recipe and ignore file from the
 build context; the image contains dependencies rather than a copy of the checkout.

@@ -7,6 +7,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | Command | Purpose |
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
+| `make container-refresh` | Pull/rebuild without cache and refresh packages inside the image before security/release checks. |
 | `make container-test` | Offline packaging/security-tool E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |

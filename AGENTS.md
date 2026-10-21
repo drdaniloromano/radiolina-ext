@@ -57,6 +57,8 @@ decisions and [testing](docs/TESTING.md) for coverage and isolation requirements
 Keep dependencies/artifacts contained; do not install development packages globally. Prefer an isolated GNOME VM for visual/audio checks.
 
 - `make container-build`: build the development image.
+- `make container-refresh`: pull/rebuild without cache and upgrade image packages
+  before release/security verification; keep host packages unchanged.
 - `make container-test`: offline service E2E and critical unit tests.
 - `make container-resources`: opt-in ten-minute Linux resource probe with local
   fixtures and no forced garbage collection; keep it outside the normal suite.

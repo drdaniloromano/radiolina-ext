@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-.PHONY: build test test-shell test-resources security-check container-build container-test container-resources container-security-check container-package
+.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
@@ -25,6 +25,16 @@ test-shell: build
 
 container-build:
 	$(CONTAINER_ENGINE) build -t $(IMAGE) -f Dockerfile .
+
+# Explicit refresh for security/release checks; ordinary builds may reuse cache.
+container-refresh:
+	@set -eu; version=$$($(CONTAINER_ENGINE) --version); \
+	case "$$version" in \
+	    podman\ *) pull=--pull=always ;; \
+	    Docker\ *) pull=--pull ;; \
+	    *) printf '%s\n' 'Unsupported container engine: choose Podman or Docker.' >&2; exit 1 ;; \
+	esac; \
+	$(CONTAINER_ENGINE) build $$pull --no-cache -t $(IMAGE) -f Dockerfile .
 
 container-test:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \

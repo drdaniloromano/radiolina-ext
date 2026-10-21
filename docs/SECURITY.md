@@ -21,6 +21,8 @@ network access. The installed applet performs no advisory monitoring.
 umask 077
 mkdir -p workspace
 make security-check
+make container-refresh
+make container-test
 make container-security-check > workspace/security-container.json
 ```
 
@@ -28,6 +30,10 @@ The desktop check writes `workspace/security-desktop.json`. Add
 `CONTAINER_ENGINE=docker` to the container command when using Docker. Reports are
 private machine metadata: keep them ignored and review before sharing. Ordinary
 tests remain offline; security queries are separate, opt-in tooling.
+`container-refresh` pulls the base and rebuilds without cache with vendor package
+updates inside the image. Use a separate `IMAGE=...` consistently across commands
+to preserve an existing development image. Rebuilding alone is not an advisory
+review, and it does not update libraries used by an installed desktop extension.
 
 ## Read and review the report
 
