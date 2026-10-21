@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-.PHONY: build test test-shell test-resources container-build container-test container-resources container-package
+.PHONY: build test test-shell test-resources security-check container-build container-test container-resources container-security-check container-package
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
@@ -17,6 +17,9 @@ test:
 test-resources:
 	python3 scripts/test-resources.py
 
+security-check:
+	python3 scripts/security-check.py --environment desktop --output workspace/security-desktop.json
+
 test-shell: build
 	python3 scripts/test-shell.py
 
@@ -31,6 +34,15 @@ container-resources:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \
 	$(CONTAINER_ENGINE) run $(CONTAINER_RUN_FLAGS) $$user_flags $(CONTAINER_SOURCES) \
 	$(IMAGE) python3 scripts/test-resources.py
+
+# This opt-in query needs repository network access; ordinary tests stay offline.
+# JSON goes to stdout, diagnostics to stderr. No private output mount is exposed.
+container-security-check:
+	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \
+	image_id=$$($(CONTAINER_ENGINE) image inspect --format '{{.Id}}' $(IMAGE)); \
+	$(CONTAINER_ENGINE) run $(filter-out --network=none,$(CONTAINER_RUN_FLAGS)) \
+	$$user_flags $(CONTAINER_SOURCES) $(IMAGE) python3 scripts/security-check.py \
+	--environment container --image-id "$$image_id"
 
 container-package:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \

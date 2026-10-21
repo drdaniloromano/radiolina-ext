@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Add opt-in Fedora/RPM dependency inventory and DNF5 security-advisory reports,
+  with private temporary caches, noninteractive queries, explicit coverage gaps
+  and source/environment fingerprints. Document manual upstream/backport review
+  and how reports can gate future distribution automation without approving releases.
 - Remove favicon settings, fetching, image parsing and display. Legacy saved flags
   and the old setter remain accepted but inactive; leave existing cache files
   untouched. Station management and playback retain their saved data.
@@ -30,6 +34,10 @@
 
 ### Verification
 
+- Cover private report permissions, recursive package inventory, Fedora's keyed-map
+  and array advisory schemas, findings, partial failures, missing/undownloaded feeds,
+  unsupported/expired distributions and disabled update coverage with offline tools.
+  Live checks retain vendor candidates and third-party gaps for maintainer review.
 - Add an opt-in contained ten-minute resource probe without forced GC, with
   warm-up/idle comparisons and early RSS/descriptor/thread safety ceilings.
   Extend isolated GNOME checks with ten disable/enable cycles and five cancelled

@@ -61,6 +61,9 @@ Keep dependencies/artifacts contained; do not install development packages globa
 - `make container-resources`: opt-in ten-minute Linux resource probe with local
   fixtures and no forced garbage collection; keep it outside the normal suite.
 - `make container-package`: create the extension ZIP in `build/`.
+- `make security-check` / `make container-security-check`: opt-in dependency
+  advisory queries with temporary caches. Follow [security review](docs/SECURITY.md);
+  incomplete data must not pass and exit zero alone never approves a release.
 - Add `CONTAINER_ENGINE=docker` to container commands to select Docker instead of
   the default Podman. Keep private files out of build contexts and runtime mounts;
   preserve the invoking user's ownership of generated files.

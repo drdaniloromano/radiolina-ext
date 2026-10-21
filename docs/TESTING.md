@@ -7,7 +7,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | Command | Purpose |
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
-| `make container-test` | Offline packaging E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
+| `make container-test` | Offline packaging/security-tool E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
@@ -16,6 +16,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow in private headless GNOME 49. |
 | `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` | Repeat at 150% monitor scaling with light/dark checks. |
 | `git diff --check` | Check patch whitespace. |
+| `make security-check` / `make container-security-check` | Opt-in networked dependency/advisory reports; follow [security procedure](SECURITY.md). |
 
 Repeat the three `container-*` commands with `CONTAINER_ENGINE=docker` to verify
 Docker independently. A Docker CLI backed by Podman is not an independent Docker
@@ -53,6 +54,11 @@ Logs, screenshots, and measurements go to ignored `workspace/`, including
 `shell-oom-recovery.json`. Keep temporary fixtures and VM assets outside Git.
 
 ## Automated coverage
+
+Three offline security-tool E2E cases exercise command boundaries, recursive
+inventory, private reports, findings, partial repository failures and missing or
+malformed data. Fake tools never contact vendor services; live queries are
+separate checks whose findings/limitations must be reported.
 
 | Area | Required coverage |
 | --- | --- |

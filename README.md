@@ -69,6 +69,7 @@ stops playback; unlocking restores an idle indicator until you press Play.
 - [User guide and troubleshooting](docs/USER_GUIDE.md)
 - [Architecture, development, and build configuration](docs/DEVELOPMENT.md)
 - [Testing and manual acceptance](docs/TESTING.md)
+- [Dependency security checks and release review](docs/SECURITY.md)
 - [Contributor guidelines](AGENTS.md)
 - [Report a problem or suggest a change](https://github.com/drdaniloromano/radiolina-ext/issues)
 

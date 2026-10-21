@@ -310,6 +310,10 @@ See [user-facing privacy limits](USER_GUIDE.md#url-privacy).
 
 ## Release policy
 
+Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
+release. Machine-readable reports can feed future preflight automation; vendor
+query success alone does not satisfy the upstream/applicability review.
+
 The current local release is **0.3.0**; public distribution is pending.
 Use `MAJOR.MINOR.PATCH`:
 patches for fixes, minor increments for features/compatibility breaks during `0.x`,
