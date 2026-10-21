@@ -42,6 +42,14 @@
 
 ### Verification
 
+- Assess all 28 desktop vendor advisory entries at component/path scope, keeping
+  broader native-stack and third-party codec coverage unresolved where evidence
+  is incomplete. Verify a contained vendor refresh and functional tests without
+  treating an empty Fedora query as release approval.
+- Compare relevant upstream GStreamer fixes with matching Fedora source RPMs;
+  record missing Opus/WAV/audio-wrapper and metadata-parser fixes as publication
+  blockers. Preserve dated private evidence and publish actionable source links;
+  no exploit was executed or native library bundled/replaced.
 - Record scoped dependency-review conclusions and vendor resolution guidance in
   [security review notes](docs/SECURITY.md#review-conclusions-and-resolution-guidance):
   the AV1 encoder issue is outside the current playback paths. Assess eight

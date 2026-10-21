@@ -7,6 +7,7 @@ A compact native popup keeps playback and saved stations close at hand.
 **GNOME Shell 49** is the only declared supported version.
 See the [changelog](CHANGELOG.md) for completed changes.
 Validation hardening on the development branch is listed under **Unreleased**.
+Publication is blocked pending [native-library security fixes and verification](docs/SECURITY.md#native-decoder-release-blockers).
 
 ## Features
 

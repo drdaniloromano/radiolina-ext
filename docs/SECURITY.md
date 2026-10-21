@@ -151,6 +151,51 @@ remove those repositories automatically, or substitute Fedora patch status for
 another vendor's package. Changes to the host or development image require a
 separate agreed update step.
 
+### Native decoder release blockers
+
+Upstream review found issues absent from the vendor query's outstanding results.
+The Fedora `1.26.11-1.fc43` source RPMs matching the reviewed Base/Good/libav builds
+retain the old code in the five selected parser/decoder paths below; their build
+recipes do not apply these backports. Additional core/container cases remain
+unverified. This is source evidence, not an executed exploit. The
+bounded admission prefix does not validate every later codec frame or metadata tag.
+
+| Upstream advisory | Reviewed path / result |
+| --- | --- |
+| [2026-0053: Opus channel positions](https://gstreamer.freedesktop.org/security/sa-2026-0053.html) | Selected `opusdec`; the source lacks the greater-than-64-channel position guard. |
+| [2026-0064: WAV streaming metadata](https://gstreamer.freedesktop.org/security/sa-2026-0064.html) | Selected `wavparse`; the source lacks the `adtl` chunk availability guard. |
+| [2026-0081: FFmpeg audio channel mapping](https://gstreamer.freedesktop.org/security/sa-2026-0081.html) | Desktop `avdec_aac` is available; the wrapper source retains unbounded channel-position operations. The default development image lacks this decoder. |
+| [2026-0033: ID3v2 parsing](https://gstreamer.freedesktop.org/security/sa-2026-0033.html) | The accepted ID3/audio path reaches native tag parsing; the reviewed source retains affected parsing contexts. |
+| [2026-0032: XMP tags](https://gstreamer.freedesktop.org/security/sa-2026-0032.html) | Audio MP4 metadata can reach the XMP parser through `qtdemux`; the source retains the affected contexts. |
+| [2026-0079: MP4 captions](https://gstreamer.freedesktop.org/security/sa-2026-0079.html) | Old code remains. Initial admission rejects non-audio tracks, but complete native container-state reachability is unverified; keep open. |
+| [2026-0078: caps comparison](https://gstreamer.freedesktop.org/security/sa-2026-0078.html), [2026-0028: buffer deserialization](https://gstreamer.freedesktop.org/security/sa-2026-0028.html) | The app builds its own pipeline strings and uses no RTP caps input; full indirect core reachability/backports remain unverified. |
+
+**Release requirement:** use native packages with these fixes or verified vendor
+backports, then repeat isolated compatibility tests and target-desktop checks.
+The linked upstream notices identify fixes through the `1.28.8` release; a package
+version comparison alone cannot attest a distribution build. Do not silently
+remove advertised formats, add post-decoder caps as a substitute for an internal
+decoder fix, overwrite host libraries, or bundle native libraries in the ZIP.
+Until the supported runtime/backport baseline is resolved, the green Fedora query
+and passing functional tests do not close these publication blockers.
+
+### Other dependencies and third-party codecs
+
+Component mapping matters: the [nghttp2 notice](https://bugzilla.redhat.com/show_bug.cgi?id=2502788)
+concerns the `nghttpx` proxy, which radiolina does not run; loading the HTTP/2 client
+library is not that proxy operation. Tracker-module, OCR, WebKit, SQLite FTS and
+pip operations are also absent from current runtime workflows. These scoped
+exclusions do not certify the desktop or other applications. Broader Bluetooth,
+system-service, libevent and OpenSSL applicability still needs vendor review.
+
+When an `avdec_*` decoder is selected, inspect the actual loaded `libavcodec`, not
+just the GStreamer plugin's package owner. Third-party packages can supply that
+library. The reviewed RPM Fusion repositories advertised no `updateinfo`; an empty
+advisory query therefore provided no security coverage. Review their exact builds,
+upstream fixes and backports manually, using [FFmpeg's security notices](https://ffmpeg.org/security.html)
+alongside vendor evidence. A repository's latest available version or a working
+AAC stream does not establish that all security fixes are present.
+
 ## Future distribution automation
 
 A release preflight can run these commands, retain timestamped JSON as an artifact,
@@ -160,6 +205,8 @@ backports and applicability before tests, final packaging and release approval.
 Every report currently has `release_approved: false`: exit `0` alone must never
 authorize publication. Scheduled CI queries are possible later; no release workflow,
 automatic updates or publication is configured by this checker.
+Include upstream advisory IDs without assigned CVEs and native bug-fix releases;
+vendor CVE feeds alone missed relevant decoder fixes in this review.
 
 See the [DNF5 advisory reference](https://dnf5.readthedocs.io/en/latest/commands/advisory.8.html)
 and [backporting explanation](https://access.redhat.com/security/updates/backporting).

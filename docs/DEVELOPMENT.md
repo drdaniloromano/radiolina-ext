@@ -179,6 +179,10 @@ GNOME Shell **49** is the declared target. Lower GJS/GLib/GStreamer package
 minimums have not been established by a compatibility matrix; the verified
 versions above are examples, not proven minimums. GI namespace versions such as
 `Gst-1.0` and `Soup-3.0` identify APIs rather than the exact installed package release.
+These historical functional results do not approve those builds for publication:
+the [native security review](SECURITY.md#native-decoder-release-blockers) found
+missing GStreamer fixes in the reviewed 1.26.11 source packages. A fixed runtime
+or verified backports and renewed compatibility checks are release prerequisites.
 
 ## Contained builds and configuration
 
