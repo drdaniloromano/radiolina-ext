@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Add a guided GitHub bug-report form for application/GNOME/distribution versions,
+  reproduction steps, expected/actual behavior, and optional screenshots or logs.
+  Remind reporters to remove private stream URLs, credentials, and access tokens.
 - Add an explicit `container-refresh` command with Podman/Docker pull flags and
   cache bypass. Upgrade packages inside the development image before installing
   tools, and document refresh/test/advisory verification as a separate operation

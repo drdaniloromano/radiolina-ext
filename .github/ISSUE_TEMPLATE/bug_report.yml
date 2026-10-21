@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+name: Bug report
+description: Report a reproducible problem with radiolina.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check existing issues and the [user guide](https://github.com/drdaniloromano/radiolina-ext/blob/main/docs/USER_GUIDE.md) before reporting.
+        Issues are public. Remove private stream URLs, credentials, and access tokens from text, screenshots, and logs.
+  - type: input
+    id: radiolina-version
+    attributes:
+      label: radiolina version
+      description: Give the release version or Git commit if built from source.
+    validations:
+      required: true
+  - type: input
+    id: gnome-version
+    attributes:
+      label: GNOME Shell version
+      description: You can check with gnome-shell --version.
+    validations:
+      required: true
+  - type: input
+    id: distribution
+    attributes:
+      label: Linux distribution and release
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Give the actions needed to reproduce the problem, including relevant settings.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      placeholder: |
+        Expected:
+        Actual:
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or relevant logs
+      description: Optional. Share only relevant excerpts or images after removing private URLs, credentials, and tokens.
+    validations:
+      required: false

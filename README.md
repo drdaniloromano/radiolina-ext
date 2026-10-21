@@ -75,7 +75,9 @@ stops playback; unlocking restores an idle indicator until you press Play.
 - [Report a problem or suggest a change](https://github.com/drdaniloromano/radiolina-ext/issues)
 
 Maintained by [Danilo Romano](https://github.com/drdaniloromano).
-Include your GNOME version and reproduction steps when reporting problems.
+Use the [bug-report form](.github/ISSUE_TEMPLATE/bug_report.yml) for versions,
+reproduction steps, and expected/actual behavior. Screenshots and logs are optional;
+remove private stream URLs, credentials, and tokens before posting.
 The source repository is [radiolina-ext](https://github.com/drdaniloromano/radiolina-ext).
 
 ## License
