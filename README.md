@@ -4,9 +4,10 @@ Lightweight internet radio for **GNOME Shell**, controlled entirely from the top
 A compact native popup keeps playback and saved stations close at hand.
 
 **Release status:** **0.3.0**, finalized locally; public distribution is pending.
-**GNOME Shell 49** is the only declared supported version.
+The current checkout declares **GNOME Shell 49 and 50** support; the **0.3.0 tag**
+targets GNOME 49. GNOME 50 compatibility is an **Unreleased** change.
 See the [changelog](CHANGELOG.md) for completed changes.
-Validation hardening on the development branch is listed under **Unreleased**.
+Validation hardening is also listed under **Unreleased**.
 Publication is blocked pending [native-library security fixes and verification](docs/SECURITY.md#native-decoder-release-blockers).
 
 ## Features
@@ -22,7 +23,7 @@ Publication is blocked pending [native-library security fixes and verification](
 
 ## Requirements
 
-- **Desktop runtime:** GNOME Shell 49, GJS/GI with GLib/Gio/GLibUnix, libsoup 3,
+- **Desktop runtime:** GNOME Shell 49 or 50, GJS/GI with GLib/Gio/GLibUnix, libsoup 3,
   GStreamer with base/good plugins and the decoders your streams need, and desktop audio.
 - **Container packaging:** Make and a local Podman or Docker installation.
 

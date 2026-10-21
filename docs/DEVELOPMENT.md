@@ -119,12 +119,12 @@ the ZIP or installed onto the host by the build scripts.
 
 | Use | Required components | Where they must exist |
 | --- | --- | --- |
-| Installed extension | GNOME Shell 49; GJS and GI bindings for GLib/Gio/GLibUnix, GStreamer 1.x, and libsoup 3; session D-Bus and desktop audio. Shell supplies St/Clutter/Pango. | Desktop host. |
+| Installed extension | GNOME Shell 49/50; GJS and GI bindings for GLib/Gio/GLibUnix, GStreamer 1.x, and libsoup 3; session D-Bus and desktop audio. Shell supplies St/Clutter/Pango. | Desktop host. |
 | Playback | Native GIO source, audio conversion/resampling/volume, buffering, and an available audio sink; parser/decoder for the chosen format. Base/Good plugins cover the verified common set, with AAC exceptions below. | Desktop host; a silent sink replaces desktop audio in tests. |
 | Container packaging | Make, POSIX shell/basic user-ID tools, local Podman or Docker; network access for image creation. Python and development packages come from [Dockerfile](../Dockerfile). | Host needs the engine/Make, not the image's GJS/Python libraries. |
 | Direct packaging (`make build`) | Python 3 standard library; Make for the convenience target. No GJS/media stack is needed just to create the ZIP. | Existing host tools; no dependency installation. |
 | Service/media tests (`make test`) | Runtime GJS/GI/GStreamer/libsoup plus Python 3, PyGObject, `dbus-run-session`, GStreamer command-line tools/fixture encoders, and OpenSSL. | Development image for `make container-test`; existing host tools for direct testing. |
-| Shell tests | Native GNOME Shell 49 with headless rendering, Python/GI, service-test tools, and extension-management tools. | Disposable headless session or VM; the development image does not provide a full desktop. |
+| Shell tests | GNOME Shell 49/50 with headless rendering, Python/GI, service-test tools, and extension-management tools. | Versioned Shell container or disposable desktop; the smaller service image does not provide Shell. |
 
 Python, Make, container engines, fixture encoders, and the OpenSSL command are
 development tools, not installed-extension runtime dependencies. OpenSSL generates
@@ -175,7 +175,13 @@ Python **3.14.8**, Make **4.4.1**, OpenSSL **3.5.9**, D-Bus **1.16.2**, and Podm
 earlier GNOME **49.1** VM workflows have maintainer confirmation. Genuine Docker runtime remains untested here;
 the available `docker` command delegates to Podman.
 
-GNOME Shell **49** is the declared target. Lower GJS/GLib/GStreamer package
+The versioned containers also verify Shell **49.10** / Mutter **49.8** on Fedora 43
+and Shell/Mutter **50.6** on Fedora 44. The latter provides GJS **1.88.1**,
+GStreamer/Base/Good **1.28.8**, and libsoup **3.6.6-10.fc44**. These functional
+results do not close the native dependency findings or verify other vendor builds.
+
+GNOME Shell **49 and 50** are declared by the Unreleased checkout; the 0.3.0 tag
+declares 49. Lower GJS/GLib/GStreamer package
 minimums have not been established by a compatibility matrix; the verified
 versions above are examples, not proven minimums. GI namespace versions such as
 `Gst-1.0` and `Soup-3.0` identify APIs rather than the exact installed package release.
@@ -252,20 +258,21 @@ make container-shell-test SHELL_VERSIONS=49 SHELL_SCALE=1.5 SHELL_THEME=light
 
 Use `CONTAINER_ENGINE=docker` for the local Docker engine. Use
 `container-shell-refresh` instead of `container-shell-build` to pull/rebuild without
-cache. Profiles map GNOME 49 to Fedora 43 and candidate GNOME 50 to Fedora 44;
+cache. Profiles map GNOME 49 to Fedora 43 and GNOME 50 to Fedora 44;
 the image build rejects an unexpected Shell major. A profile's existence does not
 declare support: the runner also checks the package's `shell-version` metadata.
-After compatibility is implemented, `SHELL_VERSIONS="49 50"` runs the matrix
-sequentially; a per-checkout lock rejects concurrent Shell builds/tests.
+The default `SHELL_VERSIONS="49 50"` runs both profiles sequentially; a per-checkout
+lock rejects concurrent Shell builds/tests. To test the same core/service suite
+against the newer libraries, run `make container-test IMAGE=localhost/radiolina-shell-test:50`.
 
 The runner uses the inspected image ID, read-only root/source mounts, no network,
-no extra capabilities, and no host bus, display, GPU or audio sockets. A private
-temporary checkout holds generated packages, HOME/XDG state, settings and the
+no extra capabilities, and no host bus, display, GPU or audio sockets. Private
+temporary storage holds a copied checkout, generated packages, HOME/XDG state, settings and the
 activation-free test bus, also used for system-bus connections. Fractional runs
 enable `scale-monitor-framebuffer` only in private settings where Mutter exposes
 that experimental feature, then verify the actual monitor scale. Only a new mode-700
 directory under `build/shell-tests/{major}/` is writable on the host; logs,
-screenshots, runtime package inventory, source fingerprint, image identity and
+screenshots, runtime package inventory, ZIP/payload checksums, source fingerprint, image identity and
 exit status stay there. Files retain the caller's ownership. Each run is limited
 to 1 GiB memory, two CPUs, 256 processes, and ten minutes; llvmpipe uses two threads.
 Containers are removed on completion/failure/interruption, while evidence remains.
@@ -281,7 +288,7 @@ Keep the separate manual checks and [dependency review](SECURITY.md).
 | `CONTAINER_ENGINE` | `podman` | `podman` or `docker`; runtime identity flags adapt to the actual engine. |
 | `IMAGE` | `localhost/gnome-radio-dev:43` | Development image tag. |
 | `OOM_SCORE_ADJ` | `500` | Playback-service kernel adjustment: integer 0–1000, or `inherit`. |
-| `SHELL_VERSIONS` | `49` | Space-separated versioned Shell profiles to build/test sequentially. |
+| `SHELL_VERSIONS` | `49 50` | Space-separated versioned Shell profiles to build/test sequentially. |
 | `SHELL_IMAGE_PREFIX` | `localhost/radiolina-shell-test` | Shell test image prefix; the major is its tag. |
 | `SHELL_SCALE` / `SHELL_THEME` | `1` / `dark` | Shell test monitor scale (`1`/`1.5`) and initial theme (`light`/`dark`). |
 

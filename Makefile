@@ -4,7 +4,7 @@
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
 OOM_SCORE_ADJ ?= 500
-SHELL_VERSIONS ?= 49
+SHELL_VERSIONS ?= 49 50
 SHELL_IMAGE_PREFIX ?= localhost/radiolina-shell-test
 SHELL_SCALE ?= 1
 SHELL_THEME ?= dark

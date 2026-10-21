@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('build', 'test'))
     parser.add_argument('--engine', default='podman')
-    parser.add_argument('--gnome', nargs='+', choices=PROFILES, default=['49'])
+    parser.add_argument('--gnome', nargs='+', choices=PROFILES, default=['49', '50'])
     parser.add_argument('--image-prefix', default='localhost/radiolina-shell-test')
     parser.add_argument('--refresh', action='store_true', help='pull base and bypass build cache')
     parser.add_argument('--scale', choices=('1', '1.5'), default='1')

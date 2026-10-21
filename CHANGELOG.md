@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Declare GNOME Shell 50 compatibility alongside 49 in the Unreleased checkout,
+  and run both versioned Shell profiles by default. Keep the permanent UUID and
+  0.3.0 release/tag unchanged; no new runtime UI compatibility branches are needed.
 - Add versioned, resource-limited GNOME Shell test containers with sequential
   execution, private HOME/settings/buses, offline software rendering and silent
   audio. Preserve per-run logs/screenshots/package identities under ignored build
@@ -51,6 +54,12 @@
 
 ### Verification
 
+- Pass all 51 offline cases against both native-library profiles and the real
+  GNOME Shell 49.10/50.6 workflows at 100% and 150% scaling. Visually review
+  native light/dark and enlarged-text screenshots. The sequential final matrix
+  tests identical application payloads, including same-session updates, silent
+  media integration, lifecycle cleanup and service-only crash/OOM recovery.
+  These functional results do not close the separate dependency security review.
 - Cover Shell launcher isolation, sequencing/locking, cleanup on failure and
   interruption, rejected profiles/engines and engine-specific flags with six
   offline E2E cases.

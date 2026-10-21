@@ -47,7 +47,7 @@ Respect GNOME's default `user` session lifecycle: screen lock stops playback;
 unlock restores the idle indicator without automatic playback. Keep lock-screen
 operation disabled.
 
-`src/core/` holds critical logic; `src/service/` owns playback, D-Bus/MPRIS, and storage; `extension/` owns the panel/popup and desktop integration. `tests/` contains unit/E2E tests. GNOME 49 is the current target; additional desktop adapters are future work.
+`src/core/` holds critical logic; `src/service/` owns playback, D-Bus/MPRIS, and storage; `extension/` owns the panel/popup and desktop integration. `tests/` contains unit/E2E tests. GNOME 49 and 50 are current targets; additional desktop adapters are future work.
 
 See [architecture and build configuration](docs/DEVELOPMENT.md) for lasting design
 decisions and [testing](docs/TESTING.md) for coverage and isolation requirements.
@@ -78,7 +78,8 @@ full desktop for physical audio/media-key, lock, and suspend acceptance.
   preserve the invoking user's ownership of generated files.
 - `make test-shell`: actual popup/lifecycle checks in disposable headless GNOME.
 - `make container-shell-build` / `make container-shell-test`: build and test a
-  private headless Shell image; `SHELL_VERSIONS=49` selects the current target.
+  private headless Shell images; the default `SHELL_VERSIONS="49 50"` tests both
+  supported targets. Set one version for focused development checks.
   Version lists run sequentially, with private buses/settings and bounded resources.
   Never mount host desktop/system buses, home, display/audio sockets or workspace.
   Evidence goes to a fresh ignored `build/shell-tests/` directory. Additional

@@ -4,7 +4,7 @@ See the [README](../README.md) for requirements, release status, and standard in
 
 ## Same-session installation and updates
 
-These procedures target GNOME 49 and use its internal extension manager through
+These procedures target GNOME 49/50 and use the internal extension manager through
 Looking Glass. A normal fresh login also loads installed files. Installing a ZIP
 replaces files on disk; it does not replace JavaScript already imported by Shell.
 
@@ -206,7 +206,7 @@ debugging, enabled separately, is outside the application's safe-message policy.
 
 | Symptom | Checks and recovery |
 | --- | --- |
-| No indicator after installation | Verify GNOME 49 and the permanent UUID with `gnome-extensions info`. For an unregistered first install, use Looking Glass above or log out/in. Quit deliberately disables the extension; re-enable it to reopen. |
+| No indicator after installation | Verify GNOME 49/50 and the permanent UUID with `gnome-extensions info`. For an unregistered first install, use Looking Glass above or log out/in. Quit deliberately disables the extension; re-enable it to reopen. |
 | Old layout or missing new option | Installing a ZIP does not reload imported UI modules. Run the same-session updater, verify it succeeds, and reopen the popup. |
 | Slow first activation | Cold GStreamer plugin discovery can take over a minute. Readiness has a cancellable 120-second deadline; Stop, Quit, or disable cancels it. ACTIVE alone does not prove the backend is ready. |
 | Connection error or stalled stream | Check the URL, codec availability, and networking. Playlist resolution has a 15-second limit; connection/rebuffering has a 30-second one-shot deadline, excluding normal playback/Pause/Stop. The popup preserves errors across reopening; Play retries. |

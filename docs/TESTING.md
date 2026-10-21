@@ -11,13 +11,15 @@ Run from the repository root; use existing tools rather than installing host dep
 | `make container-test` | Offline packaging/security-tool/launcher E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
 | `make container-shell-build SHELL_VERSIONS=49` | Build the version-specific headless Shell image, with dependencies contained. |
 | `make container-shell-test SHELL_VERSIONS=49` | Run the actual popup/lifecycle/OOM suite in the offline Shell container. |
-| `make container-shell-test SHELL_SCALE=1.5 SHELL_THEME=light` | Repeat the container Shell suite at 150% scale with light/dark checks. |
+| `make container-shell-build` / `make container-shell-test` | Build/test both supported profiles (49/Fedora 43 and 50/Fedora 44) sequentially. |
+| `make container-shell-test SHELL_SCALE=1.5 SHELL_THEME=light` | Repeat both Shell profiles at 150% scale with light/dark checks. |
+| `make container-test IMAGE=localhost/radiolina-shell-test:50` | Run the offline core/service suite against GNOME 50's GJS/native libraries. |
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
-| `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow in private headless GNOME 49. |
+| `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow using an already installed GNOME 49/50. |
 | `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` | Repeat at 150% monitor scaling with light/dark checks. |
 | `git diff --check` | Check patch whitespace. |
 | `make security-check` / `make container-security-check` | Opt-in networked dependency/advisory reports; follow [security procedure](SECURITY.md). |
@@ -36,18 +38,19 @@ extension runtime dependency. Container packaging supplies no host runtime libra
 
 ## Isolation requirements
 
-- Container tests use `--network=none`, explicit read-only source mounts, private XDG paths
+- Service container tests use `--network=none`, explicit read-only source mounts, private XDG paths
   and D-Bus, generated local MP3/ICY fixtures, and synchronized silent audio.
   Private workspace/credentials/Git are excluded from the build context and mounts;
-  only packaging exposes `build/` writable. Public streams never gate automated checks.
-- Shell E2E needs an already installed GNOME 49 Shell/rendering backend. Its private
+  packaging exposes `build/` writable, while Shell evidence is limited as below.
+  Public streams never gate automated checks.
+- Host Shell E2E needs an already installed GNOME 49/50 Shell/rendering backend. Its private
   D-Bus/XDG/settings/display isolate input, install/update/uninstall, typography,
   and lifecycle from the user's desktop. Host service activation stays disabled.
 - Versioned Shell containers provide that backend without host dependency installs.
   They use private HOME/XDG and an activation-free bus for session/system connections,
   offline software rendering/silent audio, read-only inputs/root and a fresh output
   directory under ignored `build/shell-tests/`. No host home, workspace, sockets,
-  devices or system bus is mounted. A lock enforces sequential runs; limits are
+  physical devices or system bus is mounted. A lock enforces sequential runs; limits are
   1 GiB memory, two CPUs, 256 processes and ten minutes per run. See
   [container setup](DEVELOPMENT.md#versioned-shell-test-containers).
 - The evaluator bootstrap exists only on that disposable Shell; it is never
@@ -74,6 +77,15 @@ Six launcher E2E cases use fake engines to cover private mount/resource boundari
 sequential versions, per-checkout locking, failure/interruption cleanup/status retention, rejected
 profiles/engines, and Podman/Docker refresh/identity contracts. They do not substitute
 for genuine Docker execution or actual per-version Shell tests.
+
+The versioned Podman profiles passed all 51 offline cases each, plus actual Shell
+workflows on **49.10/Fedora 43** and **50.6/Fedora 44** at 100% and 150% monitor
+scale. Light/dark, Serif 12 at 125% text scale, popup controls, same-session updates,
+repeated lifecycle and OOM/crash recovery passed. Final matrix source fingerprints
+and package-content checksums match; ZIP checksums also record each archive's
+timestamp-dependent bytes. Screenshots were visually reviewed. This establishes
+the documented automated scope, not native patch status, real audio/physical keys,
+full lock/suspend integration or genuine Docker behavior.
 
 | Area | Required coverage |
 | --- | --- |

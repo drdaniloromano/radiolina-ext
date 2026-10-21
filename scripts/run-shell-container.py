@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import zipfile
 
 
 def main():
@@ -45,6 +46,13 @@ def main():
             bundle = next((checkout / 'build').glob('*.zip'), None)
             if bundle:
                 summary['zip_sha256'] = hashlib.sha256(bundle.read_bytes()).hexdigest()
+                # ZIP timestamps differ between disposable checkouts. Compare
+                # installed file bytes separately across the version matrix.
+                payload = hashlib.sha256()
+                with zipfile.ZipFile(bundle) as archive:
+                    for name in sorted(archive.namelist()):
+                        payload.update(name.encode() + b'\0' + archive.read(name) + b'\0')
+                summary['package_payload_sha256'] = payload.hexdigest()
         finally:
             shutil.copytree(checkout / 'workspace', results / 'evidence', dirs_exist_ok=True)
             summary['exit_code'] = code
