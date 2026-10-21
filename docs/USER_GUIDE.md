@@ -132,6 +132,26 @@ the first usable HTTP(S) entry and supports relative URLs, redirects, XML entiti
 CDATA, and namespaces. The original playlist URL remains saved. HLS manifests
 and XML DTD declarations are not supported. See the [input bounds](DEVELOPMENT.md#input-and-resource-bounds).
 
+The development validation policy admits MP3, AAC, FLAC, Ogg Vorbis/Opus/FLAC,
+PCM/float WAV, and audio-only MP4/M4A containing an allowed codec. Availability
+also depends on installed decoders; missing support reports **Required codec
+unavailable**. No codecs are downloaded automatically. Video, HTML, HLS, and
+other formats are rejected even when the URL ends in `.mp3`. Filename extensions
+and HTTP content types alone do not establish the format.
+
+Identification reads at most 64 KiB from the actual response, then passes the
+same buffered stream to an explicit decoder pipeline. ID3 and MP4 audio headers
+must fit within that prefix; MP4 headers must precede audio data. Large artwork
+or non-streamable M4A files can therefore be rejected. Normal ICY/ID3 track
+metadata remains supported.
+
+Redirects are limited to five across playback/playlist resolution. Credentials
+and fragments in URLs, and HTTPS-to-HTTP redirects or playlist destinations, are
+rejected. HTTP URLs entered explicitly and local/LAN stations remain supported.
+If an HTTPS station points to HTTP-only audio, use its HTTP URL explicitly if
+you accept an unencrypted connection. These are Unreleased development changes;
+the `v0.3.0` tag retains its original behavior.
+
 A manual example is `https://stream.nightride.fm/nightride.mp3`; see
 [Nightride's stream server](https://stream.nightride.fm/) for stream endpoints.
 

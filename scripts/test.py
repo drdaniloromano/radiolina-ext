@@ -15,3 +15,5 @@ with tempfile.TemporaryDirectory(prefix='gnome-radio-tests-') as directory:
     subprocess.run(['gjs', '-m', 'tests/unit/critical.js'], cwd=ROOT, env=env, check=True)
     subprocess.run(['dbus-run-session', '--config-file=scripts/test-bus.conf', '--', 'python3', 'tests/e2e/service.py'],
                    cwd=ROOT, env=env, check=True)
+    subprocess.run(['dbus-run-session', '--config-file=scripts/test-bus.conf', '--', 'python3', 'tests/e2e/validation.py'],
+                   cwd=ROOT, env=env, check=True)

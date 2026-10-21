@@ -30,6 +30,11 @@ Keep controls responsive and keyboard-accessible, with clear state, accessible l
 
 Use GJS/GStreamer; separate playback, persistence, validation, and metadata from desktop adapters. Core functionality must not depend on Shell widgets.
 
+Keep source admission policy in `src/core/validation/`. Enforce URL/redirect rules
+on actual requests and inspect a bounded byte prefix before selecting an explicit
+audio pipeline. Preserve the same response through playback; do not restore URI
+reopening, unrestricted decoder autoselection, or streaming-thread JS callbacks.
+
 Respect GNOME's default `user` session lifecycle: screen lock stops playback;
 unlock restores the idle indicator without automatic playback. Keep lock-screen
 operation disabled.

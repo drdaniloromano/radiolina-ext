@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-import GLib from 'gi://GLib';
+import {validateUrl} from './validation/urls.js';
+export {validateUrl} from './validation/urls.js';
 
 export const DEFAULT_RECENT_LIMIT = 3;
 export const MAX_RECENT_LIMIT = 10;
@@ -12,22 +13,6 @@ export function validateRecentLimit(value) {
 
 export function cleanText(value, limit = 256) {
     return String(value ?? '').replace(/[\x00-\x1f\x7f]/g, ' ').trim().slice(0, limit);
-}
-
-export function validateUrl(value) {
-    const url = String(value ?? '').trim();
-    if (!url || url.length > 2048 || /[\s\x00-\x1f\x7f]/.test(url))
-        throw new Error('Enter a valid HTTP or HTTPS stream URL.');
-    let uri;
-    try {
-        uri = GLib.Uri.parse(url, GLib.UriFlags.NONE);
-    } catch {
-        throw new Error('Enter a valid HTTP or HTTPS stream URL.');
-    }
-    if (!['http', 'https'].includes(uri.get_scheme()?.toLowerCase()) ||
-        !uri.get_host() || uri.get_userinfo() !== null || uri.get_fragment() !== null)
-        throw new Error('Use an HTTP or HTTPS stream URL without credentials or fragments.');
-    return uri.to_string();
 }
 
 export function validateConfig(config) {

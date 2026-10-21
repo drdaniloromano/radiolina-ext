@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import Gst from 'gi://Gst?version=1.0';
 import GLib from 'gi://GLib';
+import {createPipeline} from './decoder.js';
 
 const BUFFERING_TIMEOUT_SECONDS = 30;
 
@@ -14,6 +15,8 @@ export class Player {
         this.buffering = false;
         this.desired = 'Stopped';
         this.bufferingTimeout = 0;
+        this.source = null;
+        this.volume = 1;
     }
 
     _cancelBufferingTimeout() {
@@ -34,25 +37,14 @@ export class Player {
         });
     }
 
-    start(url) {
+    start(source) {
         this.stop();
-        const pipeline = Gst.ElementFactory.make('playbin', null);
-        if (!pipeline)
-            throw new Error('GStreamer playback support is unavailable.');
-        pipeline.uri = url;
-        pipeline.flags = 2; // Audio only: no video or subtitle processing.
-        if (ARGV.includes('--test-audio')) {
-            const sink = Gst.ElementFactory.make('fakesink', null);
-            sink.sync = true;
-            pipeline.audio_sink = sink;
-        }
-        pipeline.connect('source-setup', (_pipeline, source) => {
-            if (source.constructor.find_property('timeout'))
-                source.set_property('timeout', 15);
-            if (source.constructor.find_property('iradio-mode'))
-                source.set_property('iradio-mode', true);
-        });
+        let pipeline;
+        try { pipeline = createPipeline(source, ARGV.includes('--test-audio')); }
+        catch (error) { source.close(); throw error; }
+        this.source = source;
         this.pipeline = pipeline;
+        this.setVolume(this.volume);
         this.desired = 'Playing';
         this.buffering = false;
         const bus = pipeline.get_bus();
@@ -62,6 +54,13 @@ export class Player {
             if (this.pipeline !== pipeline)
                 return;
             switch (message.type) {
+            case Gst.MessageType.ELEMENT:
+                // An audio container must never initiate another media location.
+                if (message.get_structure()?.get_name() === 'redirect') {
+                    this.stop();
+                    this.onError('Media-embedded redirects are unsupported. Use the stream URL directly.');
+                }
+                break;
             case Gst.MessageType.ERROR:
                 console.warn(message.parse_error()[0].message);
                 this.stop();
@@ -131,9 +130,17 @@ export class Player {
             this.bus.remove_signal_watch();
             this.bus = null;
         }
+        this.source?.abort();
         this.pipeline?.set_state(Gst.State.NULL);
+        this.source?.close();
+        this.source = null;
         this.pipeline = null;
         this.desired = 'Stopped';
         this.onState('Stopped');
+    }
+
+    setVolume(value) {
+        this.volume = value;
+        if (this.pipeline) this.pipeline.get_by_name('volume').volume = value;
     }
 }

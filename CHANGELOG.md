@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Changed
+
+- Centralize URL/redirect and bounded media-admission policy in
+  `src/core/validation/`; inspect the actual response rather than trusting a
+  filename or MIME header, and pass that same buffered response into playback.
+- Replace unrestricted playback autoselection with explicit supported audio
+  pipelines, preserving ICY/ID3 metadata and M3U/XSPF handling. Reject unsupported
+  formats, HTML, video, HLS, oversized audio headers, and non-streamable MP4;
+  report missing codecs separately without downloading dependencies.
+- Enforce five redirects, credential/fragment restrictions, and HTTPS-to-HTTP
+  rejection across playback and playlist sources; retain explicitly entered
+  HTTP and local/LAN stations. Abort source I/O before pipeline teardown.
+
+### Verification
+
+- Add critical validation cases and real-response E2E checks for supported audio,
+  deceptive content, single-request handoff, redirect boundaries, and trusted
+  local TLS without changing host trust stores. OpenSSL stays in the development
+  image; positive AAC decoding remains outside default-image coverage.
+
 ## 0.3.0 — 2026-10-20
 
 Finalized locally; GitHub and extensions.gnome.org publication is pending.

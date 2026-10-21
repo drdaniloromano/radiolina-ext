@@ -6,11 +6,13 @@ A compact native popup keeps playback and saved stations close at hand.
 **Release status:** **0.3.0**, finalized locally; public distribution is pending.
 **GNOME Shell 49** is the only declared supported version.
 See the [changelog](CHANGELOG.md) for completed changes.
+Validation hardening on the development branch is listed under **Unreleased**.
 
 ## Features
 
 - Play/pause from the indicator, station/track information, or media keys.
 - Saved stations from direct HTTP(S) streams, M3U, and XSPF playlists.
+- Bounded URL, redirect, and audio-format validation before decoding.
 - Inline station editing, local filtering, and configurable Recent entries.
 - Stream-provided artist/title metadata and GNOME's native media card, without
   song-change notification banners.

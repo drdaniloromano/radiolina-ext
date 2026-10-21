@@ -5,6 +5,8 @@ import {cleanText, validateUrl, validateConfig, emptyConfig, MetadataTracker} fr
 import {Store} from '../../src/service/store.js';
 import {parsePlaylist, MAX_PLAYLIST_BYTES} from '../../src/core/playlists.js';
 import {validFavicon, MAX_FAVICON_BYTES} from '../../src/core/favicons.js';
+import {validateRedirect} from '../../src/core/validation/urls.js';
+import {inspectMedia, validateIcyInterval, MAX_PROBE_BYTES} from '../../src/core/validation/media.js';
 
 let count = 0;
 function test(name, run) {
@@ -31,6 +33,38 @@ test('accepts HTTP streams and rejects unsafe or malformed URLs', () => {
 test('sanitizes untrusted metadata and bounds its length', () => {
     assert(cleanText('  Title\nartist\0  ') === 'Title artist');
     assert(cleanText('x'.repeat(1000)).length === 256);
+});
+test('applies URL policy to relative redirects and rejects HTTPS downgrades', () => {
+    assert(validateRedirect('https://radio.example/path/live', '../audio') === 'https://radio.example/audio');
+    assert(validateRedirect('http://127.0.0.1/live', '/other') === 'http://127.0.0.1/other');
+    assert(validateRedirect('http://radio.example/live', 'https://radio.example/audio') === 'https://radio.example/audio');
+    for (const target of ['', 'http://radio.example/audio', 'https://name:password@radio.example/audio',
+        'https://radio.example/audio#fragment', 'file:///tmp/audio', 'data:audio/mpeg,abc',
+        '/bad path', 'x'.repeat(2049)])
+        rejects(() => validateRedirect('https://radio.example/live', target));
+});
+test('bounds byte-level media admission and rejects unsupported or disguised input', () => {
+    const encode = value => new TextEncoder().encode(value);
+    for (const data of ['<html>not audio</html>', '<!DOCTYPE html><html/>', '#EXTM3U\n#EXT-X-VERSION:3\nsegment.ts'])
+        rejects(() => inspectMedia(encode(data), {final: true}));
+    assert(inspectMedia(encode('#EXTM3U\nhttp://radio.example/live'))?.format === 'm3u');
+    assert(inspectMedia(encode('<playlist xmlns="http://xspf.org/ns/0/">'))?.format === 'xspf');
+    assert(inspectMedia(encode('/relative.mp3'), {playlistHint: 'm3u'})?.format === 'm3u');
+    rejects(() => inspectMedia(new Uint8Array(MAX_PROBE_BYTES + 1)));
+    rejects(() => inspectMedia(encode('ID3\x04\0\0\x7f\x7f\x7f\x7f')));
+    assert(inspectMedia(new Uint8Array([255])) === null);
+    rejects(() => inspectMedia(new Uint8Array([255]), {final: true}));
+    rejects(() => inspectMedia(encode('ID3\x04'), {final: true}));
+    for (const value of ['0', '-1', 'abc', '2147483648']) rejects(() => validateIcyInterval(value));
+    assert(validateIcyInterval(null) === 0 && validateIcyInterval('4096') === 4096);
+    // A bounded WAV PCM/float header is allowed; compressed WAV is outside policy.
+    const wave = new Uint8Array(44);
+    wave.set(encode('RIFF')); wave.set(encode('WAVEfmt '), 8);
+    const view = new DataView(wave.buffer);
+    view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+    assert(inspectMedia(wave).codec === 'pcm');
+    view.setUint16(20, 7, true);
+    rejects(() => inspectMedia(wave));
 });
 test('deduplicates tracks and clears missing or stale metadata', () => {
     const tracker = new MetadataTracker();

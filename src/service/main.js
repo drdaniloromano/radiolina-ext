@@ -6,7 +6,6 @@ import GLibUnix from 'gi://GLibUnix';
 import {cleanText, emptyConfig, validateUrl, validateRecentLimit, MAX_RECENT_LIMIT, MetadataTracker} from '../core/stations.js';
 import {Store} from './store.js';
 import {Player} from './player.js';
-import {isDirectAudioUrl} from '../core/playlists.js';
 import {configureOomPreference} from './resource-policy.js';
 
 configureOomPreference();
@@ -123,12 +122,11 @@ function play() {
         loadCancellable = cancellable;
         status = 'Connecting';
         (async () => {
-            const target = isDirectAudioUrl(sourceUrl) ? sourceUrl :
-                await (await import('./playlist.js')).resolveStream(sourceUrl, cancellable);
-            if (generation !== loadGeneration || cancellable.is_cancelled()) return;
-            resolvedUrl = target;
-            player.start(target);
-            if (player.pipeline) player.pipeline.volume = volume;
+            const source = await (await import('./source.js')).openStream(sourceUrl, cancellable);
+            if (generation !== loadGeneration || cancellable.is_cancelled()) { source.close(); return; }
+            resolvedUrl = source.url;
+            player.start(source);
+            player.setVolume(volume);
             publish();
         })().catch(error => {
             if (generation !== loadGeneration) return;
@@ -266,8 +264,7 @@ const mpris = {
     get Volume() { return volume; },
     set Volume(value) {
         volume = Math.max(0, Math.min(1, value));
-        if (player.pipeline)
-            player.pipeline.volume = volume;
+        player.setVolume(volume);
         playerExport.emit_property_changed('Volume', new GLib.Variant('d', volume));
     },
     get Position() { return 0; },

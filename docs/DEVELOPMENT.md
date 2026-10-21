@@ -12,14 +12,15 @@ flowchart TB
     subgraph backend["Separate GJS playback process"]
         service["Station state, D-Bus API and MPRIS"]
         player["GStreamer playback"]
+        source["Validated HTTP response and bounded media identification"]
         store["Validated station storage"]
-        service --> player
+        service --> source --> player
         service --> store
     end
     ui -->|D-Bus commands| service
     service -->|D-Bus state updates| ui
     media["Media keys and native media card"] <-->|MPRIS| service
-    stream["Radio stream"] -->|Audio and track metadata| player
+    stream["Radio stream"] -->|Audio and track metadata| source
     store --> config["stations.json"]
 ```
 
@@ -34,6 +35,7 @@ recording, account system, or podcast subsystem.
 | --- | --- |
 | [extension/](../extension/) | Native popup/indicator, symbolic SVGs, layout CSS, desktop adapter. |
 | [src/core/](../src/core/) | URL/config validation, bounded playlist/image parsing, metadata sanitization and deduplication. |
+| [src/core/validation/](../src/core/validation/) | Shared URL/redirect rules and bounded byte-level audio/container admission policy. |
 | [src/service/](../src/service/) | GStreamer, async playlists/favicons, atomic storage, D-Bus/MPRIS, process-local resource policy. |
 | [radio.xml](../src/service/radio.xml) | App command/state contract; `State` is JSON in a D-Bus string property. |
 | [tests/unit/](../tests/unit/) | Critical validation, metadata, parsing, and storage cases. |
@@ -61,6 +63,29 @@ The two-minute service-readiness deadline accommodates cold GStreamer discovery;
 child exit fails promptly and Stop/Quit can cancel startup. Stream connection or
 rebuffering uses a cancellable 30-second one-shot deadline, not a recurring timer.
 The service entry retains its standalone `#!@GJS@ -m` marker and runs with `gjs -m`.
+
+### Stream validation and decoder boundary (Unreleased)
+
+Validation acts on URLs, redirect destinations, and initial response bytes. The
+pure policies live in `src/core/validation/`; they have no Shell or GStreamer
+dependency. `http.js` enforces redirect policy on actual libsoup requests;
+`source.js` resolves bounded playlists and inspects up to 64 KiB through a native
+`Gio.BufferedInputStream`. No extension-based playback shortcut or second GET
+is used. HTTPS sources cannot fall back to HTTP, including through playlist entries.
+
+`decoder.js` builds explicit pipelines from fixed, owned element names after
+admission. Native `giostreamsrc` consumes the same inspected buffer/response;
+ICY/ID3 handling and supported container parsers precede an allowed audio decoder.
+There is no `playbin`/`decodebin`, decoder autoselection, media URI reopening,
+video output, or JavaScript callback from a streaming thread. Codec alternatives
+are explicitly enumerated; missing native components fail with a codec error.
+MP4 headers are inspected for audio tracks and supported sample descriptions;
+WAV is limited to PCM/float and Ogg to the allowed audio codecs.
+
+Stop first aborts HTTP I/O, then stops the native pipeline and closes the stream.
+Failed/stale loads close their response; generation guards and one-shot deadlines
+remain in effect. This is bounded admission plus native format parsing, not a
+proof that a malformed allowed format cannot exploit a native library bug.
 
 ### Desktop integration and identity
 
@@ -130,7 +155,9 @@ ordinary source edits are visible through the explicit read-only mounts.
 `make build` and `make test` use already installed host tools without installing
 anything. The verified stack includes GJS 1.86, GLib/Gio/GLibUnix, GStreamer 1.26
 with base/good plugins, libsoup 3, and desktop audio. Tests additionally use Python 3,
-PyGObject, `dbus-run-session`, and `gst-launch-1.0`; Shell E2E needs native GNOME 49.
+PyGObject, `dbus-run-session`, `gst-launch-1.0`, and OpenSSL for ephemeral local TLS
+fixtures; Shell E2E needs native GNOME 49. OpenSSL is a development-image dependency,
+not an extension runtime dependency; tests never change host trust stores.
 
 | Make variable | Default | Meaning |
 | --- | --- | --- |
@@ -160,15 +187,22 @@ See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recove
 | --- | --- |
 | Stations | Up to 200; names up to 80 characters; unique IDs and HTTP(S) URLs up to 2,048 characters without credentials/fragments. |
 | Playlists | 256 KiB, three documents, five redirects, 15-second resolution deadline; first usable HTTP(S) entry. Reject circular sources, HLS, and XML declarations/DTDs. |
+| Audio identification | 64 KiB prefix, within the 15-second source-loading deadline; explicit audio container/codec policy, with no second audio GET. ID3/MP4 headers must fit; MP4 must be streamable. |
 | Favicons | Origin `/favicon.ico`, sequential host-deduplicated requests, PNG/ICO only, 256 KiB and bounded dimensions, three redirects, five seconds; cached, cancellable, no refresh polling. |
 | Recent | Ten retained unique played stations; 1–10 shown, default three. Lowering the display limit preserves history. |
 
 Resource samples are service-only, not the incremental memory used inside Shell.
-An offline-container idle sample measured 36.9 MiB RSS and 0.000 CPU seconds over
+Before validation hardening, an offline-container idle sample measured 36.9 MiB RSS and 0.000 CPU seconds over
 one second. A paused local-fixture sample measured 46.9 MiB RSS / 41.4 MiB PSS and
 0.000 CPU seconds over 10.002 seconds; MPRIS Stop retained about 47.0 MiB RSS.
 Infobox Stop instead exits that process. Shared libraries, allocator behavior,
 streams, codecs, and audio sinks affect results; these are observations, not budgets.
+
+The validation branch's offline suite also measured idle RSS 36.9 MiB with 0.000
+CPU seconds over one second. A separate paused ICY fixture measured 49.0 MiB RSS /
+43.4 MiB PSS with 0.000 CPU seconds over five seconds. Finite playback-cycle probes
+showed native descriptors being reclaimed after idle/diagnostic GC in a disposable
+copy; no production GC timer was added and long-duration leak freedom is not established.
 
 ## Release policy
 

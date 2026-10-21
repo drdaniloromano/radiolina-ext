@@ -127,7 +127,7 @@ class Streams(http.server.BaseHTTPRequestHandler):
             pass
 
 
-class ServiceE2E(unittest.TestCase):
+class ServiceFixture(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.fixture = tempfile.TemporaryDirectory(prefix='gnome-radio-fixture-')
@@ -143,7 +143,7 @@ class ServiceE2E(unittest.TestCase):
             return name.encode() + size(len(data)) + b'\0\0' + data
         tags = frame('TIT2', 'Tagged song') + frame('TPE1', 'Tagged artist')
         Streams.tags = b'ID3\x04\x00\x00' + size(len(tags)) + tags
-        cls.server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Streams)
+        cls.server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), getattr(cls, 'stream_handler', Streams))
         cls.server.daemon_threads = True
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
@@ -237,6 +237,7 @@ class ServiceE2E(unittest.TestCase):
     def media(self, name):
         return self.call(name, interface=PLAYER, path=MPRIS)
 
+class ServiceE2E(ServiceFixture):
     def test_saved_stations_survive_restart_and_validate_input(self):
         identifier = self.add()
         self.call('SetNotifications', '(b)', (True,))
@@ -488,13 +489,12 @@ class ServiceE2E(unittest.TestCase):
         self.shutdown()
         runtime = Path(self.directory.name) / 'runtime'
         shutil.copytree(ROOT / 'src', runtime)
-        player = runtime / 'service/player.js'
-        source = player.read_text()
+        transport = runtime / 'service/http.js'
+        source = transport.read_text()
         # Reproduce a transport that never supplies its own timeout/error, as
         # observed after virtual link loss. Keep the real decoding pipeline.
-        self.assertIn("source.set_property('timeout', 15)", source)
-        player.write_text(source.replace("source.set_property('timeout', 15)",
-                                         "source.set_property('timeout', 0)"))
+        self.assertIn('timeout: 15', source)
+        transport.write_text(source.replace('timeout: 15', 'timeout: 0'))
         self.service_entry = runtime / 'service/main.js'
         self.start()
         identifier = self.add('/stall.mp3')

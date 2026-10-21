@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import GLib from 'gi://GLib';
-import {validateUrl} from './stations.js';
+import {validateUrl} from './validation/urls.js';
 
 export const MAX_PLAYLIST_BYTES = 256 * 1024;
 export function playlistKind(url, type = '') {
@@ -10,9 +10,6 @@ export function playlistKind(url, type = '') {
     if (/\.m3u8?$/.test(path) || ['audio/x-mpegurl', 'audio/mpegurl',
         'application/x-mpegurl', 'application/vnd.apple.mpegurl'].includes(type)) return 'm3u';
     return '';
-}
-export function isDirectAudioUrl(url) {
-    return /\.(mp3|ogg|opus|aac|flac|wav|m4a)$/i.test(GLib.Uri.parse(url, 0).get_path());
 }
 function decodeXml(text) {
     const entities = {amp: '&', lt: '<', gt: '>', quot: '"', apos: "'"};

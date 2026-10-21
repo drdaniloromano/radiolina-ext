@@ -2,7 +2,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
-import {validateUrl} from '../core/stations.js';
+import {validateUrl, validateRedirect} from '../core/validation/urls.js';
 import {validFavicon, MAX_FAVICON_BYTES} from '../core/favicons.js';
 
 export function faviconUrl(source) {
@@ -35,7 +35,7 @@ export async function fetchFavicon(url, cancellable) {
                 if ([301, 302, 303, 307, 308].includes(message.status_code)) {
                     const target = message.response_headers.get_one('Location');
                     if (!target) return null;
-                    url = validateUrl(GLib.Uri.resolve_relative(url, target, 0));
+                    url = validateRedirect(url, target);
                     continue;
                 }
                 if (message.status_code !== 200 || message.response_headers.get_content_length() > MAX_FAVICON_BYTES)

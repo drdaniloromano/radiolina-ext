@@ -7,7 +7,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | Command | Purpose |
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
-| `make container-test` | Offline packaging E2E, 9 critical unit cases, and 18 service E2E cases. |
+| `make container-test` | Offline packaging E2E, 11 critical unit cases, 18 service E2E cases, and 7 transport/media validation cases. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
 | `make test` | Run packaging/unit/service checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
@@ -53,6 +53,7 @@ Logs, screenshots, and measurements go to ignored `workspace/`, including
 | Package | Source fidelity, MIT/license inclusion, UUID/version/support/clipboard metadata, private/development exclusions; valid/invalid OOM build settings without source-default changes. |
 | Critical unit | URL/config validation, metadata bounds/deduplication, private storage/corruption, bounded playlist and image parsing; legacy defaults. No numerical coverage threshold. |
 | Service E2E | Real decoding/MPRIS, artist/title tags, CRUD/edit identity/persistence, Recent, favicons/cache/cancellation, HTTP failures and stalled-transport deadlines, stale-load cancellation, idle resources, Shell-owner loss, OOM overrides/inheritance/denial/restart. |
+| Transport/media E2E | Actual same-response decoding, misleading extensions/headers, HTML/HLS/video rejection before decoder construction, bounded ID3/ICY/gzip playlists, five-hop redirect boundary, credentials/fragments/schemes, trusted local TLS upgrade/downgrade and playlist-entry policy. |
 | Shell E2E | Real ZIP install/replacement/uninstall and legacy-ID migration; saved bytes preserved; native pointer/keyboard controls, shared playback hover/focus, row-action exit, search, 30/70 editor, mutually exclusive views, optional Stop, fixed dimensions/aligned spacing, state icons, silent native media card, service crash/recovery. |
 | Theme/lifecycle | Native light/dark changes, 100%/150% display scales, Serif 12 with 125% text scaling, cached-module/CSS updates, delayed startup/cancellation/early exit, rapid Stop/restart, disable/enable, foreign indicator/style ownership, unsupported grouping fallback. |
 
@@ -61,6 +62,12 @@ transport-stall test disables the HTTP source's timeout in a disposable copy to
 exercise the app's own fallback, including Pause cancellation. Shell tests use
 real virtual pointer/keyboard events; silent output cannot establish audibility
 or physical-key routing. Third-party themes and hardware suspend are not implied.
+
+Validation fixtures generate MP3, FLAC, Vorbis/Opus Ogg, PCM/float WAV, MP3/Opus MP4,
+and video locally. TLS tests trust an ephemeral CA only inside a disposable service
+copy, with certificate verification enabled. The default image exercises AAC's
+missing-codec error, not positive AAC decoding; that requires a suitable installed
+decoder and real AAC fixture. Native parser security is not established by these cases.
 
 ## OOM isolation and crash recovery
 
