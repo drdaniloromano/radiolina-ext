@@ -98,7 +98,7 @@ exploit samples or resource-exhaustion probes on the maintainer's desktop.
 
 These **2026-10-21 Unreleased** notes describe the reviewed application paths,
 not the security status of every installation. Detailed environment evidence and
-unfinished reviews remain private. The dependency review is still open.
+working review notes remain private. The dependency review is still open.
 
 - **AV1 encoder: justified not-applicable to current playback paths.**
   [CVE-2026-56208](https://bugzilla.redhat.com/show_bug.cgi?id=2544505) requires
@@ -108,18 +108,36 @@ unfinished reviews remain private. The dependency review is still open.
   changes encoder buffer handling. This conclusion does not mark an installed
   `libaom` package fixed or cover other applications using it. Update affected
   environments through their vendor; reassess if playback/encoding paths change.
-- **libsoup HTTP/2: potentially applicable; resolution remains unverified.**
-  [CVE-2026-15712](https://bugzilla.redhat.com/show_bug.cgi?id=2500132) concerns
-  malformed GOAWAY frames in client HTTP/2 processing. `HttpSession` uses
-  `Soup.Session`; protocol parsing precedes the app's media-byte inspection, so
-  URL/format validation cannot establish protection from this defect. Fedora
-  identifies `libsoup3-3.6.6-5.fc43` as fixed; other distributions require their
-  own vendor/backport confirmation. Install a vendor-fixed package through the
-  distribution's supported update process, then restart the playback service and
-  rerun inventory plus relevant transport tests in isolation. Do not mark the
-  finding resolved until the installed build and fresh review confirm it;
-  deterministic tests alone do not establish exploit resistance. Other CVEs in
-  the same advisory still need individual applicability checks.
+
+### libsoup advisory applicability
+
+`HttpSession` uses `Soup.Session`; native protocol parsing precedes media-byte
+inspection. The reviewed [upstream 3.6.6 source](https://download.gnome.org/sources/libsoup/3.6/libsoup-3.6.6.tar.xz)
+offers HTTP/2 over direct TLS connections by default. URL/format validation cannot establish
+protection from HTTP/2 defects. Assessment of the eight current CVE IDs referenced by
+`FEDORA-2026-fce2f41203`:
+
+| Issue | Current radiolina paths |
+| --- | --- |
+| [CVE-2026-15712: GOAWAY over-read](https://bugzilla.redhat.com/show_bug.cgi?id=2500132) | Open, conditional on HTTP/2 debug logging. The [upstream patch](https://gitlab.gnome.org/GNOME/libsoup/-/commit/3a6fb56a0cba42d11f5fd1db6dedcc7c2e92757b.patch) identifies the logging prerequisite. Normal dropped debug messages avoid the formatting operation; inherited debug settings can enable it. |
+| [CVE-2026-15713: HTTP/2 cleanup](https://access.redhat.com/security/cve/cve-2026-15713) | Unknown/potentially applicable: client HTTP/2 is supported; the precise native cleanup prerequisites and installed fix remain unverified. |
+| [CVE-2026-15709: WebSocket deflate](https://access.redhat.com/security/cve/cve-2026-15709), [CVE-2026-15711: control frames](https://bugzilla.redhat.com/show_bug.cgi?id=2500545) | Justified not-applicable: the app establishes no WebSocket connection or upgrade handshake. |
+| [CVE-2026-15714: multipart reader](https://access.redhat.com/security/cve/cve-2026-15714) | Justified not-applicable: the app reads the response stream directly and never constructs `Soup.MultipartInputStream` or requests multipart parts. |
+| [CVE-2026-77680: Range coalescing](https://access.redhat.com/security/cve/cve-2026-77680), [CVE-2026-77014: Range sorting](https://access.redhat.com/security/cve/cve-2026-77014) | Justified not-applicable: the app runs no `Soup.Server` and never invokes Range parsing APIs. |
+| [CVE-2026-12549](https://access.redhat.com/security/cve/cve-2026-12549) | Unknown: the vendor description discusses server Range handling while its statement/mitigation discusses WebSockets. Neither is used here, but the contradictory metadata needs clarification before closure. |
+
+The Range notice also cites CVE-2025-32907 as historical context. Its
+[server Range handling](https://access.redhat.com/security/cve/cve-2026-77680)
+is outside the same current app paths; this is not an additional new finding.
+
+**Resolution:** use the distribution's supported update process to obtain a
+vendor-fixed libsoup build. Fedora identifies `libsoup3-3.6.6-5.fc43` as fixing
+the GOAWAY issue; that fact alone does not verify every CVE in the advisory.
+Confirm fixes/backports individually, restart affected processes, and rerun
+inventory plus relevant transport tests in isolation. Keep debug logging disabled
+on an unfixed GOAWAY implementation; this does not resolve the other open issues.
+These are source/vendor assessments, not successful exploit reproductions or a
+claim of parser immunity. Reassess when client features or native packages change.
 
 Third-party codec packages and repositories without advisory coverage remain a
 separate open item. Do not equate missing vendor results with absence of flaws,

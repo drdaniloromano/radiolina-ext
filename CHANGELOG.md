@@ -40,8 +40,12 @@
 
 - Record scoped dependency-review conclusions and vendor resolution guidance in
   [security review notes](docs/SECURITY.md#review-conclusions-and-resolution-guidance):
-  the AV1 encoder issue is outside the current playback paths; libsoup HTTP/2
-  handling remains potentially applicable pending installed-fix verification.
+  the AV1 encoder issue is outside the current playback paths. Assess eight
+  current libsoup CVE references separately: five are outside current client paths;
+  HTTP/2 debug/cleanup and contradictory vendor metadata remain open or conditional.
+  Account separately for the historical Range CVE cited by the advisory.
+  Confirm the GOAWAY logging prerequisite from the upstream patch and harmless
+  GLib logging checks; package fixes and exploit resistance remain unverified.
   Third-party coverage and other advisory checks remain open. Keep dated
   environment reports private; this records no package update or release approval.
 - Cover private report permissions, recursive package inventory, Fedora's keyed-map
