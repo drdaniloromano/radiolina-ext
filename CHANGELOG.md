@@ -42,6 +42,10 @@
 
 ### Verification
 
+- Trace both bundled SVG icons to the assistant's 2026-10-14 creation patches
+  in local development records. Verify exact agreement with the initial Git
+  baseline and current drawings, apart from later MIT comments; summarize the
+  evidence and its limits in the provenance review without publishing transcripts.
 - Assess all 28 desktop vendor advisory entries at component/path scope, keeping
   broader native-stack and third-party codec coverage unresolved where evidence
   is incomplete. Verify a contained vendor refresh and functional tests without
