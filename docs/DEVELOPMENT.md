@@ -110,6 +110,77 @@ selection/history through edits. Storage validates before private atomic replace
 unreadable existing configuration blocks mutations rather than destroying data.
 Clipboard access writes only the editor URL; it does not read clipboard contents.
 
+## Dependencies and codecs
+
+Container development keeps tools contained; it does not make the extension ZIP
+self-sufficient. The installed Shell UI and GJS service load the desktop host's
+libraries and GStreamer plugins. None of those native libraries are bundled in
+the ZIP or installed onto the host by the build scripts.
+
+| Use | Required components | Where they must exist |
+| --- | --- | --- |
+| Installed extension | GNOME Shell 49; GJS and GI bindings for GLib/Gio/GLibUnix, GStreamer 1.x, and libsoup 3; session D-Bus and desktop audio. Shell supplies St/Clutter/Pango. | Desktop host. |
+| Playback | Native GIO source, audio conversion/resampling/volume, buffering, and an available audio sink; parser/decoder for the chosen format. Base/Good plugins cover the verified common set, with AAC exceptions below. | Desktop host; a silent sink replaces desktop audio in tests. |
+| Container packaging | Make, POSIX shell/basic user-ID tools, local Podman or Docker; network access for image creation. Python and development packages come from [Dockerfile](../Dockerfile). | Host needs the engine/Make, not the image's GJS/Python libraries. |
+| Direct packaging (`make build`) | Python 3 standard library; Make for the convenience target. No GJS/media stack is needed just to create the ZIP. | Existing host tools; no dependency installation. |
+| Service/media tests (`make test`) | Runtime GJS/GI/GStreamer/libsoup plus Python 3, PyGObject, `dbus-run-session`, GStreamer command-line tools/fixture encoders, and OpenSSL. | Development image for `make container-test`; existing host tools for direct testing. |
+| Shell tests | Native GNOME Shell 49 with headless rendering, Python/GI, service-test tools, and extension-management tools. | Disposable headless session or VM; the development image does not provide a full desktop. |
+
+Python, Make, container engines, fixture encoders, and the OpenSSL command are
+development tools, not installed-extension runtime dependencies. OpenSSL generates
+temporary TLS-test certificates; tests trust their private CA only in a disposable
+service copy and leave system trust unchanged. Optional favicon fetching is off
+by default and uses native Shell image loading; additional codecs are needed only
+for the formats you play. Packaging does not verify a destination PC's runtime.
+
+### Per-format native elements
+
+These are the explicit choices in [decoder.js](../src/service/decoder.js), not all
+formats GStreamer might otherwise support. Package/plugin availability varies by
+distribution; a missing decoder produces an error rather than an automatic install.
+
+| Audio format/container | Required parser/decoder elements |
+| --- | --- |
+| MP3 | `mpegaudioparse` plus `mpg123audiodec`, `avdec_mp3`, or `mad`; preferred parser/decoder are in Good plugins. |
+| AAC (ADTS/ADIF or admitted MP4 audio) | `aacparse` **and** one of `avdec_aac`, `fdkaacdec`, or `faad`. The parser alone cannot decode audio. |
+| Ogg Vorbis | `oggdemux` plus `vorbisdec` or `avdec_vorbis`; the preferred pair is in Base plugins. |
+| Ogg Opus | `oggdemux` plus `opusdec` or `avdec_opus`; the preferred pair is in Base plugins. |
+| FLAC | `flacparse` plus `flacdec` or `avdec_flac`; add `oggdemux` for Ogg FLAC. Preferred native elements are in Good plugins. |
+| PCM/float WAV | `wavparse` (Good), followed by raw-audio conversion; no compressed-audio decoder. |
+| Audio-only MP4/M4A | `qtdemux` (Good), plus the parser/decoder of its admitted embedded codec; the `.m4a` extension alone does not establish AAC or decoder availability. |
+
+All pipelines also use `giostreamsrc`, `queue2`, `audioconvert`, `audioresample`,
+`volume`, and `autoaudiosink` with a working output backend. ICY and ID3 streams
+add `icydemux` and `id3demux`. Tests use `fakesink`; silent decoding does not verify
+the host's actual output device.
+
+AAC is an important distinction: [aacparse](https://gstreamer.freedesktop.org/documentation/audioparsers/aacparse.html)
+is in Good, whereas [avdec_aac](https://gstreamer.freedesktop.org/documentation/libav/avdec_aac.html)
+comes from libav, and [fdkaacdec](https://gstreamer.freedesktop.org/documentation/fdkaac/index.html)
+or [faad](https://gstreamer.freedesktop.org/documentation/faad/index.html) come from
+Bad plugins. The current Fedora image provides the parser but none of these AAC
+decoders: its tests establish missing-codec handling, not positive AAC playback.
+An eligible decoder on the desktop host is required even when container packaging succeeds.
+
+Inspect actual availability with already installed tools, for example
+`gst-inspect-1.0 mpg123audiodec` or `gst-inspect-1.0 avdec_aac`; a missing factory
+means that decoder is unavailable. See [format restrictions](USER_GUIDE.md#stream-formats-and-saved-data)
+and [test coverage](TESTING.md#automated-coverage).
+
+### Verified versions, not minimum-version claims
+
+The Fedora 43 image was verified with GJS **1.86.0**, GLib **2.86.5**,
+GStreamer/Base/Good **1.26.11**, and libsoup **3.6.6**. Development tools included
+Python **3.14.8**, Make **4.4.1**, OpenSSL **3.5.9**, D-Bus **1.16.2**, and Podman
+**5.8.4**. Headless Shell workflows have passed on GNOME **49.7** and **49.8**;
+earlier GNOME **49.1** VM workflows have maintainer confirmation. Genuine Docker runtime remains untested here;
+the available `docker` command delegates to Podman.
+
+GNOME Shell **49** is the declared target. Lower GJS/GLib/GStreamer package
+minimums have not been established by a compatibility matrix; the verified
+versions above are examples, not proven minimums. GI namespace versions such as
+`Gst-1.0` and `Soup-3.0` identify APIs rather than the exact installed package release.
+
 ## Contained builds and configuration
 
 With Podman or Docker, and Make already installed (Linux, local engine):
@@ -153,11 +224,7 @@ docs and development/private files. Rebuild the image after changing Dockerfile;
 ordinary source edits are visible through the explicit read-only mounts.
 
 `make build` and `make test` use already installed host tools without installing
-anything. The verified stack includes GJS 1.86, GLib/Gio/GLibUnix, GStreamer 1.26
-with base/good plugins, libsoup 3, and desktop audio. Tests additionally use Python 3,
-PyGObject, `dbus-run-session`, `gst-launch-1.0`, and OpenSSL for ephemeral local TLS
-fixtures; Shell E2E needs native GNOME 49. OpenSSL is a development-image dependency,
-not an extension runtime dependency; tests never change host trust stores.
+anything; their different requirements are listed in the [dependency table](#dependencies-and-codecs).
 
 | Make variable | Default | Meaning |
 | --- | --- | --- |

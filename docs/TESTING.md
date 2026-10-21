@@ -9,7 +9,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | `make container-build` | Build the Fedora 43 development image; network access required. |
 | `make container-test` | Offline packaging E2E, 11 critical unit cases, 18 service E2E cases, and 7 transport/media validation cases. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
-| `make test` | Run packaging/unit/service checks with already installed host tools. |
+| `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
 | `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow in private headless GNOME 49. |
 | `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` | Repeat at 150% monitor scaling with light/dark checks. |
@@ -22,6 +22,10 @@ under `build/` belong to the invoking host UID/GID after packaging.
 
 See [build configuration](DEVELOPMENT.md#contained-builds-and-configuration) and
 [user installation/update procedures](USER_GUIDE.md#same-session-installation-and-updates).
+The [dependency table and codec requirements](DEVELOPMENT.md#dependencies-and-codecs)
+distinguish host runtime, packaging, and testing tools. OpenSSL is required for
+local TLS fixtures in the full suite; it is included in Dockerfile and is not an
+extension runtime dependency. Container packaging supplies no host runtime libraries.
 
 ## Isolation requirements
 
@@ -63,7 +67,7 @@ exercise the app's own fallback, including Pause cancellation. Shell tests use
 real virtual pointer/keyboard events; silent output cannot establish audibility
 or physical-key routing. Third-party themes and hardware suspend are not implied.
 
-Validation fixtures generate MP3, FLAC, Vorbis/Opus Ogg, PCM/float WAV, MP3/Opus MP4,
+Validation fixtures generate MP3, FLAC, Vorbis/Opus Ogg, WAV, MP3/Opus MP4,
 and video locally. TLS tests trust an ephemeral CA only inside a disposable service
 copy, with certificate verification enabled. The default image exercises AAC's
 missing-codec error, not positive AAC decoding; that requires a suitable installed

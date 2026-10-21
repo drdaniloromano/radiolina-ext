@@ -21,10 +21,13 @@ Validation hardening on the development branch is listed under **Unreleased**.
 
 ## Requirements
 
-GNOME Shell 49, GJS, GLib/Gio with GLibUnix, GStreamer with base/good plugins and
-codecs for your streams, libsoup 3, and working desktop audio output. The verified
-development stack uses GJS 1.86 and GStreamer 1.26. Building in a container requires
-existing Podman or Docker, and Make; development dependencies stay inside the image.
+- **Desktop runtime:** GNOME Shell 49, GJS/GI with GLib/Gio/GLibUnix, libsoup 3,
+  GStreamer with base/good plugins and the decoders your streams need, and desktop audio.
+- **Container packaging:** Make and a local Podman or Docker installation.
+
+The ZIP contains extension code, not runtime libraries. Installing a package built
+in a container still requires those libraries on the desktop host. See the
+[dependency and codec details](docs/DEVELOPMENT.md#dependencies-and-codecs).
 
 ## Installation
 

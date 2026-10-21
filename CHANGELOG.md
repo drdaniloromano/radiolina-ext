@@ -14,6 +14,8 @@
 - Enforce five redirects, credential/fragment restrictions, and HTTPS-to-HTTP
   rejection across playback and playlist sources; retain explicitly entered
   HTTP and local/LAN stations. Abort source I/O before pipeline teardown.
+- Clarify desktop runtime versus container/tool dependencies, per-format decoder
+  requirements (including AAC), and verified versions versus unestablished minimums.
 
 ### Verification
 
