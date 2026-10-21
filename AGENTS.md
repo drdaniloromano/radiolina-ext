@@ -37,6 +37,10 @@ reopening, unrestricted decoder autoselection, or streaming-thread JS callbacks.
 Keep configuration schema/defaults in the same validation layer. Bound file reads
 before parsing, reject unknown fields, and preserve invalid files for repair;
 never silently reset or truncate saved stations.
+Do not expose transport URLs in MPRIS or final redirect URLs in app state.
+Only code-authored, bounded `UserError` messages may cross error boundaries;
+never embed input, URLs or native diagnostics in them. Preserve full saved URLs
+for station editing and explicit Copy, and document same-user privacy limits.
 
 Respect GNOME's default `user` session lifecycle: screen lock stops playback;
 unlock restores the idle indicator without automatic playback. Keep lock-screen

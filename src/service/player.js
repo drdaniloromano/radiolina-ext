@@ -62,7 +62,8 @@ export class Player {
                 }
                 break;
             case Gst.MessageType.ERROR:
-                console.warn(message.parse_error()[0].message);
+                // Native messages may contain private source URLs or server-supplied text.
+                console.warn('Stream playback failed.');
                 this.stop();
                 this.onError('Cannot play this stream. Check the URL or connection and try again.');
                 break;

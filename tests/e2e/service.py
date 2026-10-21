@@ -39,6 +39,7 @@ def fixture_favicon():
 
 
 class Streams(http.server.BaseHTTPRequestHandler):
+    requests = []
     title = 'First song'
     audio = b''
     slow_started = threading.Event()
@@ -51,6 +52,7 @@ class Streams(http.server.BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
+        Streams.requests.append(self.path)
         path = self.path.split('?')[0]
         if path == '/favicon.ico':
             Streams.favicon_requests += 1
@@ -160,6 +162,7 @@ class ServiceFixture(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory(prefix='gnome-radio-e2e-')
         self.env = dict(os.environ, XDG_CONFIG_HOME=self.directory.name, XDG_CACHE_HOME=self.directory.name, GIO_USE_VFS='local')
         Streams.title = 'First song'
+        Streams.requests.clear()
         Streams.slow_started.clear()
         Streams.stall_streams.clear()
         Streams.favicon_requests = 0
@@ -300,7 +303,8 @@ class ServiceE2E(ServiceFixture):
         self.assertEqual(self.state()['title'], title)
         self.assertEqual(self.prop(PLAYER, 'Metadata')['xesam:album'], 'Renamed')
         self.call('UpdateStation', '(sss)', (identifier, 'Renamed', self.url + '/plain.mp3'))
-        self.wait(lambda: self.state()['status'] == 'Playing' and self.state()['resolvedUrl'].endswith('/plain.mp3'), 'edited URL playback')
+        self.wait(lambda: self.state()['status'] == 'Playing' and '/plain.mp3' in Streams.requests,
+                  'edited URL playback')
         self.assertEqual(self.state()['title'], '')
         self.media('Pause')
         self.call('UpdateStation', '(sss)', (identifier, 'Paused edit', self.url + '/other.mp3'))
@@ -317,9 +321,10 @@ class ServiceE2E(ServiceFixture):
                 self.call('SelectStation', '(s)', (identifier,))
                 self.media('Play')
                 self.wait(lambda: self.state()['status'] == 'Playing', f'{path} decoded')
-                self.assertEqual(self.state()['resolvedUrl'], self.url + resolved)
+                self.assertIn(resolved, Streams.requests)
+                self.assertNotIn('resolvedUrl', self.state())
                 self.assertEqual(self.state()['stations'][-1]['url'], self.url + path)
-                self.assertEqual(self.prop(PLAYER, 'Metadata')['xesam:url'], self.url + resolved)
+                self.assertNotIn('xesam:url', self.prop(PLAYER, 'Metadata'))
 
     def test_bad_playlists_report_errors_without_hanging(self):
         for path in ['/loop.m3u', '/empty.m3u', '/huge.m3u', '/bad.xspf']:
@@ -337,7 +342,8 @@ class ServiceE2E(ServiceFixture):
         self.call('UpdateStation', '(sss)', (identifier, 'New source', self.url + '/plain.mp3'))
         self.wait(lambda: self.state()['status'] == 'Playing', 'new source plays')
         time.sleep(1.2)
-        self.assertEqual(self.state()['resolvedUrl'], self.url + '/plain.mp3')
+        self.assertIn('/plain.mp3', Streams.requests)
+        self.assertNotIn('/icy', Streams.requests, 'The stale playlist must not start its old source')
         self.media('Stop')
         Streams.slow_started.clear()
         self.call('UpdateStation', '(sss)', (identifier, 'Slow source', self.url + '/slow.m3u'))
@@ -346,7 +352,7 @@ class ServiceE2E(ServiceFixture):
         self.media('Pause')
         time.sleep(1.2)
         self.assertEqual(self.state()['status'], 'Paused')
-        self.assertEqual(self.state()['resolvedUrl'], '')
+        self.assertNotIn('resolvedUrl', self.state())
 
     def test_icy_metadata_notifications_and_switching(self):
         self.add('/icy')

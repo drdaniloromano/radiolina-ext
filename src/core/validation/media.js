@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
+import {UserError} from '../errors.js';
 // Bounded recognition of supported containers/codecs, independent of filenames/MIME.
 // This is an admission policy, not a replacement for native format parsers.
 export const MAX_PROBE_BYTES = 64 * 1024;
 export const MAX_ICY_INTERVAL = 1024 * 1024;
-const unsupported = () => new Error('Unsupported stream format. Use a supported audio stream or M3U/XSPF playlist.');
+const unsupported = () => new UserError('Unsupported stream format. Use a supported audio stream or M3U/XSPF playlist.');
 const text = (data, start, length) => String.fromCharCode(...data.subarray(start, start + length));
 const u32 = (data, offset, little = false) => new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(offset, little);
 const u16 = (data, offset) => new DataView(data.buffer, data.byteOffset, data.byteLength).getUint16(offset, true);
@@ -11,7 +12,7 @@ const u16 = (data, offset) => new DataView(data.buffer, data.byteOffset, data.by
 export function validateIcyInterval(value) {
     if (value === null) return 0;
     if (!/^[0-9]+$/.test(value) || Number(value) < 1 || Number(value) > MAX_ICY_INTERVAL)
-        throw new Error('Invalid stream metadata interval.');
+        throw new UserError('Invalid stream metadata interval.');
     return Number(value);
 }
 
@@ -143,7 +144,7 @@ function mp4Codec(data) {
     for (let offset = 0; offset + 8 <= data.length;) {
         const size = u32(data, offset);
         const kind = text(data, offset + 4, 4);
-        if (kind === 'mdat') throw new Error('MP4 audio headers must precede the audio data.');
+        if (kind === 'mdat') throw new UserError('MP4 audio headers must precede the audio data.');
         if (size < 8 || size > MAX_PROBE_BYTES) throw unsupported();
         if (offset + size > data.length) return null;
         if (kind === 'moov') {
@@ -206,11 +207,11 @@ function framedAudio(data, start) {
 }
 
 export function inspectMedia(bytes, {icyInterval = 0, final = false, playlistHint = ''} = {}) {
-    if (bytes.length > MAX_PROBE_BYTES) throw new Error('Stream identification exceeded its size limit.');
+    if (bytes.length > MAX_PROBE_BYTES) throw new UserError('Stream identification exceeded its size limit.');
     const data = audioPrefix(bytes, icyInterval);
     const beginning = new TextDecoder().decode(data.subarray(0, 1024)).replace(/^\uFEFF/, '').trimStart();
     if (/^(?:<!DOCTYPE\s+html|<html\b)/i.test(beginning)) throw unsupported();
-    if (/^#EXT-X-/m.test(beginning)) throw new Error('HLS streams are unsupported. Use an ordinary radio stream.');
+    if (/^#EXT-X-/m.test(beginning)) throw new UserError('HLS streams are unsupported. Use an ordinary radio stream.');
     if (/^(?:#|https?:\/\/)/i.test(beginning)) return {kind: 'playlist', format: 'm3u'};
     if (/^(?:<\?xml\b|<!DOCTYPE\b|<(?:[\w.-]+:)?playlist\b)/i.test(beginning))
         return {kind: 'playlist', format: 'xspf'};
@@ -226,7 +227,7 @@ export function inspectMedia(bytes, {icyInterval = 0, final = false, playlistHin
         }
         if (data[3] < 2 || data[3] > 4 || Array.from(data.subarray(6, 10)).some(value => value & 128)) throw unsupported();
         offset = 10 + ((data[6] << 21) | (data[7] << 14) | (data[8] << 7) | data[9]) + ((data[5] & 16) ? 10 : 0);
-        if (offset + 16 > MAX_PROBE_BYTES) throw new Error('Stream audio headers exceed the 64 KiB identification limit.');
+        if (offset + 16 > MAX_PROBE_BYTES) throw new UserError('Stream audio headers exceed the 64 KiB identification limit.');
         if (data.length < offset + 16) {
             if (final || bytes.length >= MAX_PROBE_BYTES) throw unsupported();
             return null;

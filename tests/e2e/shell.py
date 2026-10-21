@@ -960,7 +960,8 @@ class ShellE2E(unittest.TestCase):
         wait(lambda: evaluate(f'{INDICATOR}._error.visible && !{INDICATOR}._pending'), 'invalid edit rejected')
         self.assertEqual(evaluate(f'{INDICATOR}._state.stations.find(station => station.id === {INDICATOR}._state.selected).url'), ServiceE2E.url + '/icy')
         evaluate(f"{INDICATOR}._urlEntry.set_text('{ServiceE2E.url}/station.xspf'); {INDICATOR}._save.emit('clicked', 1); true")
-        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && {INDICATOR}._state.resolvedUrl === '{ServiceE2E.url}/icy' && !{INDICATOR}._pending"), 'XSPF edit playing')
+        wait(lambda: evaluate(f"{INDICATOR}._state.status === 'Playing' && {INDICATOR}._state.title === 'First song' && !{INDICATOR}._pending"), 'XSPF edit playing')
+        self.assertNotIn('resolvedUrl', evaluate(f'{INDICATOR}._state'))
         self.assertEqual(evaluate(f'{INDICATOR}._state.stations.find(station => station.id === {INDICATOR}._state.selected).url'), ServiceE2E.url + '/station.xspf')
         wait(lambda: evaluate(f"{INDICATOR}._title.text === 'First song'"), 'XSPF song metadata displayed')
         other = call(BUS, APP, IFACE, 'AddStation', GLib.Variant('(ss)', ('Other radio', ServiceE2E.url + '/station.m3u')))[0]

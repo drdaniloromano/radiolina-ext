@@ -8,6 +8,7 @@ import {validFavicon, MAX_FAVICON_BYTES} from '../../src/core/favicons.js';
 import {validateRedirect} from '../../src/core/validation/urls.js';
 import {inspectMedia, validateIcyInterval, MAX_PROBE_BYTES} from '../../src/core/validation/media.js';
 import {MAX_CONFIG_BYTES, MAX_STATION_ID_LENGTH} from '../../src/core/validation/config.js';
+import {UserError, publicErrorMessage} from '../../src/core/errors.js';
 
 let count = 0;
 function test(name, run) {
@@ -34,6 +35,15 @@ test('accepts HTTP streams and rejects unsafe or malformed URLs', () => {
 test('sanitizes untrusted metadata and bounds its length', () => {
     assert(cleanText('  Title\nartist\0  ') === 'Title artist');
     assert(cleanText('x'.repeat(1000)).length === 256);
+});
+test('publishes only explicitly safe bounded diagnostics, never raw backend errors', () => {
+    const secret = 'https://radio.example/private-secret?token=query-secret';
+    for (const error of [new Error(secret), new TypeError(secret),
+        new GLib.Error(Gio.IOErrorEnum, Gio.IOErrorEnum.FAILED, secret),
+        {message: secret}, null])
+        assert(publicErrorMessage(error, 'Retry playback.') === 'Retry playback.');
+    assert(publicErrorMessage(new UserError('Known\nvalidation error.'), 'Retry') === 'Known validation error.');
+    assert(publicErrorMessage(new UserError('x'.repeat(1000)), 'Retry').length === 384);
 });
 test('applies URL policy to relative redirects and rejects HTTPS downgrades', () => {
     assert(validateRedirect('https://radio.example/path/live', '../audio') === 'https://radio.example/audio');

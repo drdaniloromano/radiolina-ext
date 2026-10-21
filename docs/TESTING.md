@@ -7,7 +7,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | Command | Purpose |
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
-| `make container-test` | Offline packaging E2E, 13 critical unit cases, 19 service E2E cases, and 7 transport/media validation cases. |
+| `make container-test` | Offline packaging E2E, 14 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
@@ -58,6 +58,7 @@ Logs, screenshots, and measurements go to ignored `workspace/`, including
 | Critical unit | URL/config validation, 128-character IDs, unknown-field rejection, exact 1 MiB/overflow bounded reads and closure, invalid UTF-8 preservation, canonical private storage and legacy defaults; metadata, playlist and image bounds. No numerical coverage threshold. |
 | Service E2E | Real decoding/MPRIS, CRUD/edit persistence, rejected-file preservation/write blocking/compact error state and playback after manual repair, Recent, favicons/cancellation, HTTP failures/deadlines, stale-load cancellation, idle resources, Shell-owner loss, OOM overrides/inheritance/denial/restart. |
 | Transport/media E2E | Actual same-response decoding, misleading extensions/headers, HTML/HLS/video rejection before decoder construction, bounded ID3/ICY/gzip playlists, five-hop redirect boundary, credentials/fragments/schemes, trusted local TLS upgrade/downgrade and playlist-entry policy. |
+| Privacy | Token-bearing path/query URLs reach actual playback unchanged; MPRIS properties/signals omit URLs and State omits final redirects. Full saved/editor URLs and private mode persist. Disposable native/JS error traps cover HTTP, player bus, startup, saves and icons without exposing injected secrets in application errors/logs; public-message unit bounds remain enforced. |
 | Shell E2E | Real ZIP install/replacement/uninstall and legacy-ID migration; saved bytes preserved; native pointer/keyboard controls, shared playback hover/focus, row-action exit, search, 30/70 editor, mutually exclusive views, optional Stop, fixed dimensions/aligned spacing, state icons, silent native media card, service crash/recovery. |
 | Theme/lifecycle | Native light/dark changes, 100%/150% display scales, Serif 12 with 125% text scaling, cached-module/CSS updates, delayed startup/cancellation/early exit, rapid Stop/restart, disable/enable, foreign indicator/style ownership, unsupported grouping fallback. |
 
@@ -92,6 +93,11 @@ Completed verification on GNOME 49.7: Shell **200 → 200**, playback service
 The offline suite passed all 9 critical cases and 18 service cases (150.916 s).
 This tests abrupt service death and recovery, not kernel victim selection,
 actual low-memory survival, hardware behavior, or systemd-oomd policy.
+
+The subsequent privacy-hardening workflow also passed on isolated GNOME 49.8
+(84.525 s): native media card/editor Copy, Stop exit, unchanged Shell score 200,
+service score 500 before/after SIGKILL, and one-click playback/metadata recovery.
+The same OOM verification limitations apply.
 
 ## Manual acceptance
 

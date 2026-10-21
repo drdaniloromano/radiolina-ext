@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Omit stream URLs from MPRIS and stop exporting final redirect URLs in app state.
+  Preserve full saved URLs for playback/editor/explicit Copy. Use bounded,
+  explicitly code-authored public errors or fixed fallbacks and safe playback/icon
+  warnings; document plaintext storage, session-bus and clipboard privacy limits.
 - Bound saved configuration reads to 1 MiB before JSON parsing, limit station IDs
   to 128 characters, and reject unknown configuration/station fields in the shared
   validation layer. Preserve rejected files and require repair/restart before writes;
@@ -23,6 +27,12 @@
 
 ### Verification
 
+- Check URL omission from media properties/signals, token-bearing direct/redirect
+  playback, saved URL fidelity, and injected native/JS failures across application
+  errors and logs. Keep decoder admission checks independent of diagnostic text.
+- Pass the isolated GNOME 49.8 workflow with the revised state contract, native
+  media card/editor Copy, Stop teardown and SIGKILL recovery; service OOM score
+  stays 500 and Shell stays 200.
 - Cover exact byte/ID limits, overflow read termination/closure, invalid UTF-8,
   unknown fields, unchanged rejected files, blocked mutations, and successful
   playback after manual configuration repair. No memory exhaustion is simulated.

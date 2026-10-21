@@ -1,5 +1,6 @@
 #!@GJS@ -m
 // SPDX-License-Identifier: MIT
+import {UserError, publicErrorMessage} from '../core/errors.js';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GLibUnix from 'gi://GLibUnix';
@@ -26,7 +27,7 @@ let startupError = '';
 try {
     config = store.load();
 } catch (error) {
-    startupError = error.message;
+    startupError = publicErrorMessage(error, 'Saved stations could not be read. Back up and repair stations.json, then restart radiolina.');
     config = emptyConfig();
 }
 let status = 'Stopped';
@@ -37,7 +38,6 @@ let rootExport;
 let volume = 1;
 let loadGeneration = 0;
 let loadCancellable = null;
-let resolvedUrl = '';
 let favicons = {};
 let faviconSignature = '';
 let faviconCancellable = null;
@@ -62,14 +62,14 @@ function refreshFavicons() {
             const icon = origins.get(url);
             if (icon) { favicons[saved.id] = icon; publish(); }
         }
-    })().catch(error => { if (!cancellable.is_cancelled()) console.warn(`Favicon unavailable: ${error.message}`); });
+    })().catch(() => { if (!cancellable.is_cancelled()) console.warn('Favicon unavailable.'); });
 }
 function station() {
     return config.stations.find(item => item.id === config.selected);
 }
 function publish() {
     appExport?.emit_property_changed('State', new GLib.Variant('s', JSON.stringify({
-        ...config, favicons, status, title: metadata.title, artist: metadata.artist, error: errorText, resolvedUrl,
+        ...config, favicons, status, title: metadata.title, artist: metadata.artist, error: errorText,
     })));
     playerExport?.emit_property_changed('PlaybackStatus', new GLib.Variant('s', mpris.PlaybackStatus));
     playerExport?.emit_property_changed('Metadata', new GLib.Variant('a{sv}', mpris.Metadata));
@@ -101,7 +101,7 @@ const player = new Player(value => {
 
 function changeConfig(next) {
     if (startupError)
-        throw new Error(startupError); // Never overwrite an unreadable station file.
+        throw new UserError(startupError); // Never overwrite an unreadable station file.
     store.save(next); // Save before changing in-memory state.
     config = next;
     errorText = '';
@@ -124,13 +124,12 @@ function play() {
         (async () => {
             const source = await (await import('./source.js')).openStream(sourceUrl, cancellable);
             if (generation !== loadGeneration || cancellable.is_cancelled()) { source.close(); return; }
-            resolvedUrl = source.url;
             player.start(source);
             player.setVolume(volume);
             publish();
         })().catch(error => {
             if (generation !== loadGeneration) return;
-            errorText = error.message;
+            errorText = publicErrorMessage(error, 'Cannot open this stream. Check the connection, audio and codec support, then retry.');
             status = 'Stopped';
             metadata.reset();
             publish();
@@ -144,7 +143,6 @@ function stop() {
     loadGeneration++;
     loadCancellable?.cancel();
     loadCancellable = null;
-    resolvedUrl = '';
     player.stop();
     metadata.reset();
     publish();
@@ -159,17 +157,17 @@ function pause() {
 }
 const app = {
     get State() {
-        return JSON.stringify({...config, favicons, status, title: metadata.title, artist: metadata.artist, error: errorText, resolvedUrl});
+        return JSON.stringify({...config, favicons, status, title: metadata.title, artist: metadata.artist, error: errorText});
     },
     AddStation(name, url) {
         const normalized = validateUrl(url);
         const label = cleanText(name, 80);
         if (!label)
-            throw new Error('Enter a station name.');
+            throw new UserError('Enter a station name.');
         if (config.stations.length >= 200)
-            throw new Error('The station list is full.');
+            throw new UserError('The station list is full.');
         if (config.stations.some(item => item.url === normalized))
-            throw new Error('This stream is already saved.');
+            throw new UserError('This stream is already saved.');
         const id = GLib.uuid_string_random();
         changeConfig({...config, selected: config.selected || id,
             stations: [...config.stations, {id, name: label, url: normalized}]});
@@ -177,12 +175,12 @@ const app = {
     },
     UpdateStation(id, name, url) {
         const existing = config.stations.find(item => item.id === id);
-        if (!existing) throw new Error('Station not found.');
+        if (!existing) throw new UserError('Station not found.');
         const normalized = validateUrl(url);
         const label = cleanText(name, 80);
-        if (!label) throw new Error('Enter a station name.');
+        if (!label) throw new UserError('Enter a station name.');
         if (config.stations.some(item => item.id !== id && item.url === normalized))
-            throw new Error('This stream is already saved.');
+            throw new UserError('This stream is already saved.');
         const previousStatus = status;
         changeConfig({...config, stations: config.stations.map(item =>
             item.id === id ? {...item, name: label, url: normalized} : item)});
@@ -194,7 +192,7 @@ const app = {
     },
     RemoveStation(id) {
         if (!config.stations.some(item => item.id === id))
-            throw new Error('Station not found.');
+            throw new UserError('Station not found.');
         const stations = config.stations.filter(item => item.id !== id);
         const selected = id === config.selected ? stations[0]?.id ?? '' : config.selected;
         const wasSelected = id === config.selected;
@@ -204,7 +202,7 @@ const app = {
     },
     SelectStation(id) {
         if (!config.stations.some(item => item.id === id))
-            throw new Error('Station not found.');
+            throw new UserError('Station not found.');
         if (config.selected === id)
             return;
         const resume = ['Playing', 'Connecting'].includes(status);
@@ -256,7 +254,6 @@ const mpris = {
             'xesam:title': new GLib.Variant('s', metadata.title || current.name),
             ...(metadata.artist ? {'xesam:artist': new GLib.Variant('as', [metadata.artist])} : {}),
             'xesam:album': new GLib.Variant('s', current.name),
-            'xesam:url': new GLib.Variant('s', resolvedUrl || current.url),
         };
     },
     get Rate() { return 1; },
@@ -280,7 +277,7 @@ const mpris = {
     Previous() {},
     Seek(_offset) {},
     SetPosition(_id, _position) {},
-    OpenUri() { throw new Error('Add custom streams through the station menu.'); },
+    OpenUri() { throw new UserError('Add custom streams through the station menu.'); },
     Pause: pause,
     Play: play,
     PlayPause: app.PlayPause,
@@ -296,7 +293,7 @@ function wrap(xml, name, object) {
                 return handler.apply(object, args);
             } catch (error) {
                 // Expected validation errors belong to the caller, not the Shell log.
-                throw new GLib.Error(Gio.DBusError, Gio.DBusError.INVALID_ARGS, error.message);
+                throw new GLib.Error(Gio.DBusError, Gio.DBusError.INVALID_ARGS, publicErrorMessage(error, 'Radio operation failed. Check saved-file permissions and try again.'));
             }
         };
     }

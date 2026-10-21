@@ -184,6 +184,23 @@ is left untouched and settings/station writes are blocked: back it up, repair it
 then restart radiolina. These limits address local configuration resource use;
 they do not establish protection against malicious same-user processes.
 
+## URL privacy
+
+In the Unreleased development build, MPRIS media metadata omits the stream URL;
+station/track names, artist and media controls remain available. The final redirect
+URL is not published in application state. Application errors use bounded,
+code-authored messages or generic fallbacks instead of raw backend diagnostics.
+
+Saved URLs can contain access tokens in their paths or query parameters. They
+remain complete for playback, editing and explicit **Copy**, in the unencrypted
+`stations.json` file (mode `0600`) and station-management D-Bus state. Other
+processes running as your user may access these; this is not credential isolation.
+Copy places the full URL on the desktop clipboard, where clipboard tools may retain
+it. The stream server still receives the URL needed for playback. Stream-provided
+titles/artists remain visible as metadata. Avoid sharing private URLs or station
+files; review diagnostic output before attaching it to reports. Native-library
+debugging, enabled separately, is outside the application's safe-message policy.
+
 ## Troubleshooting
 
 | Symptom | Checks and recovery |

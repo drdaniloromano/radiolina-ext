@@ -280,6 +280,27 @@ CPU seconds over one second. A separate paused ICY fixture measured 49.0 MiB RSS
 showed native descriptors being reclaimed after idle/diagnostic GC in a disposable
 copy; no production GC timer was added and long-duration leak freedom is not established.
 
+## URL privacy and diagnostics
+
+MPRIS omits `xesam:url` entirely, including for public streams: secrets can occur
+in paths as well as query strings. Keep track IDs, station/title/artist and media
+controls; the [MPRIS metadata contract](https://specifications.freedesktop.org/mpris/latest/Player_Interface.html#Property:Metadata)
+requires a track ID, not a URL. The playback response owns its final URL internally;
+the application `State` no longer exports `resolvedUrl`.
+
+[UserError/publicErrorMessage](../src/core/errors.js) marks code-authored public
+messages and sanitizes/bounds them to 384 characters. Never put URLs, server text,
+user input or a native error's message into `UserError`. Boundary handlers replace
+unexpected/native errors with fixed fallbacks. Playback and optional-icon warnings
+also use fixed messages; codec/HTTP-status/validation guidance remains specific.
+No raw-error opt-in logger or polling is introduced. External native debugging is
+outside this policy and its output must be reviewed before sharing.
+
+Full saved URLs remain necessary for station editing/Copy and are exposed in
+station-management state and private plaintext storage. This reduces unnecessary
+metadata/diagnostic disclosure; it is not a boundary against same-user processes.
+See [user-facing privacy limits](USER_GUIDE.md#url-privacy).
+
 ## Release policy
 
 The current local release is **0.3.0**; public distribution is pending.

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import {UserError} from './errors.js';
 import GLib from 'gi://GLib';
 import {validateUrl} from './validation/urls.js';
 
@@ -20,7 +21,7 @@ function decodeXml(text) {
             if (value > 0 && value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff))
                 return String.fromCodePoint(value);
         }
-        throw new Error('Invalid XML entity in XSPF playlist.');
+        throw new UserError('Invalid XML entity in XSPF playlist.');
     });
 }
 // Bounded XSPF reader with nesting, namespaces, xml:base and CDATA support.
@@ -35,26 +36,26 @@ function xspfLocations(text, baseUrl) {
     while (offset < text.length) {
         tokens.lastIndex = offset;
         const match = tokens.exec(text);
-        if (!match) throw new Error('Malformed XSPF playlist; declarations are unsupported.');
+        if (!match) throw new UserError('Malformed XSPF playlist; declarations are unsupported.');
         const token = match[0];
         offset = tokens.lastIndex;
         if (token.startsWith('<!--') || token.startsWith('<?')) continue;
         if (token.startsWith('<![CDATA[')) {
-            if (!stack.length) throw new Error('Invalid XSPF document.');
+            if (!stack.length) throw new UserError('Invalid XSPF document.');
             if (stack.at(-1).isLocation) stack.at(-1).text += token.slice(9, -3);
         } else if (!token.startsWith('<')) {
             const value = decodeXml(token);
-            if (!stack.length && value.trim()) throw new Error('Invalid XSPF document.');
+            if (!stack.length && value.trim()) throw new UserError('Invalid XSPF document.');
             if (stack.at(-1)?.isLocation) stack.at(-1).text += value;
         } else if (token.startsWith('</')) {
             const node = stack.pop();
-            if (!node || node.name !== token.slice(2, -1).trim()) throw new Error('Mismatched XSPF tags.');
+            if (!node || node.name !== token.slice(2, -1).trim()) throw new UserError('Mismatched XSPF tags.');
             if (node.isLocation) locations.push([node.text.trim(), node.base]);
         } else {
             const name = token.match(/^<([\w:.-]+)/)[1];
             const attrs = {};
             for (const attr of token.matchAll(/\s+([\w:.-]+)\s*=\s*("[^"]*"|'[^']*')/g)) {
-                if (Object.hasOwn(attrs, attr[1])) throw new Error('Duplicate XSPF attribute.');
+                if (Object.hasOwn(attrs, attr[1])) throw new UserError('Duplicate XSPF attribute.');
                 attrs[attr[1]] = decodeXml(attr[2].slice(1, -1));
             }
             const namespaces = {...stack.at(-1)?.namespaces};
@@ -65,10 +66,10 @@ function xspfLocations(text, baseUrl) {
             const ns = namespaces[name.includes(':') ? name.split(':')[0] : ''];
             if (!stack.length) {
                 if (root || local(name) !== 'playlist' || ns !== 'http://xspf.org/ns/0/')
-                    throw new Error('Expected an XSPF playlist.');
+                    throw new UserError('Expected an XSPF playlist.');
                 root = true;
             }
-            if (stack.length >= 64) throw new Error('XSPF playlist is nested too deeply.');
+            if (stack.length >= 64) throw new UserError('XSPF playlist is nested too deeply.');
             const parentBase = stack.at(-1)?.base ?? baseUrl;
             const base = attrs['xml:base'] ? GLib.Uri.resolve_relative(parentBase, attrs['xml:base'], 0) : parentBase;
             const node = {name, namespaces, base, text: '', isLocation: ns === 'http://xspf.org/ns/0/' &&
@@ -77,16 +78,16 @@ function xspfLocations(text, baseUrl) {
             if (!/\/\s*>$/.test(token)) stack.push(node);
         }
     }
-    if (!root || stack.length) throw new Error('Incomplete XSPF playlist.');
+    if (!root || stack.length) throw new UserError('Incomplete XSPF playlist.');
     return locations;
 }
 export function parsePlaylist(text, kind, baseUrl) {
     if (new TextEncoder().encode(text).length > MAX_PLAYLIST_BYTES)
-        throw new Error('Playlist is too large (maximum 256 KiB).');
+        throw new UserError('Playlist is too large (maximum 256 KiB).');
     text = text.replace(/^\uFEFF/, '');
     let candidates;
     if (kind === 'm3u') {
-        if (/^#EXT-X-/m.test(text)) throw new Error('HLS playlists are unsupported. Use an ordinary radio M3U.');
+        if (/^#EXT-X-/m.test(text)) throw new UserError('HLS playlists are unsupported. Use an ordinary radio M3U.');
         candidates = text.split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#'))
             .map(url => [url, baseUrl]);
     } else {
@@ -97,5 +98,5 @@ export function parsePlaylist(text, kind, baseUrl) {
             if (url) return validateUrl(GLib.Uri.resolve_relative(base, url, 0));
         } catch { /* Skip invalid and non-HTTP entries. */ }
     }
-    throw new Error('Playlist has no usable HTTP or HTTPS stream URL.');
+    throw new UserError('Playlist has no usable HTTP or HTTPS stream URL.');
 }

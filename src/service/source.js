@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import {UserError} from '../core/errors.js';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {HttpSession, readBounded} from './http.js';
@@ -34,11 +35,11 @@ export async function openStream(sourceUrl, cancellable) {
                     }));
                 media = inspectMedia(input.peek_buffer(), {icyInterval, playlistHint: hint, final: count === 0});
                 if (!media && (!count || input.get_available() >= MAX_PROBE_BYTES))
-                    throw new Error('Stream audio headers exceed the 64 KiB identification limit or are incomplete.');
+                    throw new UserError('Stream audio headers exceed the 64 KiB identification limit or are incomplete.');
             }
             if (media.kind === 'playlist') {
-                if (icyInterval) throw new Error('A playlist cannot contain interleaved radio metadata.');
-                if (++depth > 3) throw new Error('Playlists are nested too deeply.');
+                if (icyInterval) throw new UserError('A playlist cannot contain interleaved radio metadata.');
+                if (++depth > 3) throw new UserError('Playlists are nested too deeply.');
                 const data = await readBounded(input, MAX_PLAYLIST_BYTES, cancellable);
                 input.close(null); input = null;
                 url = parsePlaylist(new TextDecoder('utf-8', {fatal: true}).decode(data), media.format, response.url);
@@ -66,7 +67,7 @@ export async function openStream(sourceUrl, cancellable) {
         }
     } catch (error) {
         if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-            throw new Error('Stream source loading was cancelled or timed out.');
+            throw new UserError('Stream source loading was cancelled or timed out.');
         throw error;
     } finally {
         if (timeout) GLib.source_remove(timeout);

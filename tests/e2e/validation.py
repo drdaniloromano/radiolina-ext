@@ -11,11 +11,12 @@ import threading
 import time
 import unittest
 from urllib.parse import parse_qs, urlsplit
-from service import ServiceFixture, Streams, ROOT
+from service import ServiceFixture, Streams, ROOT, PLAYER, MPRIS, Gio, GLib
 
 
 class ValidationStreams(Streams):
     requests = []
+    private_requests = []
     formats = {}
     http_url = ''
     tls_url = ''
@@ -24,6 +25,14 @@ class ValidationStreams(Streams):
         parts = urlsplit(self.path)
         path = parts.path
         self.requests.append(path)
+        if path.startswith('/private-'):
+            self.private_requests.append(self.path)
+        if path == '/private-start/source-secret':
+            self.send_response(302)
+            self.send_header('Location', '/private-final/redirect-secret?token=redirect-token')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
+            return
         location = None
         if path.startswith('/redirect/'):
             kind = path.split('/')[2].split('.')[0]
@@ -121,6 +130,7 @@ class ValidationE2E(ServiceFixture):
 
     def setUp(self):
         ValidationStreams.requests.clear()
+        ValidationStreams.private_requests.clear()
         super().setUp()
 
     def play_url(self, url, error=False):
@@ -194,15 +204,114 @@ class ValidationE2E(ServiceFixture):
         runtime = Path(self.directory.name, 'runtime')
         shutil.copytree(ROOT / 'src', runtime)
         decoder = runtime / 'service/decoder.js'
-        decoder.write_text(decoder.read_text().replace('export function createPipeline(source, testAudio) {',
-                           "export function createPipeline(source, testAudio) { throw new Error('fixture: decoder reached');", 1))
+        marker = runtime / 'decoder-reached'
+        decoder.write_text("import GLib from 'gi://GLib';\n" + decoder.read_text().replace(
+            'export function createPipeline(source, testAudio) {',
+            'export function createPipeline(source, testAudio) { '
+            f'GLib.file_set_contents({json.dumps(str(marker))}, "called"); '
+            "throw new Error('fixture: decoder reached');", 1))
         self.service_entry = runtime / 'service/main.js'
         self.start()
         state = self.play_url(self.url + '/disguised-html.mp3', error=True)
         self.assertIn('Unsupported stream format', state['error'])
-        self.assertNotIn('decoder reached', state['error'])
+        self.assertFalse(marker.exists(), 'Rejected content must not reach the decoder')
         state = self.play_url(self.url + '/plain.mp3', error=True)
-        self.assertIn('decoder reached', state['error'], 'The construction trap must be active')
+        self.assertTrue(marker.exists(), 'The construction trap must be active')
+        self.assertNotIn('decoder reached', state['error'], 'Unexpected errors stay private')
+
+    def test_private_urls_stay_out_of_media_metadata_and_redirect_state(self):
+        changes = []
+        subscription = self.bus.signal_subscribe(
+            'org.mpris.MediaPlayer2.GnomeRadio', 'org.freedesktop.DBus.Properties',
+            'PropertiesChanged', MPRIS, None, Gio.DBusSignalFlags.NONE,
+            lambda *_args: changes.append(_args[-1].unpack()))
+        self.addCleanup(self.bus.signal_unsubscribe, subscription)
+        for suffix in ('/private-final/direct-secret?token=direct-token',
+                       '/private-start/source-secret?token=source-token'):
+            url = self.url + suffix
+            state = self.play_url(url)
+            self.assertIn(suffix, ValidationStreams.private_requests)
+            if 'private-start' in suffix:
+                self.assertIn('/private-final/redirect-secret?token=redirect-token',
+                              ValidationStreams.private_requests)
+            self.assertNotIn('resolvedUrl', state)
+            self.assertEqual(state['stations'][-1]['url'], url)
+            for command in ('Pause', 'Play', 'Stop'):
+                self.media(command)
+                if command == 'Play':
+                    self.wait(lambda: self.state()['status'] == 'Playing', 'private URL resumes')
+                metadata = self.prop(PLAYER, 'Metadata')
+                self.assertNotIn('xesam:url', metadata)
+                self.assertIn('mpris:trackid', metadata)
+                self.assertEqual(metadata['xesam:title'], 'Validation fixture')
+                self.assertEqual(metadata['xesam:album'], 'Validation fixture')
+        self.assertTrue(any('Metadata' in changed for _, changed, _ in changes))
+        for _, changed, _ in changes:
+            metadata = changed.get('Metadata', {})
+            self.assertNotIn('xesam:url', metadata)
+            self.assertNotIn('-secret', json.dumps(metadata))
+            self.assertNotIn('-token', json.dumps(metadata))
+        saved = Path(self.directory.name, 'gnome-radio/stations.json')
+        self.assertEqual(json.loads(saved.read_text())['stations'], self.state()['stations'])
+        self.assertEqual(saved.stat().st_mode & 0o777, 0o600)
+        self.log.flush(); self.log.seek(0)
+        self.assertNotIn('-secret', self.log.read())
+
+    def test_unexpected_backend_errors_do_not_disclose_secrets(self):
+        self.shutdown()
+        secret = 'https://radio.example/path-secret?token=query-secret\nraw-backend-secret ' + 'x' * 8192
+        payload = json.dumps(secret)
+        for mode in ('http', 'player', 'save', 'startup', 'favicon'):
+            with self.subTest(mode=mode):
+                runtime = Path(self.directory.name, mode + '-runtime')
+                shutil.copytree(ROOT / 'src', runtime)
+                if mode == 'http':
+                    path = runtime / 'service/http.js'
+                    content = path.read_text().replace('async open(sourceUrl) {',
+                        'async open(sourceUrl) { throw new GLib.Error('
+                        f'GLib.quark_from_string("fixture"), 1, {payload});', 1)
+                elif mode == 'player':
+                    path = runtime / 'service/player.js'
+                    content = path.read_text().replace('this.onState(\'Connecting\');\n        this._armBufferingTimeout();',
+                        'GLib.idle_add(GLib.PRIORITY_DEFAULT, () => { '
+                        'bus.post(Gst.Message.new_error(pipeline, new GLib.Error('
+                        f'GLib.quark_from_string("fixture"), 1, {payload}), {payload})); '
+                        'return GLib.SOURCE_REMOVE; });\n'
+                        "        this.onState('Connecting');\n        this._armBufferingTimeout();", 1)
+                elif mode in ('save', 'startup'):
+                    path = runtime / 'service/store.js'
+                    method = 'save(config)' if mode == 'save' else 'load()'
+                    content = path.read_text().replace(method + ' {',
+                        method + f' {{ throw new Error({payload});', 1)
+                else:
+                    path = runtime / 'service/favicon.js'
+                    content = path.read_text().replace('export function faviconUrl(source) {',
+                        f'export function faviconUrl(source) {{ throw new Error({payload});', 1)
+                self.assertNotEqual(content, path.read_text(), 'Fixture trap must be injected')
+                path.write_text(content)
+                self.service_entry = runtime / 'service/main.js'
+                self.start()
+                if mode in ('save', 'startup'):
+                    with self.assertRaises(GLib.Error) as failure:
+                        self.add('/plain-' + mode)
+                    self.assertNotIn('secret', str(failure.exception))
+                    self.assertLess(len(str(failure.exception)), 600)
+                elif mode == 'favicon':
+                    self.add('/plain-favicon')
+                    self.call('SetFetchFavicons', '(b)', (True,))
+                    def logged():
+                        self.log.seek(0)
+                        return 'Favicon unavailable.' in self.log.read()
+                    self.wait(logged, 'safe optional favicon warning')
+                else:
+                    self.play_url(self.url + '/plain-' + mode, error=True)
+                self.assertNotIn('secret', self.state()['error'])
+                self.assertLessEqual(len(self.state()['error']), 384)
+                self.shutdown()
+                self.log.seek(0)
+                log = self.log.read()
+                for marker in ('path-secret', 'query-secret', 'raw-backend-secret'):
+                    self.assertNotIn(marker, log)
 
 
 if __name__ == '__main__':

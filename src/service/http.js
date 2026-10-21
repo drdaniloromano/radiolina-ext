@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import {UserError} from '../core/errors.js';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 import {validateUrl, validateRedirect, MAX_REDIRECTS, REDIRECT_CODES} from '../core/validation/urls.js';
@@ -15,7 +16,7 @@ export class HttpSession {
     async open(sourceUrl) {
         let url = validateUrl(sourceUrl);
         while (true) {
-            if (this.seen.has(url)) throw new Error('Stream source contains a circular reference.');
+            if (this.seen.has(url)) throw new UserError('Stream source contains a circular reference.');
             this.seen.add(url);
             const message = Soup.Message.new('GET', url);
             message.set_flags(Soup.MessageFlags.NO_REDIRECT);
@@ -26,14 +27,14 @@ export class HttpSession {
                 }));
             if (REDIRECT_CODES.has(message.status_code)) {
                 try {
-                    if (++this.redirects > this.maxRedirects) throw new Error('Too many stream redirects (maximum five).');
+                    if (++this.redirects > this.maxRedirects) throw new UserError('Too many stream redirects (maximum five).');
                     url = validateRedirect(url, message.response_headers.get_one('Location'));
                 } finally { await closeInput(input, this.cancellable); }
                 continue;
             }
             if (message.status_code < 200 || message.status_code >= 300) {
                 await closeInput(input, this.cancellable);
-                throw new Error(`Stream source returned HTTP ${message.status_code}. Check the URL.`);
+                throw new UserError(`Stream source returned HTTP ${message.status_code}. Check the URL.`);
             }
             return {input, url, headers: message.response_headers};
         }
@@ -63,7 +64,7 @@ export async function readBounded(input, maximum, cancellable) {
         const chunk = await readBytes(input, Math.min(8192, maximum + 1 - length), cancellable);
         if (!chunk.length) break;
         length += chunk.length;
-        if (length > maximum) throw new Error('Playlist is too large (maximum 256 KiB).');
+        if (length > maximum) throw new UserError('Playlist is too large (maximum 256 KiB).');
         chunks.push(chunk);
     }
     const data = new Uint8Array(length);

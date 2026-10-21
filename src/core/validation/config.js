@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import {UserError} from '../errors.js';
 import {validateUrl} from './urls.js';
 import {cleanText} from './text.js';
 
@@ -14,14 +15,14 @@ const STATION_FIELDS = new Set(['id', 'name', 'url']);
 
 function validateFields(value, fields) {
     if (!value || typeof value !== 'object' || Array.isArray(value))
-        throw new Error('Invalid configuration object.');
+        throw new UserError('Invalid configuration object.');
     if (Object.keys(value).some(key => !fields.has(key)))
-        throw new Error('Unknown configuration fields; keep only documented settings and station fields.');
+        throw new UserError('Unknown configuration fields; keep only documented settings and station fields.');
 }
 
 export function validateRecentLimit(value) {
     if (!Number.isInteger(value) || value < 1 || value > MAX_RECENT_LIMIT)
-        throw new Error(`Recent stations must be between 1 and ${MAX_RECENT_LIMIT}.`);
+        throw new UserError(`Recent stations must be between 1 and ${MAX_RECENT_LIMIT}.`);
     return value;
 }
 
@@ -29,7 +30,7 @@ export function validateConfig(config) {
     validateFields(config, CONFIG_FIELDS);
     if (config.version !== 1 || !Array.isArray(config.stations) ||
         config.stations.length > 200 || typeof config.notifications !== 'boolean')
-        throw new Error('Invalid station configuration.');
+        throw new UserError('Invalid station configuration.');
     const ids = new Set();
     const urls = new Set();
     for (const station of config.stations) {
@@ -38,12 +39,12 @@ export function validateConfig(config) {
             !/^[a-zA-Z0-9_-]+$/.test(station.id) || ids.has(station.id) ||
             !station.name || station.name !== cleanText(station.name, 80) ||
             station.url !== validateUrl(station.url) || urls.has(station.url))
-            throw new Error('Invalid or duplicate saved station.');
+            throw new UserError('Invalid or duplicate saved station.');
         ids.add(station.id);
         urls.add(station.url);
     }
     if (config.selected !== '' && !ids.has(config.selected))
-        throw new Error('Selected station is missing.');
+        throw new UserError('Selected station is missing.');
     const recent = config.recent ?? [];
     if (!Array.isArray(recent) || recent.length > MAX_RECENT_LIMIT || new Set(recent).size !== recent.length ||
         recent.some(id => !ids.has(id)) ||
@@ -51,7 +52,7 @@ export function validateConfig(config) {
         (config.showStopButton !== undefined && typeof config.showStopButton !== 'boolean') ||
         (config.playButtonOnLeft !== undefined && typeof config.playButtonOnLeft !== 'boolean') ||
         (config.groupWithAppIndicators !== undefined && typeof config.groupWithAppIndicators !== 'boolean'))
-        throw new Error('Invalid recent stations or display settings.');
+        throw new UserError('Invalid recent stations or display settings.');
     const recentLimit = validateRecentLimit(config.recentLimit === undefined ? DEFAULT_RECENT_LIMIT : config.recentLimit);
     return {version: 1, stations: config.stations.map(({id, name, url}) => ({id, name, url})),
         selected: config.selected, notifications: config.notifications,

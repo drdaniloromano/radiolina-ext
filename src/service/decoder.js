@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import {UserError} from '../core/errors.js';
 import Gst from 'gi://Gst?version=1.0';
 
 // Explicit pipelines: no decodebin/playbin, URI sources, plugin autoselection, or
@@ -14,17 +15,17 @@ const CODECS = {
 
 export function createPipeline(source, testAudio) {
     const codec = CODECS[source.media.codec];
-    if (!codec) throw new Error('Unsupported stream format.');
+    if (!codec) throw new UserError('Unsupported stream format.');
     const decoder = codec.decoders.find(name => Gst.ElementFactory.find(name));
     if (codec.decoders.length && !decoder)
-        throw new Error(`Required codec unavailable: ${source.media.codec.toUpperCase()}.`);
+        throw new UserError(`Required codec unavailable: ${source.media.codec.toUpperCase()}.`);
     const container = {ogg: 'oggdemux', mp4: 'qtdemux', wav: 'wavparse', '': null}[source.media.container];
-    if (container === undefined) throw new Error('Unsupported audio container.');
+    if (container === undefined) throw new UserError('Unsupported audio container.');
     const elements = ['giostreamsrc', source.icyInterval ? 'icydemux' : null,
         source.media.id3 ? 'id3demux' : null, container, codec.parser, decoder,
         'queue2', 'audioconvert', 'audioresample', 'volume', testAudio ? 'fakesink' : 'autoaudiosink'].filter(Boolean);
     if (elements.some(name => !Gst.ElementFactory.find(name)))
-        throw new Error(`Required codec or audio component unavailable: ${source.media.codec.toUpperCase()}.`);
+        throw new UserError(`Required codec or audio component unavailable: ${source.media.codec.toUpperCase()}.`);
     const chain = ['giostreamsrc name=input blocksize=8192'];
     if (source.icyInterval) chain.push(`application/x-icy,metadata-interval=${source.icyInterval}`, 'icydemux');
     if (source.media.id3) chain.push('id3demux');
