@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Document a repeatable agent/maintainer advisory-triage procedure with snapshot
+  identity, primary-source and reachability evidence, private decision records,
+  explicit uncertainty and reassessment after source or environment changes.
 - Add opt-in Fedora/RPM dependency inventory and DNF5 security-advisory reports,
   with private temporary caches, noninteractive queries, explicit coverage gaps
   and source/environment fingerprints. Document manual upstream/backport review

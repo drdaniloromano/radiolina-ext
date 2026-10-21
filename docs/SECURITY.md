@@ -56,6 +56,40 @@ as affected, vendor-fixed, justified not-applicable, or unknown; installed histo
 advisories and an empty result do not prove complete security. Upstream applicability
 and dynamically selected native backends are not automatically assessed.
 
+## Repeatable advisory triage
+
+Review one finding at a time; agents must follow this procedure too:
+
+1. **Identify the snapshot.** Retain the original report unchanged. Record its
+   timestamp, source/checker/inventory fingerprints, image ID or desktop identity,
+   exact package build, advisory/CVE IDs and coverage gaps. Confirm that the
+   inspected source and environment still match; otherwise collect a new report.
+2. **Verify the defect.** Read primary upstream and distribution notices. Record
+   the affected operation, input/configuration prerequisites and vendor fix or
+   backport evidence. A version comparison alone cannot establish patch status.
+3. **Trace reachability.** Explain why the package appears in the inventory, then
+   trace accepted bytes through `src/core/validation/media.js`,
+   `src/service/source.js` and `src/service/decoder.js`. Inspect actual factories,
+   fallback codecs and dynamic audio backends as relevant. Package presence or a
+   loaded library alone does not establish that the vulnerable operation runs;
+   absence in one trace does not prove that it cannot run.
+4. **Record a bounded decision.** Save a dated review under ignored
+   `workspace/`, including reviewer, report reference, identities above, source
+   links, commands/results, reasoning, limitations, classification and next action.
+   Use **affected**, **vendor-fixed**, **justified not-applicable**, or **unknown**.
+   Justified not-applicable requires evidence that the vulnerable operation's
+   prerequisites cannot occur in the reviewed paths. Missing evidence stays unknown.
+5. **Resolve and recheck.** Keep affected/unknown findings and incomplete coverage
+   open. Propose package/image updates separately; never update the host or add an
+   advisory exclusion silently. After an approved update, rerun inventory and
+   relevant contained tests. Reassess previous decisions when source, factory,
+   package, image or advisory details change; no permanent CVE allowlist.
+
+Machine-specific findings belong in the private review, not `AGENTS.md` or a
+public claim that all installations are safe. Manual decisions do not rewrite the
+raw report or turn `release_approved` into an automatic approval. Do not run
+exploit samples or resource-exhaustion probes on the maintainer's desktop.
+
 ## Future distribution automation
 
 A release preflight can run these commands, retain timestamped JSON as an artifact,

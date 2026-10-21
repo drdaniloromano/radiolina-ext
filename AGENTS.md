@@ -64,6 +64,10 @@ Keep dependencies/artifacts contained; do not install development packages globa
 - `make security-check` / `make container-security-check`: opt-in dependency
   advisory queries with temporary caches. Follow [security review](docs/SECURITY.md);
   incomplete data must not pass and exit zero alone never approves a release.
+  For each finding, follow [advisory triage](docs/SECURITY.md#repeatable-advisory-triage):
+  verify primary notices and actual reachability, retain raw reports and dated
+  evidence in ignored `workspace/`, and leave uncertain findings open. Reassess
+  after source/environment changes; never silently update packages or suppress CVEs.
 - Add `CONTAINER_ENGINE=docker` to container commands to select Docker instead of
   the default Podman. Keep private files out of build contexts and runtime mounts;
   preserve the invoking user's ownership of generated files.
