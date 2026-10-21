@@ -7,6 +7,7 @@ import {parsePlaylist, MAX_PLAYLIST_BYTES} from '../../src/core/playlists.js';
 import {validFavicon, MAX_FAVICON_BYTES} from '../../src/core/favicons.js';
 import {validateRedirect} from '../../src/core/validation/urls.js';
 import {inspectMedia, validateIcyInterval, MAX_PROBE_BYTES} from '../../src/core/validation/media.js';
+import {MAX_CONFIG_BYTES, MAX_STATION_ID_LENGTH} from '../../src/core/validation/config.js';
 
 let count = 0;
 function test(name, run) {
@@ -147,6 +148,58 @@ test('bounds untrusted favicon images and rejects active or oversized formats', 
     ico.set([0, 0, 1, 0, 1, 0]);
     new DataView(ico.buffer).setUint32(14, 100, true);
     assert(!validFavicon(ico));
+});
+test('bounds saved station IDs and rejects unknown config or station fields', () => {
+    const id = 'x'.repeat(MAX_STATION_ID_LENGTH);
+    const config = {...emptyConfig(), selected: id, recent: [id],
+        stations: [{id, name: 'My radio', url: 'https://radio.example/live'}]};
+    const valid = validateConfig(config);
+    assert(valid.selected === id);
+    assert(valid !== config && valid.stations[0] !== config.stations[0] && valid.recent !== config.recent);
+    rejects(() => validateConfig({...config, stations: [{...config.stations[0], id: id + 'x'}]}));
+    for (const key of ['extra', 'status', '__proto__']) {
+        rejects(() => validateConfig({...config, [key]: 'unused'}));
+        rejects(() => validateConfig({...config, stations: [{...config.stations[0], [key]: 'unused'}]}));
+    }
+    for (const value of [null, [], 'text', 1]) rejects(() => validateConfig(value));
+    const many = {...emptyConfig(), stations: Array.from({length: 200}, (_, n) =>
+        ({id: `radio_${n}`, name: 'Radio', url: `https://radio.example/${n}`}))};
+    assert(validateConfig(many).stations.length === 200);
+    rejects(() => validateConfig({...many, stations: [...many.stations, {id: 'extra', name: 'Extra', url: 'https://radio.example/extra'}]}));
+});
+test('bounds file bytes before parsing and preserves oversized or invalid UTF-8 input', () => {
+    const path = GLib.dir_make_tmp('gnome-radio-bounds-XXXXXX');
+    const store = new Store(path);
+    const write = bytes => store.file.replace_contents(bytes, null, false, Gio.FileCreateFlags.PRIVATE, null);
+    const json = JSON.stringify({version: 1, stations: [], selected: '', notifications: false});
+    try {
+        const exact = new TextEncoder().encode(json + ' '.repeat(MAX_CONFIG_BYTES - json.length));
+        write(exact);
+        assert(store.load().recentLimit === 3, 'Legacy defaults must survive at the byte boundary');
+        const oversized = new Uint8Array(MAX_CONFIG_BYTES + 1);
+        oversized.set(exact); oversized[MAX_CONFIG_BYTES] = 32;
+        for (const bytes of [oversized, new Uint8Array([0xff])]) {
+            write(bytes);
+            rejects(() => store.load());
+            const after = store.file.load_contents(null)[1];
+            assert(after.length === bytes.length && after.every((v, i) => v === bytes[i]));
+        }
+        store.save({version: 1, stations: [], selected: '', notifications: false});
+        assert(JSON.parse(new TextDecoder().decode(store.file.load_contents(null)[1])).recentLimit === 3);
+    } finally {
+        store.file.delete(null);
+        Gio.File.new_for_path(path).delete(null);
+    }
+    // A growing/size-less input must also stop at the bound and always close.
+    let read = 0;
+    let closed = false;
+    store.file = {read: () => ({read_bytes: count => {
+        read += count;
+        if (read > MAX_CONFIG_BYTES + 1) throw new Error('Unbounded read');
+        return GLib.Bytes.new(new Uint8Array(count).fill(32));
+    }, close: () => { closed = true; }})};
+    rejects(() => store.load());
+    assert(read === MAX_CONFIG_BYTES + 1 && closed, 'Read must stop and close at overflow');
 });
 test('persists private configuration and refuses corrupt data without overwriting it', () => {
     const path = GLib.dir_make_tmp('gnome-radio-unit-XXXXXX');

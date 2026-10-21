@@ -34,6 +34,9 @@ Keep source admission policy in `src/core/validation/`. Enforce URL/redirect rul
 on actual requests and inspect a bounded byte prefix before selecting an explicit
 audio pipeline. Preserve the same response through playback; do not restore URI
 reopening, unrestricted decoder autoselection, or streaming-thread JS callbacks.
+Keep configuration schema/defaults in the same validation layer. Bound file reads
+before parsing, reject unknown fields, and preserve invalid files for repair;
+never silently reset or truncate saved stations.
 
 Respect GNOME's default `user` session lifecycle: screen lock stops playback;
 unlock restores the idle indicator without automatic playback. Keep lock-screen

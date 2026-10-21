@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Bound saved configuration reads to 1 MiB before JSON parsing, limit station IDs
+  to 128 characters, and reject unknown configuration/station fields in the shared
+  validation layer. Preserve rejected files and require repair/restart before writes;
+  retain version-1 defaults and private atomic saves.
 - Centralize URL/redirect and bounded media-admission policy in
   `src/core/validation/`; inspect the actual response rather than trusting a
   filename or MIME header, and pass that same buffered response into playback.
@@ -19,6 +23,9 @@
 
 ### Verification
 
+- Cover exact byte/ID limits, overflow read termination/closure, invalid UTF-8,
+  unknown fields, unchanged rejected files, blocked mutations, and successful
+  playback after manual configuration repair. No memory exhaustion is simulated.
 - Add critical validation cases and real-response E2E checks for supported audio,
   deceptive content, single-request handoff, redirect boundaries, and trusted
   local TLS without changing host trust stores. OpenSSL stays in the development

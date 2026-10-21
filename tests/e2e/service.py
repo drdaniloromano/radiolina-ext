@@ -542,6 +542,43 @@ class ServiceE2E(ServiceFixture):
         print(f'Idle service: {rss_mib:.1f} MiB RSS, {cpu_seconds:.3f}s CPU / {time.monotonic() - start:.2f}s')
         self.assertLess(cpu_seconds, 0.2, 'Idle service unexpectedly busy')
 
+    def test_configuration_limits_preserve_rejected_files_and_allow_manual_repair(self):
+        self.shutdown()
+        saved = Path(self.directory.name) / 'gnome-radio/stations.json'
+        saved.parent.mkdir(exist_ok=True)
+        station = {'id': 'my_radio', 'name': 'My radio', 'url': self.url + '/icy'}
+        valid = {'version': 1, 'stations': [station], 'selected': 'my_radio', 'notifications': False}
+        cases = [
+            (json.dumps(valid).encode() + b' ' * (1024 * 1024), '1 MiB'),
+            (json.dumps(dict(valid, extra='unused')).encode(), 'Unknown'),
+            (json.dumps(dict(valid, stations=[dict(station, extra='unused')])).encode(), 'Unknown'),
+            (json.dumps(dict(valid, stations=[dict(station, id='x' * 129)])).encode(), 'station'),
+            (b'\xff', 'UTF-8'),
+        ]
+        for content, error in cases:
+            with self.subTest(error=error, size=len(content)):
+                saved.write_bytes(content)
+                self.start()
+                state = self.state()
+                self.assertIn(error, state['error'])
+                self.assertIn('repair', state['error'])
+                self.assertEqual(state['stations'], [])
+                self.assertLess(len(json.dumps(state)), 2048)
+                for method, signature, args in [('AddStation', '(ss)', ('New', self.url + '/plain')),
+                                                 ('SetRecentLimit', '(u)', (5,))]:
+                    with self.assertRaises(GLib.Error):
+                        self.call(method, signature, args)
+                self.assertEqual(saved.read_bytes(), content)
+                self.shutdown()
+        saved.write_text(json.dumps(valid))
+        self.start()
+        self.assertEqual(self.state()['stations'], [station])
+        self.assertEqual(self.state()['error'], '')
+        self.assertEqual(self.state()['recentLimit'], 3)
+        self.call('PlayPause')
+        self.wait(lambda: self.state()['status'] == 'Playing' and self.state()['title'],
+                  'playback after manual repair and restart')
+
     def test_oom_adjustment_targets_only_service_and_recovers_after_kill(self):
         parent_score = Path('/proc/self/oom_score_adj').read_text()
         self.assertEqual(int(Path(f'/proc/{self.process.pid}/oom_score_adj').read_text()), 500)

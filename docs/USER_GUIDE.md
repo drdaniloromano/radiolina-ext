@@ -167,12 +167,22 @@ its `stations` array, preserving other settings; each entry has this form:
 {"id":"my_radio","name":"My radio","url":"https://example.com/live.mp3"}
 ```
 
-IDs must be unique ASCII letters/digits/underscores/hyphens; URLs must also be
+IDs must be unique ASCII letters/digits/underscores/hyphens, 1–128 characters; URLs must also be
 unique. `selected` must reference an existing ID or be empty, and `recent` may
 contain only unique existing IDs, at most ten. Up to 200 stations are allowed,
 with names up to 80 characters and URLs up to 2,048 characters. URLs must not
 contain credentials, fragments, whitespace, or control characters. Re-enable
 radiolina to load the edited file. There is no one-URL-per-line saved-list importer.
+
+In the Unreleased development build, the UTF-8 JSON file must fit within **1 MiB**
+(including whitespace); unknown fields are rejected. Supported top-level fields
+are `version`, `stations`, `selected`, `notifications`, `recent`, `recentLimit`,
+`fetchFavicons`, `showStopButton`, `playButtonOnLeft`, and `groupWithAppIndicators`.
+Station entries accept only `id`, `name`, and `url`. Existing version-1 files
+without newer optional settings still receive their defaults. A rejected file
+is left untouched and settings/station writes are blocked: back it up, repair it,
+then restart radiolina. These limits address local configuration resource use;
+they do not establish protection against malicious same-user processes.
 
 ## Troubleshooting
 

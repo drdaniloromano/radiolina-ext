@@ -35,7 +35,7 @@ recording, account system, or podcast subsystem.
 | --- | --- |
 | [extension/](../extension/) | Native popup/indicator, symbolic SVGs, layout CSS, desktop adapter. |
 | [src/core/](../src/core/) | URL/config validation, bounded playlist/image parsing, metadata sanitization and deduplication. |
-| [src/core/validation/](../src/core/validation/) | Shared URL/redirect rules and bounded byte-level audio/container admission policy. |
+| [src/core/validation/](../src/core/validation/) | Shared URL/redirect, configuration schema/text, and bounded byte-level audio/container admission policy. |
 | [src/service/](../src/service/) | GStreamer, async playlists/favicons, atomic storage, D-Bus/MPRIS, process-local resource policy. |
 | [radio.xml](../src/service/radio.xml) | App command/state contract; `State` is JSON in a D-Bus string property. |
 | [tests/unit/](../tests/unit/) | Critical validation, metadata, parsing, and storage cases. |
@@ -252,11 +252,20 @@ See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recove
 
 | Input | Bounds and behavior |
 | --- | --- |
-| Stations | Up to 200; names up to 80 characters; unique IDs and HTTP(S) URLs up to 2,048 characters without credentials/fragments. |
+| Configuration | 1 MiB UTF-8 JSON; bounded reads stop after one overflow byte before parsing, without relying on a size check. Reject unknown top-level/station fields; publish only explicit schema fields. Private atomic writes use the same validation/byte limit. Invalid files remain untouched and service mutations stay blocked until repair/restart. |
+| Stations | Up to 200; names up to 80 characters; unique ASCII IDs up to 128 characters and HTTP(S) URLs up to 2,048 characters without credentials/fragments. |
 | Playlists | 256 KiB, three documents, five redirects, 15-second resolution deadline; first usable HTTP(S) entry. Reject circular sources, HLS, and XML declarations/DTDs. |
 | Audio identification | 64 KiB prefix, within the 15-second source-loading deadline; explicit audio container/codec policy, with no second audio GET. ID3/MP4 headers must fit; MP4 must be streamable. |
 | Favicons | Origin `/favicon.ico`, sequential host-deduplicated requests, PNG/ICO only, 256 KiB and bounded dimensions, three redirects, five seconds; cached, cancellable, no refresh polling. |
 | Recent | Ten retained unique played stations; 1–10 shown, default three. Lowering the display limit preserves history. |
+
+Configuration schema/defaults live in
+[validation/config.js](../src/core/validation/config.js); Store owns bounded I/O.
+The existing `stations.js` exports remain compatible. Version-1 files can omit
+newer optional settings; accepted configs are copied into known-field objects.
+These Unreleased limits constrain local configuration allocation and IPC, not
+remote media attacks or malicious same-user processes. Oversized State propagation
+was reproduced before the fix; no memory-exhaustion or Shell crash was attempted.
 
 Resource samples are service-only, not the incremental memory used inside Shell.
 Before validation hardening, an offline-container idle sample measured 36.9 MiB RSS and 0.000 CPU seconds over
