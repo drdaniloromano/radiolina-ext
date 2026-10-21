@@ -4,6 +4,12 @@
 
 ### Changed
 
+- Add versioned, resource-limited GNOME Shell test containers with sequential
+  execution, private HOME/settings/buses, offline software rendering and silent
+  audio. Preserve per-run logs/screenshots/package identities under ignored build
+  output without exposing host desktop sockets, configuration or private workspace.
+- Make the Shell harness verify its actual declared version, generate matching
+  test-extension metadata, and avoid the host system bus and removed X11 flags.
 - Add a guided GitHub bug-report form for application/GNOME/distribution versions,
   reproduction steps, expected/actual behavior, and optional screenshots or logs.
   Remind reporters to remove private stream URLs, credentials, and access tokens.
@@ -45,6 +51,14 @@
 
 ### Verification
 
+- Cover Shell launcher isolation, sequencing/locking, cleanup on failure and
+  interruption, rejected profiles/engines and engine-specific flags with six
+  offline E2E cases.
+- Pass the contained GNOME Shell 49.10 popup workflow at 100% and 150% monitor
+  scaling, including native light/dark and enlarged-text screenshots. Preserve
+  service-only OOM score 500, unchanged Shell score, one-click crash recovery,
+  ten disable/enable cycles and five cancelled starts. Genuine Docker and
+  physical desktop acceptance remain separate, unverified boundaries.
 - Trace both bundled SVG icons to the assistant's 2026-10-14 creation patches
   in local development records. Verify exact agreement with the initial Git
   baseline and current drawings, apart from later MIT comments; summarize the

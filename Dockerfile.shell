@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# Test dependencies only; sources and generated evidence are mounted explicitly.
+ARG FEDORA_VERSION=43
+FROM registry.fedoraproject.org/fedora:${FEDORA_VERSION}
+ARG GNOME_VERSION=49
+RUN dnf -y upgrade --refresh && \
+    dnf -y --setopt=install_weak_deps=False install \
+        gnome-shell gsettings-desktop-schemas adwaita-icon-theme \
+        adwaita-sans-fonts adwaita-mono-fonts dejavu-serif-fonts \
+        mesa-dri-drivers mesa-libEGL gjs gstreamer1 \
+        gstreamer1-plugins-base gstreamer1-plugins-good \
+        python3 python3-gobject dbus-daemon openssl && \
+    dnf clean all && \
+    version="$(gnome-shell --version)" && \
+    case "$version" in \
+        "GNOME Shell ${GNOME_VERSION}"|"GNOME Shell ${GNOME_VERSION}."*) ;; \
+        *) printf '%s\n' "Unexpected Shell version: $version" >&2; exit 1 ;; \
+    esac
+ENV LANG=C.UTF-8 GIO_USE_VFS=local PYTHONDONTWRITEBYTECODE=1
+WORKDIR /project
+CMD ["python3", "scripts/test.py"]

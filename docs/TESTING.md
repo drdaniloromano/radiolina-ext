@@ -8,7 +8,10 @@ Run from the repository root; use existing tools rather than installing host dep
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
 | `make container-refresh` | Pull/rebuild without cache and refresh packages inside the image before security/release checks. |
-| `make container-test` | Offline packaging/security-tool E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
+| `make container-test` | Offline packaging/security-tool/launcher E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
+| `make container-shell-build SHELL_VERSIONS=49` | Build the version-specific headless Shell image, with dependencies contained. |
+| `make container-shell-test SHELL_VERSIONS=49` | Run the actual popup/lifecycle/OOM suite in the offline Shell container. |
+| `make container-shell-test SHELL_SCALE=1.5 SHELL_THEME=light` | Repeat the container Shell suite at 150% scale with light/dark checks. |
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
@@ -19,7 +22,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | `git diff --check` | Check patch whitespace. |
 | `make security-check` / `make container-security-check` | Opt-in networked dependency/advisory reports; follow [security procedure](SECURITY.md). |
 
-Repeat the three `container-*` commands with `CONTAINER_ENGINE=docker` to verify
+Repeat relevant container commands with `CONTAINER_ENGINE=docker` to verify
 Docker independently. A Docker CLI backed by Podman is not an independent Docker
 result. Report engine versions and unavailable/untested engines. Check that files
 under `build/` belong to the invoking host UID/GID after packaging.
@@ -40,6 +43,13 @@ extension runtime dependency. Container packaging supplies no host runtime libra
 - Shell E2E needs an already installed GNOME 49 Shell/rendering backend. Its private
   D-Bus/XDG/settings/display isolate input, install/update/uninstall, typography,
   and lifecycle from the user's desktop. Host service activation stays disabled.
+- Versioned Shell containers provide that backend without host dependency installs.
+  They use private HOME/XDG and an activation-free bus for session/system connections,
+  offline software rendering/silent audio, read-only inputs/root and a fresh output
+  directory under ignored `build/shell-tests/`. No host home, workspace, sockets,
+  devices or system bus is mounted. A lock enforces sequential runs; limits are
+  1 GiB memory, two CPUs, 256 processes and ten minutes per run. See
+  [container setup](DEVELOPMENT.md#versioned-shell-test-containers).
 - The evaluator bootstrap exists only on that disposable Shell; it is never
   packaged. Do not enable remote Eval or unsafe mode in the host Shell.
 - Headless Shell is process/settings isolation, not a security sandbox or full VM.
@@ -60,6 +70,10 @@ Three offline security-tool E2E cases exercise command boundaries, recursive
 inventory, private reports, findings, partial repository failures and missing or
 malformed data. Fake tools never contact vendor services; live queries are
 separate checks whose findings/limitations must be reported.
+Six launcher E2E cases use fake engines to cover private mount/resource boundaries,
+sequential versions, per-checkout locking, failure/interruption cleanup/status retention, rejected
+profiles/engines, and Podman/Docker refresh/identity contracts. They do not substitute
+for genuine Docker execution or actual per-version Shell tests.
 
 | Area | Required coverage |
 | --- | --- |

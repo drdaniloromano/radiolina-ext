@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Exercise native Shell actors on an isolated, headless GNOME 49 desktop."""
+"""Exercise native Shell actors on the declared, isolated headless GNOME desktop."""
 import json
 import hashlib
 import os
@@ -11,6 +11,10 @@ import tempfile
 import time
 import unittest
 
+# Shell must never use the host system bus. The activation-free private test bus
+# also provides its system-bus connection; real system-service behavior is manual.
+os.environ['DBUS_SYSTEM_BUS_ADDRESS'] = os.environ['DBUS_SESSION_BUS_ADDRESS']
+
 from service import BUS, APP, IFACE, ServiceE2E, Streams, Gio, GLib, pump
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,6 +22,7 @@ UUID = json.loads((ROOT / 'extension/metadata.json').read_text())['uuid']
 INDICATOR = f"Main.panel.statusArea['{UUID}']"
 PEERS = ['radio-peer-one@test', 'radio-peer-two@test']
 GROUP_WARNING = 'Grouping may be incompatible with some extensions or panel customizations. Disable this option if icons, menus, or clicks behave unexpectedly.'
+SHELL_MAJOR = os.environ['GNOME_RADIO_TEST_SHELL_MAJOR']
 
 
 class ShellE2E(unittest.TestCase):
@@ -27,8 +32,11 @@ class ShellE2E(unittest.TestCase):
         bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
         log = tempfile.TemporaryFile(mode='w+')
         scale = float(os.environ.get('GNOME_RADIO_TEST_SCALE', '1'))
-        shell = subprocess.Popen(['gnome-shell', '--headless', '--wayland', '--no-x11',
-                                  '--virtual-monitor', f'{round(1024 * scale)}x{round(768 * scale)}'],
+        shell_args = ['gnome-shell', '--headless', '--wayland',
+                      '--virtual-monitor', f'{round(1024 * scale)}x{round(768 * scale)}']
+        if '--no-x11' in subprocess.check_output(['gnome-shell', '--help'], text=True):
+            shell_args.append('--no-x11')
+        shell = subprocess.Popen(shell_args,
                                  stdout=log, stderr=log)
         def cleanup():
             shell.terminate()
@@ -612,7 +620,7 @@ class ShellE2E(unittest.TestCase):
             neighbor = installed.parent / role
             neighbor.mkdir()
             (neighbor / 'metadata.json').write_text(json.dumps({'uuid': role,
-                'name': 'Generic panel fixture', 'description': 'Panel-only test fixture', 'shell-version': ['49']}))
+                'name': 'Generic panel fixture', 'description': 'Panel-only test fixture', 'shell-version': [SHELL_MAJOR]}))
             shutil.copy2(root / 'tests/fixtures/panel-neighbor.js', neighbor / 'extension.js')
             load_neighbor = (f"await Main.extensionManager.loadExtension(Main.extensionManager.createExtensionObject("
                              f"'{role}', Gio.File.new_for_path({json.dumps(str(neighbor))}), 2)); "

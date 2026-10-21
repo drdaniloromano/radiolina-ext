@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: MIT
-.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package
+.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package container-shell-build container-shell-refresh container-shell-test
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
 OOM_SCORE_ADJ ?= 500
+SHELL_VERSIONS ?= 49
+SHELL_IMAGE_PREFIX ?= localhost/radiolina-shell-test
+SHELL_SCALE ?= 1
+SHELL_THEME ?= dark
 # Mount only build/test inputs, never the private workspace or repository metadata.
 CONTAINER_SOURCES = $(foreach path,extension src scripts tests LICENSE,-v "$(CURDIR)/$(path):/project/$(path):ro")
 CONTAINER_RUN_FLAGS = --rm --network=none --security-opt label=disable
@@ -22,6 +26,19 @@ security-check:
 
 test-shell: build
 	python3 scripts/test-shell.py
+
+container-shell-build:
+	python3 scripts/container-shell.py build --engine "$(CONTAINER_ENGINE)" \
+	    --gnome $(SHELL_VERSIONS) --image-prefix "$(SHELL_IMAGE_PREFIX)"
+
+container-shell-refresh:
+	python3 scripts/container-shell.py build --refresh --engine "$(CONTAINER_ENGINE)" \
+	    --gnome $(SHELL_VERSIONS) --image-prefix "$(SHELL_IMAGE_PREFIX)"
+
+container-shell-test:
+	python3 scripts/container-shell.py test --engine "$(CONTAINER_ENGINE)" \
+	    --gnome $(SHELL_VERSIONS) --image-prefix "$(SHELL_IMAGE_PREFIX)" \
+	    --scale "$(SHELL_SCALE)" --theme "$(SHELL_THEME)"
 
 container-build:
 	$(CONTAINER_ENGINE) build -t $(IMAGE) -f Dockerfile .

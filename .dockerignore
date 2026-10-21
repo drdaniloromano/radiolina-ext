@@ -2,4 +2,5 @@
 # Deny everything else, including private workspaces, credentials, Git, and artifacts.
 **
 !Dockerfile
+!Dockerfile.shell
 !.dockerignore

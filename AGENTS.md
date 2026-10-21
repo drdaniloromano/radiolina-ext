@@ -54,7 +54,9 @@ decisions and [testing](docs/TESTING.md) for coverage and isolation requirements
 
 ## Contained Development & Commands
 
-Keep dependencies/artifacts contained; do not install development packages globally. Prefer an isolated GNOME VM for visual/audio checks.
+Keep dependencies/artifacts contained; do not install development packages globally.
+Use versioned Shell containers for automated UI/lifecycle checks. Use an isolated
+full desktop for physical audio/media-key, lock, and suspend acceptance.
 
 - `make container-build`: build the development image.
 - `make container-refresh`: pull/rebuild without cache and upgrade image packages
@@ -75,6 +77,12 @@ Keep dependencies/artifacts contained; do not install development packages globa
   the default Podman. Keep private files out of build contexts and runtime mounts;
   preserve the invoking user's ownership of generated files.
 - `make test-shell`: actual popup/lifecycle checks in disposable headless GNOME.
+- `make container-shell-build` / `make container-shell-test`: build and test a
+  private headless Shell image; `SHELL_VERSIONS=49` selects the current target.
+  Version lists run sequentially, with private buses/settings and bounded resources.
+  Never mount host desktop/system buses, home, display/audio sockets or workspace.
+  Evidence goes to a fresh ignored `build/shell-tests/` directory. Additional
+  profiles do not establish compatibility until the declared-version suite passes.
 - `make build` / `make test`: use already installed tools without dependency installation.
 
 ## Coding Style & Naming Conventions
