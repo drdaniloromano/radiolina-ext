@@ -172,7 +172,8 @@ bounded admission prefix does not validate every later codec frame or metadata t
 | [2026-0033: ID3v2 parsing](https://gstreamer.freedesktop.org/security/sa-2026-0033.html) | The accepted ID3/audio path reaches native tag parsing; the reviewed source retains affected parsing contexts. |
 | [2026-0032: XMP tags](https://gstreamer.freedesktop.org/security/sa-2026-0032.html) | Audio MP4 metadata can reach the XMP parser through `qtdemux`; the source retains the affected contexts. |
 | [2026-0079: MP4 captions](https://gstreamer.freedesktop.org/security/sa-2026-0079.html) | Old code remains. Initial admission rejects non-audio tracks, but complete native container-state reachability is unverified; keep open. |
-| [2026-0078: caps comparison](https://gstreamer.freedesktop.org/security/sa-2026-0078.html), [2026-0028: buffer deserialization](https://gstreamer.freedesktop.org/security/sa-2026-0028.html) | The app builds its own pipeline strings and uses no RTP caps input; full indirect core reachability/backports remain unverified. |
+| [2026-0078: caps comparison](https://gstreamer.freedesktop.org/security/sa-2026-0078.html) | The app owns its caps strings and uses no RTP caps input; indirect native mixed-list reachability remains unresolved. Core source fixes are scoped below. |
+| [2026-0028: buffer deserialization](https://gstreamer.freedesktop.org/security/sa-2026-0028.html) | The app builds its own pipeline strings and uses no RTP caps input; full indirect core reachability/backports remain unverified. |
 
 **2026-10-22 scoped reassessment — Opus only:** the matching Fedora 44
 [`gstreamer1-plugins-base-1.28.8-1.fc44` source package](https://kojipkgs.fedoraproject.org/packages/gstreamer1-plugins-base/1.28.8/1.fc44/src/gstreamer1-plugins-base-1.28.8-1.fc44.src.rpm)
@@ -237,6 +238,17 @@ fragmented-stream handling can parse later `moov` headers beyond that check.
 Caption preprocessing can run before downstream output; audio caps alone do not
 establish exclusion. A complete admitted caption path was not demonstrated, and
 no malformed sample was decoded. This review does not clear other findings.
+
+**2026-10-22 scoped reassessment — caps comparison:** the loaded core libraries
+map to the exact Fedora 43 `gstreamer1-1.26.11-1.fc43` and Fedora 44
+[`gstreamer1-1.28.8-1.fc44` source packages](https://kojipkgs.fedoraproject.org/packages/gstreamer1/1.28.8/1.fc44/src/gstreamer1-1.28.8-1.fc44.src.rpm).
+The newer comparator has the three critical fix contexts and checks each pair's
+type; its source matches the official upstream 1.28.8 release. Classify that
+comparison crash as vendor-fixed at matching-source scope. The older source
+lacks the fix; admitted-media reachability stays unknown despite the absent
+RTSP/RTP route. Not every additional parser-hardening change in the linked patch
+series is present in 1.28.8; this is a scoped comparison-fix decision. Only a benign
+owned caps comparison was run, without mixed-type crash inputs or a full advisory scan.
 
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.

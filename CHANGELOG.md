@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Reassess core media-format comparison using matched source RPMs and loaded
+  library ownership. Fedora 44 core 1.28.8 has the type-aware comparison fix and
+  matches upstream release source; Fedora 43 core 1.26.11 lacks it, with application
+  reachability still unresolved. Keep additional linked parser-hardening contexts
+  distinct from the crash fix. Run only a benign comparison; no application changes.
 - Reassess MP4 caption parsing against exact native source members: Fedora 44 Good
   1.28.8 contains all four upstream fix contexts; Fedora 43 Good 1.26.11 lacks them.
   Keep older-profile reachability unresolved after tracing first-header rejection,
