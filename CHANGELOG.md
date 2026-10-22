@@ -7,6 +7,8 @@
 - Add local CI adapters around existing contained tests and packaging, with
   dependency-image cache integrity checks, current-source test gates, verified
   ZIP payloads and allowlisted bounded evidence. Keep runtime behavior unchanged.
+- Include final/failure Shell screenshots in selected CI evidence while excluding
+  saved-station files, with an explicit failed-run artifact regression check.
 - Prepare GitHub Actions test/build automation using pinned actions, sequential
   GNOME 49/50 profiles, positive AAC tests and short-lived development artifacts.
   Remote execution and publication require separate authorization.

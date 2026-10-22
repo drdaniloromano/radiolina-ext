@@ -285,7 +285,8 @@ def evidence(_args):
                 'shell-oom-recovery.json', 'shell-resource-lifecycle.json', 'play-circle-alignment.json',
                 'shell-e2e.log', 'playback-hover-light.png', 'playback-hover-dark.png',
                 'large-text-light-stations.png', 'large-text-dark-stations.png', 'popup.png',
-                'row-actions-hidden.png', 'editor.png', 'settings.png'))
+                'row-actions-hidden.png', 'editor.png', 'settings.png',
+                'shell-final.png', 'screenshot-regression.png'))
     total = 0
     for path in selected:
         if not path.is_file() or path.is_symlink():

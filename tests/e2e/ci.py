@@ -85,6 +85,17 @@ class CiE2E(unittest.TestCase):
         self.assertIn(b'<url>', content)
         for private in (b'PRIVATE_STATION_MARKER', b'PRIVATE_STATE_MARKER', b'user:secret'):
             self.assertNotIn(private, content)
+        run = self.root / 'build/shell-tests/49/failed-run'
+        (run / 'evidence').mkdir(parents=True)
+        screenshot = run / 'evidence/shell-final.png'
+        screenshot.write_bytes(b'fixture failure screenshot')
+        (run / 'evidence/stations.json').write_text('PRIVATE_FAILURE_STATIONS')
+        (self.state / 'test-49.json').write_text(json.dumps({
+            'passed': False, 'runs': [str(run.relative_to(self.root))]}))
+        self.ci.evidence(None)
+        files = list((self.state / 'artifacts/test-evidence').glob('*'))
+        self.assertTrue(any(p.name.endswith('shell-final.png') for p in files))
+        self.assertNotIn(b'PRIVATE_FAILURE_STATIONS', b''.join(p.read_bytes() for p in files))
         (self.state / 'test-49.json').write_text(json.dumps({'runs': ['workspace']}))
         with self.assertRaisesRegex(ValueError, 'Unexpected evidence directory'):
             self.ci.evidence(None)
