@@ -22,6 +22,7 @@ runtime requirement or evidence of compatibility with every distribution.
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
+| `make ci-start`, then `ci-image`/`ci-test CI_PROFILE=49`, `50`, `aac`, then `ci-package`/`ci-evidence` | Run the local equivalent of Actions, gate the installation ZIP on current successful tests, and stage allowlisted evidence. See [CI commands and artifacts](DEVELOPMENT.md#github-actions-test-and-build). |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
 | `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow using an already installed GNOME 49/50. |
@@ -87,6 +88,14 @@ Six launcher E2E cases use fake engines to cover private mount/resource boundari
 sequential versions, per-checkout locking, failure/interruption cleanup/status retention, rejected
 profiles/engines, and Podman/Docker refresh/identity contracts. They do not substitute
 for genuine Docker execution or actual per-version Shell tests.
+
+Four CI boundary E2E cases cover cache hit/refresh/corruption, failed-service owned
+cleanup, failed/stale/missing test gates, real ZIP source/exclusion checks, and
+allowlisted/redacted output. Their fake engines do not establish Docker support.
+Run them alone with `python3 tests/e2e/ci.py`; they also run in the contained suite.
+The prepared Actions workflow runs both supported profiles sequentially and the
+positive AAC profile. Remote execution/genuine Docker remain unverified until
+observed. CI screenshots require human review; physical acceptance stays separate.
 
 The versioned Podman profiles passed all 51 offline cases each, plus actual Shell
 workflows on **49.10/Fedora 43** and **50.6/Fedora 44** at 100% and 150% monitor

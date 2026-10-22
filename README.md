@@ -19,6 +19,9 @@ Publication awaits a [patched runtime baseline and remaining verification](docs/
 - Native light/dark styling, static playback-state icons, and optional Stop.
 - Separate playback service; Stop releases it and Quit removes the indicator.
 
+Stations are user-added; there is no online station search or built-in directory.
+Filtering searches only your saved stations.
+
 ## Requirements
 
 - **Desktop runtime:** GNOME Shell 49 or 50, GJS/GI with GLib/Gio/GLibUnix, libsoup 3,
@@ -30,6 +33,10 @@ in a container still requires those libraries on the desktop host. See the
 [dependency and codec details](docs/DEVELOPMENT.md#dependencies-and-codecs).
 
 ## Installation
+
+When an authorized [Actions run](https://github.com/drdaniloromano/radiolina-ext/actions)
+provides an installation artifact, extract it and install the inner extension ZIP.
+See [downloads, checksums and expiration](docs/DEVELOPMENT.md#downloading-and-installing-the-artifact).
 
 From a checkout, build the development package and install it:
 
