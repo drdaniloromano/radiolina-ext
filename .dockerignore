@@ -3,4 +3,5 @@
 **
 !Dockerfile
 !Dockerfile.shell
+!Dockerfile.aac
 !.dockerignore

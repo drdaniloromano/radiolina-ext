@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package container-shell-build container-shell-refresh container-shell-test
+.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package container-shell-build container-shell-refresh container-shell-test container-aac-build container-aac-test
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
@@ -8,6 +8,9 @@ SHELL_VERSIONS ?= 49 50
 SHELL_IMAGE_PREFIX ?= localhost/radiolina-shell-test
 SHELL_SCALE ?= 1
 SHELL_THEME ?= dark
+AAC_IMAGE ?= localhost/radiolina-aac-test:44
+AAC_BASE_IMAGE ?= localhost/radiolina-shell-test:50
+REQUIRE_AAC ?= 0
 # Mount only build/test inputs, never the private workspace or repository metadata.
 CONTAINER_SOURCES = $(foreach path,extension src scripts tests LICENSE,-v "$(CURDIR)/$(path):/project/$(path):ro")
 CONTAINER_RUN_FLAGS = --rm --network=none --security-opt label=disable
@@ -55,7 +58,16 @@ container-refresh:
 
 container-test:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \
-	$(CONTAINER_ENGINE) run $(CONTAINER_RUN_FLAGS) $$user_flags $(CONTAINER_SOURCES) $(IMAGE)
+	$(CONTAINER_ENGINE) run $(CONTAINER_RUN_FLAGS) $$user_flags \
+	--env GNOME_RADIO_TEST_REQUIRE_AAC=$(REQUIRE_AAC) $(CONTAINER_SOURCES) $(IMAGE)
+
+# The optional image inherits an already-built GNOME 50/Fedora 44 test image.
+container-aac-build:
+	$(CONTAINER_ENGINE) build --build-arg BASE_IMAGE="$(AAC_BASE_IMAGE)" \
+	-t $(AAC_IMAGE) -f Dockerfile.aac .
+
+container-aac-test:
+	$(MAKE) container-test IMAGE="$(AAC_IMAGE)" REQUIRE_AAC=1
 
 container-resources:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \

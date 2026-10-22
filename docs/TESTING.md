@@ -14,6 +14,7 @@ Run from the repository root; use existing tools rather than installing host dep
 | `make container-shell-build` / `make container-shell-test` | Build/test both supported profiles (49/Fedora 43 and 50/Fedora 44) sequentially. |
 | `make container-shell-test SHELL_SCALE=1.5 SHELL_THEME=light` | Repeat both Shell profiles at 150% scale with light/dark checks. |
 | `make container-test IMAGE=localhost/radiolina-shell-test:50` | Run the offline core/service suite against GNOME 50's GJS/native libraries. |
+| `make container-aac-build` / `make container-aac-test` | Build a separate codec image from the existing GNOME 50 profile; require real ADTS AAC and AAC-in-M4A playback/control tests. |
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
@@ -107,9 +108,14 @@ Validation fixtures generate MP3, FLAC, Vorbis/Opus Ogg, WAV, MP3/Opus MP4,
 and video locally. TLS tests trust an ephemeral CA only inside a disposable service
 copy, with certificate verification enabled. Both tested GNOME 49/Fedora 43 and
 GNOME 50/Fedora 44 images lack AAC decoders and exercise the missing-codec error,
-not successful AAC decoding. That requires a separately verified decoder/runtime
-and real AAC fixture. Inspecting a fixed decoder's source does not fill this gap.
-Native parser security is not established by these cases.
+not successful AAC decoding. The separate Fedora 44 AAC profile adds the vendor
+libav plugin and passes locally encoded ADTS AAC and AAC-in-M4A playback,
+pause/resume, Stop and one-GET checks. Its full suite runs 52 cases: 51 pass and the
+missing-codec case skips; the original profile separately passes that case and
+skips positive AAC. `REQUIRE_AAC=1` fails if positive-test prerequisites are absent.
+No real device output, ADIF, other AAC decoders or every channel/profile combination
+is implied. See the [optional profile](DEVELOPMENT.md#optional-aac-test-profile).
+Native parser security is not established by these functional cases.
 
 ## Resource cleanup
 

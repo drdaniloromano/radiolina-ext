@@ -3,6 +3,7 @@
 import gzip
 import http.server
 import json
+import os
 from pathlib import Path
 import shutil
 import ssl
@@ -170,6 +171,41 @@ class ValidationE2E(ServiceFixture):
             self.skipTest('AAC decoder installed; synthetic ADTS fixture tests absence only')
         state = self.play_url(self.url + '/aac.aac', error=True)
         self.assertIn('Required codec unavailable: AAC', state['error'])
+
+    def test_real_aac_and_m4a_play_pause_and_resume_without_reopening(self):
+        def available(name):
+            return subprocess.run(['gst-inspect-1.0', name], capture_output=True).returncode == 0
+        missing = [name for name in ('avenc_aac', 'aacparse', 'mp4mux') if not available(name)]
+        if not any(available(name) for name in ('avdec_aac', 'fdkaacdec', 'faad')):
+            missing.append('AAC decoder')
+        if missing:
+            reason = 'Positive AAC fixtures require: ' + ', '.join(missing)
+            if os.environ.get('GNOME_RADIO_TEST_REQUIRE_AAC') == '1':
+                self.fail(reason)
+            self.skipTest(reason)
+        for name, tail in {
+            'real.aac': ['audio/mpeg,mpegversion=4,stream-format=adts'],
+            'real.m4a': ['mp4mux', 'faststart=true'],
+        }.items():
+            with self.subTest(name=name):
+                path = Path(self.fixture.name) / name
+                subprocess.run(['gst-launch-1.0', '-q', 'audiotestsrc', 'num-buffers=400',
+                                '!', 'audio/x-raw,rate=44100,channels=2', '!', 'audioconvert',
+                                '!', 'avenc_aac', 'bitrate=64000', '!', 'aacparse', '!',
+                                *tail, '!', 'filesink', f'location={path}'], check=True, timeout=20)
+                ValidationStreams.formats[name] = path.read_bytes()
+                self.play_url(self.url + '/format/' + name)
+                self.assertEqual(self.prop(PLAYER, 'PlaybackStatus'), 'Playing')
+                self.media('Pause')
+                self.assertEqual(self.state()['status'], 'Paused')
+                self.media('Play')
+                self.wait(lambda: self.state()['error'] or self.state()['status'] == 'Playing',
+                          'AAC resumes')
+                self.assertEqual(self.state()['error'], '')
+                self.assertEqual(self.state()['status'], 'Playing')
+                self.assertEqual(ValidationStreams.requests.count('/format/' + name), 1)
+                self.media('Stop')
+                self.assertEqual(self.state()['status'], 'Stopped')
 
     def test_actual_redirects_apply_one_policy_to_all_source_names(self):
         for extension in ('mp3', 'm3u'):

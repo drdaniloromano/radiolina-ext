@@ -159,9 +159,11 @@ comes from libav, and [fdkaacdec](https://gstreamer.freedesktop.org/documentatio
 or [faad](https://gstreamer.freedesktop.org/documentation/faad/index.html) come from
 Bad plugins. Both tested Fedora 43/GNOME 49 and Fedora 44/GNOME 50 images provide
 the parser but none of these AAC decoders: their tests establish missing-codec
-handling, not successful AAC playback. Neither image has the libav plugin or its
-permitted fallback decoders. A fixed wrapper source candidate is documented in
-the [security review](SECURITY.md#native-decoder-release-blockers), not installed.
+handling, not successful AAC playback. Neither original image has the libav plugin
+or its permitted fallback decoders. The separate [AAC test profile](#optional-aac-test-profile)
+adds Fedora's libav package and verifies real ADTS AAC and AAC-in-M4A playback.
+Its wrapper uses the source build recorded in the
+[security review](SECURITY.md#native-decoder-release-blockers).
 An eligible decoder on the desktop host is required even when container packaging succeeds.
 
 Inspect actual availability with already installed tools, for example
@@ -193,6 +195,11 @@ the [native security review](SECURITY.md#native-decoder-release-blockers) found
 missing GStreamer fixes in the reviewed 1.26.11 source packages. A fixed runtime
 or verified backports and renewed compatibility checks are public distribution prerequisites.
 
+For release verification, use supported distribution packages with the relevant
+security fixes/backports. The Fedora 44 profile is the current reference for the
+reviewed native fixes; GNOME 49/50 API compatibility is assessed separately.
+This is not a universal minimum-version claim or a runtime version check.
+
 ## Contained builds and configuration
 
 With Podman or Docker, and Make already installed (Linux, local engine):
@@ -220,7 +227,7 @@ builds may reuse cached layers. Before security/release verification, use
 keep a separate review image. Podman uses `--pull=always`; Docker uses `--pull`.
 This updates only the selected container image, never the host's packages.
 Building the image needs network access. [.dockerignore](../.dockerignore), supported
-by both engines, excludes everything except the two recipes and ignore file from the
+by both engines, excludes everything except the recipes and ignore file from the
 build context; the image contains dependencies rather than a copy of the checkout.
 Tests and packaging run offline with only `extension/`, `src/`, `scripts/`, `tests/`,
 and `LICENSE` mounted read-only. Private `workspace/`, Git metadata, credentials,
@@ -245,6 +252,33 @@ ordinary source edits are visible through the explicit read-only mounts.
 
 `make build` and `make test` use already installed host tools without installing
 anything; their different requirements are listed in the [dependency table](#dependencies-and-codecs).
+
+### Optional AAC test profile
+
+[Dockerfile.aac](../Dockerfile.aac) derives a separate Fedora 44 codec-test image
+from the existing GNOME 50 profile. It installs the vendor libav package inside
+that image; normal images, packaging dependencies and host libraries are unchanged.
+
+```sh
+make container-shell-build SHELL_VERSIONS=50 # Only if the base image is missing.
+make container-aac-build
+make container-aac-test
+```
+
+Use `CONTAINER_ENGINE=docker` consistently for Docker. Override `AAC_BASE_IMAGE`
+with an inspected immutable image ID for repeatable review, and `AAC_IMAGE` for a
+separate tag. Builds query vendor repositories; tests are offline, mount only
+allowlisted sources and use the normal invoking-user identity rules.
+`container-aac-test` sets `REQUIRE_AAC=1`: absent fixture encoders or decoders fail
+the positive test. Ordinary tests skip that case when unavailable and retain the
+separate missing-codec test. Neither test downloads codecs or public streams.
+
+The verified profile uses GStreamer/libav **1.28.8-1.fc44** and actual loaded
+`libavcodec-free` **8.1.3-1.fc44**. Local generated ADTS AAC and AAC-in-M4A streams
+pass playback, pause/resume and same-response checks with silent output.
+This adds codec/service coverage, not another full Shell matrix or physical audio
+acceptance. Genuine Docker remains untested. See [testing](TESTING.md) and
+[security scope](SECURITY.md#release-priorities).
 
 ### Versioned Shell test containers
 

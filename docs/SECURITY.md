@@ -105,7 +105,7 @@ publication; the detailed technical findings below remain unchanged.
 | Older Fedora 43 GStreamer builds with missing fixes, including selected Opus/WAV paths | Block endorsement of that unpatched runtime. Choose a supported patched baseline/backport and verify it; GNOME 49 compatibility alone does not require using these old native builds. |
 | Reviewed Fedora 44 GStreamer fixes | Retain the scoped source evidence; no need to repeat each reconstruction without a relevant change. This does not certify all dependencies or user desktops. |
 | Older caption/caps/buffer reachability and libsoup identity conflicts | Focused follow-up, technical status still unknown. Resolve serious plausible exposure on the chosen runtime; metadata disagreement alone is not a confirmed vulnerability or an automatic blocker. |
-| AAC/FFmpeg and third-party codec coverage | Verify the decoder actually selected before claiming successful AAC support. Missing decoders are a functional gap; missing advisory coverage is uncertainty, not proof of a flaw or a fix. |
+| AAC/FFmpeg and third-party codec coverage | A separate Fedora 44 profile now verifies ADTS AAC and AAC-in-M4A using the vendor libav decoder. Original Shell profiles still lack AAC decoders; other codecs/vendors remain scoped separately. Missing advisory coverage is uncertainty, not proof of a flaw or a fix. |
 | Broad desktop/system dependency findings | Vendor maintenance unless evidence establishes app-path relevance. Preserve open technical assessments; no blanket exclusions or host-wide source audit. |
 | Physical audio/media keys, lock/suspend and genuine Docker | Separate acceptance/compatibility gaps; apply the [testing requirements](TESTING.md), not CVE classifications. |
 
@@ -280,16 +280,29 @@ unchecked metadata chunks on a nonseekable response; initial format admission
 does not prevent the native crash. No crash payload, binary reproducibility or
 complete advisory scan was performed; other publication blockers remain open.
 
-**2026-10-22 scoped reassessment — FFmpeg wrapper:** neither tested image has
+**2026-10-22 scoped reassessment — FFmpeg wrapper:** neither original Shell image has
 `gst-libav`, any permitted `avdec_*` fallback, or an eligible AAC decoder. The
 wrapper path is absent in those snapshots; successful AAC decoding remains untested.
 The official Fedora 44
 [`gstreamer1-plugin-libav-1.28.8-1.fc44` source package](https://kojipkgs.fedoraproject.org/packages/gstreamer1-plugin-libav/1.28.8/1.fc44/src/gstreamer1-plugin-libav-1.28.8-1.fc44.src.rpm)
 contains the reviewed [upstream decoder/mapping fixes](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12439.patch),
-but was inspected only, not installed or tested. The earlier desktop's affected
+was initially inspected only; the later AAC profile below installs/tests it.
+The earlier desktop's affected
 `1.26.11` wrapper and RPM Fusion codec coverage remain open. Updating FFmpeg alone
 does not fix the adapter; checking the adapter does not clear its loaded FFmpeg
 library. Verify both layers before testing a separately agreed codec profile.
+
+**2026-10-22 AAC profile verification:** a separate Fedora 44 image now installs
+that exact `gstreamer1-plugin-libav-1.28.8-1.fc44` build and loads Fedora's
+`libavcodec-free-8.1.3-1.fc44`. Real generated ADTS AAC and AAC-in-M4A fixtures pass
+the service/control tests. The exact-image vendor query returns no outstanding
+advisories or reported repository coverage gaps within its automated scope;
+`release_approved` remains false. [FFmpeg's security notices](https://ffmpeg.org/security.html)
+were consulted; neither that list nor an empty vendor result attests every native
+operation. The earlier wrapper-source evidence applies to this matching build;
+it is not blanket FFmpeg clearance. Original images and host packages are unchanged.
+Other AAC backends, ADIF, historical RPM Fusion coverage and physical acceptance
+remain separate; see the [repeatable profile](DEVELOPMENT.md#optional-aac-test-profile).
 
 **2026-10-22 scoped reassessment — ID3v2:** both images' `id3demux` loads
 `libgsttag` from the matching Base RPM. Fedora 44's reviewed `1.28.8-1.fc44`

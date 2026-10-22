@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Add an optional contained AAC profile and real ADTS AAC/AAC-in-M4A service E2E
+  coverage for playback, pause/resume, Stop and single-response handling. Required
+  mode fails on missing codecs; normal tests retain missing-codec coverage.
+  Verify Fedora libav/FFmpeg ownership, offline tests and scoped vendor advisories
+  without changing host packages or application behavior; Docker remains untested.
 - Prioritize security review by actual application exposure: retain known native
   runtime blockers, distinguish documented uncertainties and distribution
   maintenance, and reserve deep source investigation for important ambiguities.

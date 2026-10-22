@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Optional codec-test dependencies; never used by normal packaging or installed.
+ARG BASE_IMAGE=localhost/radiolina-shell-test:50
+FROM ${BASE_IMAGE}
+RUN dnf -y --setopt=install_weak_deps=False install gstreamer1-plugin-libav && \
+    dnf clean all
