@@ -180,6 +180,16 @@ matching-source scope. The GNOME 49/Fedora 43 image still selects the reviewed
 exploit testing, a fresh complete advisory scan, or clearance of other findings.
 GNOME version alone does not establish the desktop's native-library patch status.
 
+**2026-10-22 scoped reassessment — WAV only:** the matching Fedora 44
+[`gstreamer1-plugins-good-1.28.8-1.fc44` source package](https://kojipkgs.fedoraproject.org/packages/gstreamer1-plugins-good/1.28.8/1.fc44/src/gstreamer1-plugins-good-1.28.8-1.fc44.src.rpm)
+contains the exact [upstream streaming availability check](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/010db8a2246e00796b1ae7002fa43264898083c3.patch),
+with no recipe patches. The GNOME 50 image's `wavparse` belongs to that build:
+classify this advisory as vendor-fixed at matching-source scope. Fedora 43's
+`1.26.11-1.fc43` still lacks the check. Accepted WAV headers can be followed by
+unchecked metadata chunks on a nonseekable response; initial format admission
+does not prevent the native crash. No crash payload, binary reproducibility or
+complete advisory scan was performed; other publication blockers remain open.
+
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package

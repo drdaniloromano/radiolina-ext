@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Reassess WAV streaming metadata against the same profiles: Fedora 44 Good
+  1.28.8 contains the upstream availability guard; Fedora 43 Good 1.26.11 lacks it.
+  Verify selected parser ownership and matching source/build recipes, preserving
+  dated private evidence without executing a crash payload. Keep the older runtime
+  finding and other publication gates open; application behavior is unchanged.
 - Reassess the Opus channel-position finding against both tested runtime profiles:
   the matching Fedora 44 Base 1.28.8 source contains the upstream fix; Fedora 43
   Base 1.26.11 retains the affected code. Verify installed decoder/package ownership
