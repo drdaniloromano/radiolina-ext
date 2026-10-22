@@ -4,6 +4,9 @@
 
 ### Verification
 
+- Recheck the submission ZIP against current source, metadata and license;
+  document the purposes of its two packaging metadata fields and refresh private
+  reviewer notes. Preserve test/security limitations; no runtime changes or upload.
 - Keep service E2E and headless GNOME containers as the default test workflow.
   Make full desktop VMs optional, reuse prior manual confirmations and document
   untested hardware scope. Clarify that Fedora is a test-image choice, not an

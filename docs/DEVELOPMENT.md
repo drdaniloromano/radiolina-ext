@@ -103,6 +103,10 @@ Shell theme object, other styles, and unidentified registrations. Versioned CSS
 and content-addressed UI modules support live updates; native GType identities
 include the module URI so cached installations cannot collide.
 
+Packaged metadata uses `radio-stylesheet` to select the owned layout stylesheet
+and `radio-runtime` to identify the module for the same-session developer updater.
+Both name local content-hashed files. The updater itself is not included in the ZIP.
+
 Keep UUID `radiolina@drdaniloromano.github.io` stable. Service identifiers
 `org.mpris.MediaPlayer2.GnomeRadio` / `org.gnome.Radio1` and the `gnome-radio`
 config/cache names deliberately retain compatibility. Stable station IDs preserve
