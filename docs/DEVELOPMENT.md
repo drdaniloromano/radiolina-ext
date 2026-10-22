@@ -364,8 +364,10 @@ See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recove
 
 ## GitHub Actions test and build
 
-The [workflow](../.github/workflows/ci.yml) prepares **development artifacts**;
-it has no release, registry, or GNOME submission job. It uses a standard
+The [test workflow](../.github/workflows/ci.yml) prepares **development artifacts**;
+it has no release, registry, or GNOME submission job. A separate
+[release workflow](../.github/workflows/release.yml) builds an installer and attaches it to
+an existing release, as described below. Testing uses a standard
 `ubuntu-24.04` VM and genuine Docker. GNOME dependencies stay in the Fedora
 containers, with Podman still supported for local development. Local validation
 does not establish a successful Actions run or genuine Docker compatibility;
@@ -465,6 +467,48 @@ Logs have URL redaction and a 1 MiB tail limit; the selected evidence budget is
 Only staged allowlisted outputs are uploaded, never private workspace, saved
 stations, credentials, account inventory or the entire build tree.
 
+### Automated release attachments
+
+Publishing a GitHub Release runs **Build release ZIP**. This dedicated workflow
+**creates a fresh installable ZIP from the release tag**, then attaches it to that
+release. It requires the tagged commit's completed, successful **push to main**
+checks; it does not rerun GNOME tests or build dependency images. The tag must
+match package `version-name` (`v0.5.0` for `0.5.0`) and belong to main's history.
+Standalone tag pushes do not trigger it. Source-code archives are not installers.
+
+The read-only build job executes reviewed main tooling against a temporary tagged
+checkout. It never runs tagged scripts or retrieves an earlier CI ZIP. The builder
+uses the runner's existing Python standard library; no GNOME development packages,
+new dependencies or host installations are needed. It verifies every packaged
+file, runtime/style wrapper, metadata and license against the tagged source.
+Fixed ZIP headers, ordering, permissions and uncompressed entries make repeat
+builds identical without depending on a compression-library version.
+
+A separate job uses the same pinned automation commit and receives `contents:
+write` only to attach `radiolina@drdaniloromano.github.io.zip`, `SHA256SUMS` and
+`verification.json`. The manifest records source and payload hashes, the builder
+hash and successful CI run ID. It explicitly distinguishes **tested source** from
+the **newly built ZIP**, which is not itself run in GNOME by this workflow. No
+personal access token is needed. Release notes, tags and publication state remain
+unchanged. Existing identical files are retained; conflicts stop without replacing
+assets. Retries attach only missing files. Incomplete assets require manual repair;
+a later tooling change can also require manual review if it changes generated files.
+
+For an existing release, choose **Actions → Build release ZIP → Run workflow**,
+select branch **main**, and enter its existing tag, for example `v0.5.0`.
+This also handles tags whose source predates this workflow. Manual runs on feature
+branches are skipped. Pending/failed main CI must be resolved first. Expired CI
+artifacts do not prevent building: only the successful run record is required.
+Published immutable releases cannot accept missing assets; attach files before
+publication in that mode. The workflow does not disable immutability.
+
+The inter-job transfer artifact lasts one day and contains only the three approved
+files and an internal release plan. The pinned official download action is 8.0.2
+(Node 24), alongside the existing checkout/upload pins. Both workflows are checked
+by the contained validator; offline release-boundary tests run once using the
+runner's existing Python/Git. The manifest keeps `release_approved: false`;
+the maintainer's publication decision and [security review](SECURITY.md) stay separate.
+
 ### GitHub settings and cost limits
 
 Before separately authorizing a push/run, verify repository visibility and
@@ -563,8 +607,8 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The package version is **0.5.0**, prepared for merge; public distribution is
-pending the final
+The current tagged package version is **0.5.0**, with a maintainer-published
+GitHub Release. GNOME Extensions submission is pending the final
 [security priorities](SECURITY.md#release-priorities) and package review. Missing
 full-VM/hardware coverage alone does not block release; document its limitations.
 Use `MAJOR.MINOR.PATCH`:
@@ -581,8 +625,8 @@ Retain the [provenance findings and review limits](PROVENANCE.md).
 
 Prepare the version and changelog in a PR, wait for its current checks, merge,
 then wait for the resulting `main` build. Tag that reviewed `main` commit;
-do not tag the feature branch in advance. The current workflow does not create
-tags or GitHub Releases. A GitHub Release adds notes and durable downloads to a
-tag; attaching the verified `main` ZIP is a separate publication step. Actions
-artifacts expire and are not release assets. Creating a tag alone does not run
-this workflow, so use the already verified build from the tagged commit.
+do not tag the feature branch in advance. The test workflow does not create tags
+or GitHub Releases. A GitHub Release adds notes and durable downloads to a tag;
+publishing it starts the separate verified-attachment workflow above. Actions
+artifacts expire and are not release assets. Creating a standalone tag starts
+neither workflow; use the already verified build from the tagged commit.

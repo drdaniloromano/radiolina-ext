@@ -3,10 +3,10 @@
 Lightweight internet radio for **GNOME Shell**, controlled entirely from the top bar.
 A compact native popup keeps playback and saved stations close at hand.
 
-**Version:** **0.5.0**, prepared for merge; public distribution is pending.
+**Version:** **0.5.0**. GNOME Extensions submission is pending.
 Supports **GNOME Shell 49 and 50**.
 See the [changelog](CHANGELOG.md) for completed changes.
-Publication awaits a [patched runtime baseline and remaining verification](docs/SECURITY.md#release-priorities).
+See the [runtime security review and remaining verification](docs/SECURITY.md#release-priorities).
 
 ## Features
 
@@ -33,6 +33,10 @@ in a container still requires those libraries on the desktop host. See the
 [dependency and codec details](docs/DEVELOPMENT.md#dependencies-and-codecs).
 
 ## Installation
+
+When a [GitHub Release](https://github.com/drdaniloromano/radiolina-ext/releases)
+has installer assets, download `radiolina@drdaniloromano.github.io.zip` and
+`SHA256SUMS`. See [automatic release ZIP builds](docs/DEVELOPMENT.md#automated-release-attachments).
 
 When an authorized [Actions run](https://github.com/drdaniloromano/radiolina-ext/actions)
 provides an installation artifact, extract it and install the inner extension ZIP.

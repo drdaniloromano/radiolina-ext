@@ -1,10 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Development
+
+- Build a fresh installer ZIP from the version tag in a dedicated workflow when
+  a GitHub Release is published, with a manual retry for existing releases. Require
+  successful main CI for that source, verify the package contents, and separate
+  read-only building from write-capable attachment. Generate repeatable assets,
+  preserve existing identical files and refuse conflicts; do not create tags,
+  create releases, change publication state or submit to extensions.gnome.org.
+- Add offline release-boundary E2E tests using real Git and ZIP fixtures, and
+  validate both workflows. Keep application behavior and version unchanged.
+
 ## 0.5.0 — 2026-10-22
 
-Prepared for merge; finalize by tagging the reviewed `main` commit `v0.5.0`
-after its checks pass. GitHub Releases and extensions.gnome.org publication
-remain separate from CI development artifacts and subject to the
+Tagged at reviewed main commit `374d647` after its checks passed; the maintainer
+published its GitHub Release. Extensions.gnome.org submission remains separate
+from GitHub development artifacts and subject to the
 [existing publication priorities](docs/SECURITY.md#release-priorities).
 
 ### Development
