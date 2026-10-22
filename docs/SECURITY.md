@@ -102,7 +102,7 @@ exploit samples or resource-exhaustion probes on the maintainer's desktop.
 
 ## Review conclusions and resolution guidance
 
-These **2026-10-21 Unreleased** notes describe the reviewed application paths,
+These **2026-10-21** notes describe the application paths included in **0.4.0**,
 not the security status of every installation. Detailed environment evidence and
 working review notes remain private. The dependency review is still open.
 

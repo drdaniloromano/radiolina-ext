@@ -3,11 +3,9 @@
 Lightweight internet radio for **GNOME Shell**, controlled entirely from the top bar.
 A compact native popup keeps playback and saved stations close at hand.
 
-**Release status:** **0.3.0**, finalized locally; public distribution is pending.
-The current checkout declares **GNOME Shell 49 and 50** support; the **0.3.0 tag**
-targets GNOME 49. GNOME 50 compatibility is an **Unreleased** change.
+**Release status:** **0.4.0**, finalized locally; public distribution is pending.
+Supports **GNOME Shell 49 and 50**.
 See the [changelog](CHANGELOG.md) for completed changes.
-Validation hardening is also listed under **Unreleased**.
 Publication is blocked pending [native-library security fixes and verification](docs/SECURITY.md#native-decoder-release-blockers).
 
 ## Features

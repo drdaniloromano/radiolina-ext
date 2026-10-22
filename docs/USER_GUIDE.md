@@ -128,7 +128,7 @@ the first usable HTTP(S) entry and supports relative URLs, redirects, XML entiti
 CDATA, and namespaces. The original playlist URL remains saved. HLS manifests
 and XML DTD declarations are not supported. See the [input bounds](DEVELOPMENT.md#input-and-resource-bounds).
 
-The development validation policy admits MP3, AAC, FLAC, Ogg Vorbis/Opus/FLAC,
+The validation policy admits MP3, AAC, FLAC, Ogg Vorbis/Opus/FLAC,
 PCM/float WAV, and audio-only MP4/M4A containing an allowed codec. Availability
 also depends on installed decoders; missing support reports **Required codec
 unavailable**. No codecs are downloaded automatically. Video, HTML, HLS, and
@@ -145,7 +145,7 @@ Redirects are limited to five across playback/playlist resolution. Credentials
 and fragments in URLs, and HTTPS-to-HTTP redirects or playlist destinations, are
 rejected. HTTP URLs entered explicitly and local/LAN stations remain supported.
 If an HTTPS station points to HTTP-only audio, use its HTTP URL explicitly if
-you accept an unencrypted connection. These are Unreleased development changes;
+you accept an unencrypted connection. These validation rules apply from 0.4.0;
 the `v0.3.0` tag retains its original behavior.
 
 A manual example is `https://stream.nightride.fm/nightride.mp3`; see
@@ -169,7 +169,7 @@ with names up to 80 characters and URLs up to 2,048 characters. URLs must not
 contain credentials, fragments, whitespace, or control characters. Re-enable
 radiolina to load the edited file. There is no one-URL-per-line saved-list importer.
 
-In the Unreleased development build, the UTF-8 JSON file must fit within **1 MiB**
+The UTF-8 JSON file must fit within **1 MiB**
 (including whitespace); unknown fields are rejected. Supported top-level fields
 are `version`, `stations`, `selected`, `notifications`, `recent`, `recentLimit`,
 `fetchFavicons`, `showStopButton`, `playButtonOnLeft`, and `groupWithAppIndicators`.
@@ -179,7 +179,7 @@ is left untouched and settings/station writes are blocked: back it up, repair it
 then restart radiolina. These limits address local configuration resource use;
 they do not establish protection against malicious same-user processes.
 
-Favicon fetching and its setting are removed in the Unreleased build. The legacy
+Favicon fetching and its setting are removed in 0.4.0. The legacy
 `fetchFavicons` boolean is accepted but always inactive, including through older
 clients. Existing cache files under `${XDG_CACHE_HOME:-~/.cache}/gnome-radio/favicons/`
 are left untouched and no longer read or written. You may delete that directory
@@ -187,7 +187,7 @@ after quitting radiolina if you want to reclaim its space.
 
 ## URL privacy
 
-In the Unreleased development build, MPRIS media metadata omits the stream URL;
+MPRIS media metadata omits the stream URL;
 station/track names, artist and media controls remain available. The final redirect
 URL is not published in application state. Application errors use bounded,
 code-authored messages or generic fallbacks instead of raw backend diagnostics.

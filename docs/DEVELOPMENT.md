@@ -64,7 +64,7 @@ child exit fails promptly and Stop/Quit can cancel startup. Stream connection or
 rebuffering uses a cancellable 30-second one-shot deadline, not a recurring timer.
 The service entry retains its standalone `#!@GJS@ -m` marker and runs with `gjs -m`.
 
-### Stream validation and decoder boundary (Unreleased)
+### Stream validation and decoder boundary
 
 Validation acts on URLs, redirect destinations, and initial response bytes. The
 pure policies live in `src/core/validation/`; they have no Shell or GStreamer
@@ -180,7 +180,7 @@ and Shell/Mutter **50.6** on Fedora 44. The latter provides GJS **1.88.1**,
 GStreamer/Base/Good **1.28.8**, and libsoup **3.6.6-10.fc44**. These functional
 results do not close the native dependency findings or verify other vendor builds.
 
-GNOME Shell **49 and 50** are declared by the Unreleased checkout; the 0.3.0 tag
+GNOME Shell **49 and 50** are declared by release 0.4.0; the 0.3.0 tag
 declares 49. Lower GJS/GLib/GStreamer package
 minimums have not been established by a compatibility matrix; the verified
 versions above are examples, not proven minimums. GI namespace versions such as
@@ -188,7 +188,7 @@ versions above are examples, not proven minimums. GI namespace versions such as
 These historical functional results do not approve those builds for publication:
 the [native security review](SECURITY.md#native-decoder-release-blockers) found
 missing GStreamer fixes in the reviewed 1.26.11 source packages. A fixed runtime
-or verified backports and renewed compatibility checks are release prerequisites.
+or verified backports and renewed compatibility checks are public distribution prerequisites.
 
 ## Contained builds and configuration
 
@@ -323,7 +323,7 @@ Configuration schema/defaults live in
 [validation/config.js](../src/core/validation/config.js); Store owns bounded I/O.
 The existing `stations.js` exports remain compatible. Version-1 files can omit
 newer optional settings; accepted configs are copied into known-field objects.
-These Unreleased limits constrain local configuration allocation and IPC, not
+These limits constrain local configuration allocation and IPC, not
 remote media attacks or malicious same-user processes. Oversized State propagation
 was reproduced before the fix; no memory-exhaustion or Shell crash was attempted.
 
@@ -375,7 +375,8 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The current local release is **0.3.0**; public distribution is pending.
+The current local release is **0.4.0**; public distribution is pending and remains
+blocked by the documented security findings and outstanding acceptance checks.
 Use `MAJOR.MINOR.PATCH`:
 patches for fixes, minor increments for features/compatibility breaks during `0.x`,
 and major increments for compatibility breaks after `1.0`. Set `version-name` in

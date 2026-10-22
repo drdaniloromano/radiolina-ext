@@ -1,12 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-10-22
+
+Finalized locally; GitHub and extensions.gnome.org publication is pending.
+Public distribution remains blocked by the unresolved
+[native-library security findings](docs/SECURITY.md#native-decoder-release-blockers)
+and outstanding manual acceptance checks.
 
 ### Changed
 
-- Declare GNOME Shell 50 compatibility alongside 49 in the Unreleased checkout,
-  and run both versioned Shell profiles by default. Keep the permanent UUID and
-  0.3.0 release/tag unchanged; no new runtime UI compatibility branches are needed.
+- Declare GNOME Shell 50 compatibility alongside 49, and run both versioned Shell
+  profiles by default. Keep the permanent UUID; no new runtime UI compatibility
+  branches are needed.
 - Add versioned, resource-limited GNOME Shell test containers with sequential
   execution, private HOME/settings/buses, offline software rendering and silent
   audio. Preserve per-run logs/screenshots/package identities under ignored build
