@@ -4,6 +4,12 @@
 
 ### Verification
 
+- Reassess XMP metadata parsing: verify MP4's native metadata handoff and actual
+  Base tag-library ownership. Fedora 44 Base 1.28.8 contains all four upstream fix
+  contexts; Fedora 43 Base 1.26.11 retains the old ones. Correct a private historical
+  source/test filename collision through exact archive-member checks, preserve the
+  original evidence, and document collision-safe review procedures. No application
+  behavior changes or malformed-media testing; other publication gates remain open.
 - Reassess ID3v2 parsing through the actual demuxer/tag-library ownership: Fedora
   44 Base 1.28.8 contains the reviewed peak-read and custom-frame fixes; Fedora 43
   Base 1.26.11 retains affected code. Preserve dated private source comparisons,

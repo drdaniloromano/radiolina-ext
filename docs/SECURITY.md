@@ -70,6 +70,10 @@ Review one finding at a time; agents must follow this procedure too:
    timestamp, source/checker/inventory fingerprints, image ID or desktop identity,
    exact package build, advisory/CVE IDs and coverage gaps. Confirm that the
    inspected source and environment still match; otherwise collect a new report.
+   Preserve archive member paths or use collision-free evidence names: runtime
+   and test sources can share a basename. Verify the saved file's hash and member
+   identity before comparison. Retain flawed historical artifacts and document
+   corrections in a new dated report rather than rewriting the original evidence.
 2. **Verify the defect.** Read primary upstream and distribution notices. Record
    the affected operation, input/configuration prerequisites and vendor fix or
    backport evidence. A version comparison alone cannot establish patch status.
@@ -211,6 +215,17 @@ ID3 size limit does not validate individual frames. This is source and loaded-li
 ownership evidence, without hostile-tag tests or binary reproducibility; other
 findings remain open. The advisory describes a very-low-impact read and custom-tag
 data corruption, not an established code-execution result.
+
+**2026-10-22 scoped reassessment — XMP:** the MP4 UUID metadata path in
+`qtdemux` can call Base's XMP parser without a video track. Both images map the
+matching Base tag library. Fedora 44's `1.28.8-1.fc44` source contains all four
+[upstream fix contexts](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11793.patch),
+including the input boundary and temporary-string termination changes; classify
+this advisory as vendor-fixed at matching-source scope. Fedora 43's
+`1.26.11-1.fc43` retains all four old contexts. The native call path was rechecked
+from exact archive members after finding an older source/test filename collision.
+No malformed XMP, exploit or binary-reproducibility test was performed; other
+publication findings remain open.
 
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
