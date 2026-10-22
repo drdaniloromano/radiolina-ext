@@ -519,6 +519,48 @@ by the contained validator; offline release-boundary tests run once using the
 runner's existing Python/Git. The manifest keeps `release_approved: false`;
 the maintainer's publication decision and [security review](SECURITY.md) stay separate.
 
+### Post-build static review
+
+Run [Shexli](https://pypi.org/project/shexli/) **after creating the installable ZIP
+and before uploading it**. Both workflows do this; an Actions report is retained
+with test evidence, separately from the installer. It neither modifies the ZIP nor
+installs dependencies on the desktop. For local preflight:
+
+```sh
+make container-package
+make container-check-package PACKAGE_ZIP=build/radiolina@drdaniloromano.github.io.zip
+# Optional: CONTAINER_ENGINE=docker; PACKAGE_CHECK_OUTPUT=build/my-package-check
+```
+
+Only the tool image build needs network access. Its Python image and three wheel
+versions/hashes are pinned in [the recipe](../Dockerfile.shexli) and
+[requirements](../scripts/shexli-requirements.txt). Analysis runs unprivileged,
+offline, with a read-only filesystem, a temporary directory, bounded CPU/memory,
+and only a snapshot of the ZIP mounted. No workspace, home, desktop bus or socket
+is exposed. Local reports default to ignored `build/package-check/` and include
+raw JSON, stderr, package checksum, image identity and an explicit review summary.
+Use a dedicated report directory; unrelated files are preserved and rejected.
+
+Shexli 0.2.1 returns zero even when it finds errors. Our gate validates its JSON
+schema/counts/coverage and blocks errors, crashes, missing or inconsistent reports.
+Warnings and `manual_review` items remain visible with `review_required: true`;
+they do not stop artifact uploads and are not a publication approval. Review them
+before GNOME submission. Never add automatic suppressions. The parser is pinned
+to Tree-sitter 0.25.2: 0.26 reproduced a native crash, tracked in the
+[open upstream issue](https://gitlab.gnome.org/Infrastructure/extensions-web/-/work_items/398).
+Review tool/image pins deliberately; do not float dependency upgrades inside CI.
+
+The **2026-10-22 / v0.5.0** ZIP analysis completed with zero errors, three warnings
+and one manual-review item: a synchronous local XML read, explicit clipboard write,
+files the analyzer considers unreachable, and signal-cleanup patterns. These are
+review prompts, not confirmed defects or automatically dismissed findings.
+Only **two JavaScript files** were recognized as reachable; the separate playback
+service and its modules still need our existing tests and human review. Static
+analysis does not execute the extension, test native decoders, scan dependencies
+for CVEs or replace GNOME's review. Local Podman execution is verified; the local
+`docker` command is a Podman wrapper, so genuine Docker verification requires the
+new hosted workflow run. No hosted run or submission is implied by local results.
+
 ### GitHub settings and cost limits
 
 Before separately authorizing a push/run, verify repository visibility and

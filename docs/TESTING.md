@@ -22,10 +22,12 @@ runtime requirement or evidence of compatibility with every distribution.
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
+| `make container-check-package PACKAGE_ZIP=build/radiolina@drdaniloromano.github.io.zip` | Analyze an already-built ZIP with pinned Shexli. Initial tool-image build needs network; analysis is offline and limited to the package. |
 | `make ci-start`, then `ci-image`/`ci-test CI_PROFILE=49`, `50`, `aac`, then `ci-package`/`ci-evidence` | Run the local equivalent of Actions, gate the installation ZIP on current successful tests, and stage allowlisted evidence. See [CI commands and artifacts](DEVELOPMENT.md#github-actions-test-and-build). |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
 | `python3 tests/e2e/release.py` | Offline release builds/uploads with real temporary Git repositories/ZIPs and a fixture GitHub API; existing Git and Python only. Runs once on the Actions runner, outside the GNOME dependency images. |
+| `python3 tests/e2e/package_check.py` | Offline analyzer-gate cases: zero-exit findings, crash/malformed report rejection, ZIP-only container mount and unrelated-file preservation. |
 | `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow using an already installed GNOME 49/50. |
 | `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` | Repeat at 150% monitor scaling with light/dark checks. |
 | `git diff --check` | Check patch whitespace. |
@@ -117,6 +119,13 @@ They perform no network requests or release writes. Actual GitHub build preparat
 and attachment dry-run are separate read-only checks; they do not verify the
 write-capable job or published assets. The release ZIP is rebuilt from tested
 source and checked file by file; this workflow does not execute it inside GNOME.
+
+The contained Shexli check runs after ZIP creation and before either upload path.
+Local Podman tests verify real warning/manual-review output and rejection of a
+malformed-metadata ZIP with two errors, despite the analyzer's zero exit code.
+Five fixture cases cover the gate's isolation and failure handling. Genuine Docker
+for this new step remains untested locally (`docker` is a Podman wrapper).
+See [static-review policy and coverage limits](DEVELOPMENT.md#post-build-static-review).
 
 Local adapter verification on **2026-10-22**, Podman 5.8.4: all three offline
 profiles pass 55 cases with one expected codec-related skip each. Actual Shell

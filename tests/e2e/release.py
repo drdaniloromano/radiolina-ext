@@ -60,7 +60,7 @@ class ReleaseE2E(unittest.TestCase):
         for name in ('src', 'extension', 'scripts', 'tests', '.github'):
             shutil.copytree(ROOT / name, self.root / name,
                             ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
-        for name in ('LICENSE', 'Makefile', 'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac',
+        for name in ('LICENSE', 'Makefile', 'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac', 'Dockerfile.shexli',
                      '.dockerignore', '.gitignore'):
             shutil.copyfile(ROOT / name, self.root / name)
         self.git('init', '--quiet', '--initial-branch=main')

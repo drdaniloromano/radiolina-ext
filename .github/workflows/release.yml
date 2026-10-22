@@ -43,6 +43,19 @@ jobs:
         run: >-
           python3 scripts/release.py prepare --tag "$RELEASE_TAG"
           --directory "$RUNNER_TEMP/release-assets"
+      - name: Analyze the built release ZIP with contained Shexli
+        run: >-
+          make container-check-package CONTAINER_ENGINE=docker
+          PACKAGE_ZIP="$RUNNER_TEMP/release-assets/radiolina@drdaniloromano.github.io.zip"
+          PACKAGE_CHECK_OUTPUT="$RUNNER_TEMP/shexli"
+      - name: Retain Shexli report for human review, including failures
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
+        with:
+          name: shexli-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/shexli/
+          if-no-files-found: warn
+          retention-days: 3
       - name: Transfer only verified release files
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
         with:

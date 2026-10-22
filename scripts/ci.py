@@ -40,7 +40,8 @@ def source_id(root=None):
     root = ROOT if root is None else root
     value = hashlib.sha256()
     for name in ('extension', 'src', 'scripts', 'tests', 'LICENSE', 'Makefile',
-                 'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github'):
+                 'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac', 'Dockerfile.shexli',
+                 '.dockerignore', '.github'):
         base = root / name
         for path in sorted(base.rglob('*')) if base.is_dir() else [base]:
             if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc':
@@ -280,6 +281,7 @@ def evidence(_args):
     destination.mkdir(parents=True)
     # These are test-generated files only, never the host/private workspace.
     selected = list(STATE.glob('*.log'))
+    selected += [STATE / 'shexli' / name for name in ('report.json', 'summary.json', 'stderr.log')]
     selected += list(STATE.glob('image-*.json')) + list(STATE.glob('test-*.json'))
     for record_file in STATE.glob('test-*.json'):
         for directory in read(record_file)['runs']:

@@ -15,6 +15,12 @@
 
 ### Development
 
+- Analyze the final ZIP with contained, pinned Shexli before development/release
+  uploads. Reject analyzer errors, crashes and invalid reports; preserve warnings
+  and manual-review findings as review evidence. Keep host dependencies unchanged.
+- Pin the analyzer's Tree-sitter dependency to 0.25.2 after reproducing the
+  [upstream 0.26 crash](https://gitlab.gnome.org/Infrastructure/extensions-web/-/work_items/398).
+  Record static-analysis coverage limits; no application behavior/version changes.
 - Build a fresh installer ZIP from the version tag in a dedicated workflow when
   a GitHub Release is published, with a manual retry for existing releases. Require
   successful main CI for that source, verify the package contents, and separate

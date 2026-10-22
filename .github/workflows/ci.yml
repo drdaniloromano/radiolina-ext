@@ -48,7 +48,9 @@ jobs:
           docker.io/rhysd/actionlint:1.7.11@sha256:5457037ba91acd225478edac3d4b32e45cf6c10291e0dabbfd2491c63129afe1
           -shellcheck= -pyflakes= .github/workflows/*.yml
       - name: Test release build and attachment boundaries with local fixtures
-        run: python3 tests/e2e/release.py
+        run: |
+          python3 tests/e2e/release.py
+          python3 tests/e2e/package_check.py
       - name: Restore GNOME 49 dependency image
         if: ${{ !inputs.refresh_images }}
         id: cache49
@@ -108,6 +110,11 @@ jobs:
           key: ${{ steps.cacheaac.outputs.cache-primary-key }}
       - name: Build and verify installation ZIP after all tests
         run: make ci-package
+      - name: Analyze the final ZIP with contained Shexli
+        run: >-
+          make container-check-package
+          PACKAGE_ZIP=build/ci/artifacts/package/radiolina@drdaniloromano.github.io.zip
+          PACKAGE_CHECK_OUTPUT=build/ci/shexli
       - name: Stage selected test evidence
         if: ${{ always() }}
         run: make ci-evidence
@@ -131,7 +138,7 @@ jobs:
       - name: Remove only owned CI images
         if: ${{ always() }}
         run: |
-          for image in localhost/radiolina-ci:49 localhost/radiolina-ci:50 localhost/radiolina-ci-aac:44; do
+          for image in localhost/radiolina-ci:49 localhost/radiolina-ci:50 localhost/radiolina-ci-aac:44 localhost/radiolina-shexli:0.2.1; do
             if docker image inspect "$image" >/dev/null 2>&1; then
               docker image rm "$image"
             fi

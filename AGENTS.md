@@ -101,6 +101,12 @@ identical existing assets and reject conflicts without overwriting. Standalone
 tags must not create releases. See
 [release attachments](docs/DEVELOPMENT.md#automated-release-attachments).
 
+Run `make container-check-package PACKAGE_ZIP=...` after packaging and before
+uploading. Use the pinned analyzer-only container; keep analysis offline with only
+the ZIP mounted. Errors, crashes and incomplete reports must fail. Keep warnings
+and manual-review findings visible; never suppress them automatically or treat a
+zero tool exit as approval. See [static review](docs/DEVELOPMENT.md#post-build-static-review).
+
 ## Coding Style & Naming Conventions
 
 Use four-space indentation in JavaScript/Python, ES modules, descriptive names, and focused modules. Run `git diff --check`; no formatter/linter is configured.

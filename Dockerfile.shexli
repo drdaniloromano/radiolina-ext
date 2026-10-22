@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+FROM docker.io/library/python:3.12-slim-bookworm@sha256:0f5b26b9518d002b6173fd61daad821fa340635ebfec5bba471013f9ca114579
+COPY scripts/shexli-requirements.txt /tmp/requirements.txt
+RUN python -m pip install --no-cache-dir --disable-pip-version-check \
+    --only-binary=:all: --require-hashes -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
+ENV PYTHONDONTWRITEBYTECODE=1
+USER 65534:65534
+ENTRYPOINT ["python", "-m", "shexli"]
