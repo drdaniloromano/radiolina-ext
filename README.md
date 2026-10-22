@@ -6,7 +6,7 @@ A compact native popup keeps playback and saved stations close at hand.
 **Release status:** **0.4.0**, finalized locally; public distribution is pending.
 Supports **GNOME Shell 49 and 50**.
 See the [changelog](CHANGELOG.md) for completed changes.
-Publication is blocked pending [native-library security fixes and verification](docs/SECURITY.md#native-decoder-release-blockers).
+Publication awaits a [patched runtime baseline and remaining verification](docs/SECURITY.md#release-priorities).
 
 ## Features
 

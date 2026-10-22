@@ -62,9 +62,62 @@ as affected, vendor-fixed, justified not-applicable, or unknown; installed histo
 advisories and an empty result do not prove complete security. Upstream applicability
 and dynamically selected native backends are not automatically assessed.
 
+## Release priorities
+
+Use a proportionate review of radiolina's code and actual network/decoder paths,
+not an audit of every package in the desktop dependency closure. Before release,
+check vendor/upstream advisories, run relevant isolated tests and record a
+maintainer decision. GNOME's [extension review rules](https://gjs.guide/extensions/review-guidelines/review-guidelines.html)
+also require lifecycle cleanup and careful process handling; they do not prescribe
+reconstructing every dependency's source patches.
+
+Keep **technical status** (affected, fixed, not-applicable, unknown) separate from
+**release priority**:
+
+- **Block the affected release/runtime:** a confirmed or credibly suspected serious
+  defect exposed through the intended app path, such as native memory corruption,
+  secret disclosure or remotely triggered resource exhaustion. Obtain a fix,
+  supported backport or justified mitigation and verify it before endorsement.
+- **Focused follow-up:** contradictory metadata, uncertain indirect reachability
+  or limited coverage. Record evidence, potential impact, owner, next action and
+  a review trigger. Unknown does not automatically block or clear a release;
+  investigate before release if a serious app-path exposure remains plausible.
+  Any deferral needs an explicit rationale and maintainer decision, not silence.
+- **Distribution maintenance:** broader desktop findings without an established
+  radio-controlled path. Keep vendor update advice and uncertainty visible, but
+  do not require radiolina to certify unrelated system services. Escalate if new
+  evidence connects the vulnerable operation to playback or Shell integration.
+
+Vendor notices identifying exact fixed builds normally suffice for patch status.
+Inspect source/backports when important applicability or fix evidence conflicts;
+do not routinely reconstruct patches, execute exploits or prove every possible
+indirect native call. Incomplete reports remain incomplete, never an automated
+pass or a claim of complete security. Functional tests do not prove parser safety.
+
+### Current decision summary
+
+This **2026-10-22** prioritization uses retained reviews, not a fresh package scan
+or release approval. It replaces blanket rules that every unknown finding blocks
+publication; the detailed technical findings below remain unchanged.
+
+| Remaining item | Priority and next action |
+| --- | --- |
+| Older Fedora 43 GStreamer builds with missing fixes, including selected Opus/WAV paths | Block endorsement of that unpatched runtime. Choose a supported patched baseline/backport and verify it; GNOME 49 compatibility alone does not require using these old native builds. |
+| Reviewed Fedora 44 GStreamer fixes | Retain the scoped source evidence; no need to repeat each reconstruction without a relevant change. This does not certify all dependencies or user desktops. |
+| Older caption/caps/buffer reachability and libsoup identity conflicts | Focused follow-up, technical status still unknown. Resolve serious plausible exposure on the chosen runtime; metadata disagreement alone is not a confirmed vulnerability or an automatic blocker. |
+| AAC/FFmpeg and third-party codec coverage | Verify the decoder actually selected before claiming successful AAC support. Missing decoders are a functional gap; missing advisory coverage is uncertainty, not proof of a flaw or a fix. |
+| Broad desktop/system dependency findings | Vendor maintenance unless evidence establishes app-path relevance. Preserve open technical assessments; no blanket exclusions or host-wide source audit. |
+| Physical audio/media keys, lock/suspend and genuine Docker | Separate acceptance/compatibility gaps; apply the [testing requirements](TESTING.md), not CVE classifications. |
+
+The immediate decision is the native-runtime baseline, followed by codec and
+desktop acceptance. No supported Shell version, format, host package or release
+status changes merely because this prioritization is recorded.
+
 ## Repeatable advisory triage
 
-Review one finding at a time; agents must follow this procedure too:
+Start with the priorities above; related findings may share a bounded review.
+Agents must follow this procedure too. Preserve per-advisory records; a grouped
+priority review can reference them without repeating source investigations:
 
 1. **Identify the snapshot.** Retain the original report unchanged. Record its
    timestamp, source/checker/inventory fingerprints, image ID or desktop identity,
@@ -77,6 +130,8 @@ Review one finding at a time; agents must follow this procedure too:
 2. **Verify the defect.** Read primary upstream and distribution notices. Record
    the affected operation, input/configuration prerequisites and vendor fix or
    backport evidence. A version comparison alone cannot establish patch status.
+   Prefer clear vendor evidence; inspect native source only when needed to resolve
+   an important uncertainty or contradiction.
 3. **Trace reachability.** Explain why the package appears in the inventory, then
    trace accepted bytes through `src/core/validation/media.js`,
    `src/service/source.js` and `src/service/decoder.js`. Inspect actual factories,
@@ -88,13 +143,15 @@ Review one finding at a time; agents must follow this procedure too:
    Start filenames with the UTC review time for chronological sorting:
    `YYYY-MM-DDTHH-MM-SSZ--desktop-or-container--ADVISORY-ID.md`. Include reviewer,
    report reference, identities above, source links, commands/results, reasoning,
-   limitations, classification and next action. Mark partial reviews explicitly;
-   keep later reassessments as new dated reports referencing the earlier decision.
+   limitations, classification, release priority and next action. Mark partial
+   reviews explicitly; keep reassessments as new dated reports referencing the earlier decision.
    Use **affected**, **vendor-fixed**, **justified not-applicable**, or **unknown**.
    Justified not-applicable requires evidence that the vulnerable operation's
    prerequisites cannot occur in the reviewed paths. Missing evidence stays unknown.
 5. **Resolve and recheck.** Keep affected/unknown findings and incomplete coverage
-   open. Propose package/image updates separately; never update the host or add an
+   open; being open alone does not determine release priority. Record the reason
+   for blocking, following up or assigning distribution maintenance. Propose
+   package/image updates separately; never update the host or add an
    advisory exclusion silently. After an approved update, rerun inventory and
    relevant contained tests. Reassess previous decisions when source, factory,
    package, image or advisory details change; no permanent CVE allowlist.
@@ -289,14 +346,16 @@ native-source scan does not prove all indirect paths impossible. A fixed, valid
 four-byte buffer value parsed successfully in both profiles; malformed input and
 the vulnerable error path were not executed. Other publication gates remain open.
 
-**Release requirement:** use native packages with these fixes or verified vendor
-backports, then repeat isolated compatibility tests and target-desktop checks.
+**Runtime decision:** use native packages fixing applicable defects or verified
+vendor backports, then repeat relevant isolated and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package
 version comparison alone cannot attest a distribution build. Do not silently
 remove advertised formats, add post-decoder caps as a substitute for an internal
 decoder fix, overwrite host libraries, or bundle native libraries in the ZIP.
-Until the supported runtime/backport baseline is resolved, the green Fedora query
-and passing functional tests do not close these publication blockers.
+The selected Opus/WAV paths make the reviewed unpatched older runtime unsuitable
+for endorsement. Resolve that baseline; assess unknown cases using the priorities
+above rather than making every incomplete trace an unconditional blocker. A green
+Fedora query and passing functional tests do not close known native defects.
 
 ### Other dependencies and third-party codecs
 
@@ -305,7 +364,9 @@ concerns the `nghttpx` proxy, which radiolina does not run; loading the HTTP/2 c
 library is not that proxy operation. Tracker-module, OCR, WebKit, SQLite FTS and
 pip operations are also absent from current runtime workflows. These scoped
 exclusions do not certify the desktop or other applications. Broader Bluetooth,
-system-service, libevent and OpenSSL applicability still needs vendor review.
+system-service, libevent and OpenSSL findings retain their open assessments.
+Use normal vendor maintenance; investigate further for this project when the
+chosen backend or new evidence establishes a plausible affected operation.
 
 When an `avdec_*` decoder is selected, inspect the actual loaded `libavcodec`, not
 just the GStreamer plugin's package owner. Third-party packages can supply that
@@ -317,10 +378,12 @@ AAC stream does not establish that all security fixes are present.
 
 ## Future distribution automation
 
-A release preflight can run these commands, retain timestamped JSON as an artifact,
-and block on unresolved findings, incomplete/stale data or changed source/image/package
-fingerprints. Then require recorded maintainer review of upstream notices,
-backports and applicability before tests, final packaging and release approval.
+A release preflight can run these commands and retain timestamped JSON as an artifact.
+Unresolved findings, incomplete/stale data or changed fingerprints must require
+maintainer review rather than automatic approval. Block on unresolved serious
+app-path exposures; record the rationale and next action for deferred uncertainties
+and distribution-maintenance items. Review upstream notices, vendor fixes and
+applicability before final packaging and release approval.
 Every report currently has `release_approved: false`: exit `0` alone must never
 authorize publication. Scheduled CI queries are possible later; no release workflow,
 automatic updates or publication is configured by this checker.

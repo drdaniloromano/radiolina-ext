@@ -4,6 +4,10 @@
 
 ### Verification
 
+- Prioritize security review by actual application exposure: retain known native
+  runtime blockers, distinguish documented uncertainties and distribution
+  maintenance, and reserve deep source investigation for important ambiguities.
+  Preserve existing findings and private evidence; no application or support changes.
 - Correct CVE-2026-15713's earlier cleanup-only assessment: upstream identifies a
   shared-cache disclosure, and both test profiles contain the exact cache fix.
   Confirm no cache feature with offline session probes. Preserve dated evidence
