@@ -227,6 +227,17 @@ from exact archive members after finding an older source/test filename collision
 No malformed XMP, exploit or binary-reproducibility test was performed; other
 publication findings remain open.
 
+**2026-10-22 scoped reassessment — MP4 captions:** exact native source members
+reconfirm all four old contexts in Fedora 43 Good `1.26.11-1.fc43` and all four
+[fixed contexts](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12433.patch)
+in the installed Fedora 44 `1.28.8-1.fc44` parser's matching source. Classify the
+newer profile as vendor-fixed at matching-source scope. Keep the older profile
+**unknown, fix absent**: the first-header check rejects caption tracks, but native
+fragmented-stream handling can parse later `moov` headers beyond that check.
+Caption preprocessing can run before downstream output; audio caps alone do not
+establish exclusion. A complete admitted caption path was not demonstrated, and
+no malformed sample was decoded. This review does not clear other findings.
+
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package

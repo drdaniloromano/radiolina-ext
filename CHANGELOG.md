@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Reassess MP4 caption parsing against exact native source members: Fedora 44 Good
+  1.28.8 contains all four upstream fix contexts; Fedora 43 Good 1.26.11 lacks them.
+  Keep older-profile reachability unresolved after tracing first-header rejection,
+  later fragmented-stream headers and caption preprocessing before output. Do not
+  treat audio caps as parser exclusion; no malformed media or application changes.
 - Reassess XMP metadata parsing: verify MP4's native metadata handoff and actual
   Base tag-library ownership. Fedora 44 Base 1.28.8 contains all four upstream fix
   contexts; Fedora 43 Base 1.26.11 retains the old ones. Correct a private historical
