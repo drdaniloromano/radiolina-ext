@@ -98,10 +98,13 @@ idempotence, existing-account preservation and invalid-ID rejection. Reproduce
 D-Bus identity failures with automatic engine account injection disabled; keep
 EXTERNAL authentication and host account isolation intact.
 The Actions workflow runs both supported profiles sequentially and the
-positive AAC profile. Its first genuine Docker run built GNOME 49 but failed
-private D-Bus authentication before service cases; complete remote execution
-remains unverified until a successful rerun. CI screenshots require human review;
-physical acceptance stays separate.
+positive AAC profile. The first genuine Docker run failed private D-Bus
+authentication before service cases; after numeric-account provisioning,
+[run 39822728172](https://github.com/drdaniloromano/radiolina-ext/actions/runs/39822728172)
+passed all three profiles (56 passes and one expected codec skip each), four
+Shell runs and package/artifact verification on Docker 28.0.4. All four popup
+screenshots were reviewed. Each new PR revision still requires its own green
+checks; physical acceptance stays separate.
 
 Local adapter verification on **2026-10-22**, Podman 5.8.4: all three offline
 profiles pass 55 cases with one expected codec-related skip each. Actual Shell

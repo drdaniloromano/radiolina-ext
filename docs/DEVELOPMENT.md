@@ -370,9 +370,11 @@ it has no release, registry, or GNOME submission job. It uses a standard
 containers, with Podman still supported for local development. Local validation
 does not establish a successful Actions run or genuine Docker compatibility;
 both require observed results on that backend. The first remote Docker 28.0.4
-run built GNOME 49 successfully but exposed a missing numeric account during
-private D-Bus authentication; image builds now provision that account. A complete
-remote run must pass before merging.
+run exposed a missing numeric account during private D-Bus authentication;
+image builds now provision that account. The corrected
+[PR run](https://github.com/drdaniloromano/radiolina-ext/actions/runs/39822728172)
+passed all three profiles, four Shell runs, packaging and artifact uploads.
+Require green checks for the latest PR revision before merging.
 
 ### Triggers, tests and image maintenance
 
@@ -547,7 +549,8 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The current local release is **0.4.0**; public distribution is pending the final
+The package version is **0.5.0**, prepared for merge; public distribution is
+pending the final
 [security priorities](SECURITY.md#release-priorities) and package review. Missing
 full-VM/hardware coverage alone does not block release; document its limitations.
 Use `MAJOR.MINOR.PATCH`:
@@ -561,3 +564,11 @@ For a finalized release, date the changelog entry, tag the reviewed commit
 version or Unreleased entry creates neither a tag nor a public release. Keep original
 MIT notices in the package; platform dependencies retain their own licenses.
 Retain the [provenance findings and review limits](PROVENANCE.md).
+
+Prepare the version and changelog in a PR, wait for its current checks, merge,
+then wait for the resulting `main` build. Tag that reviewed `main` commit;
+do not tag the feature branch in advance. The current workflow does not create
+tags or GitHub Releases. A GitHub Release adds notes and durable downloads to a
+tag; attaching the verified `main` ZIP is a separate publication step. Actions
+artifacts expire and are not release assets. Creating a tag alone does not run
+this workflow, so use the already verified build from the tagged commit.
