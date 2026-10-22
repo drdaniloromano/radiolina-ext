@@ -13,6 +13,12 @@
 
 ### Verification
 
+- Verify the local CI adapter with Podman: all three offline profiles pass
+  (55 cases passed and one expected codec-related skip per profile), plus four
+  actual GNOME 49/50 Shell runs at 100%/150%. Preserve service-only OOM score 500,
+  unchanged Shell scores, crash recovery, source-matched ZIPs and artifact privacy.
+  A real compressed dependency-image save/load round-trip retains its image ID.
+  Genuine Docker and remote Actions remain unverified; security findings stay open.
 - Recheck the submission ZIP against current source, metadata and license;
   document the purposes of its two packaging metadata fields and refresh private
   reviewer notes. Preserve test/security limitations; no runtime changes or upload.

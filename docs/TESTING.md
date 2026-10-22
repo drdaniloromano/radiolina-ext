@@ -97,6 +97,13 @@ The prepared Actions workflow runs both supported profiles sequentially and the
 positive AAC profile. Remote execution/genuine Docker remain unverified until
 observed. CI screenshots require human review; physical acceptance stays separate.
 
+Local adapter verification on **2026-10-22**, Podman 5.8.4: all three offline
+profiles pass 55 cases with one expected codec-related skip each. Actual Shell
+49.10/50.6 pass both scale/theme runs; service score stays 500 through SIGKILL/
+Play recovery while Shell stays 200. The verified installation payload matches
+all four Shell runs. A dependency-image cache round-trip retains its image ID
+(479 MiB compressed). These results do not establish remote Actions or Docker.
+
 The versioned Podman profiles passed all 51 offline cases each, plus actual Shell
 workflows on **49.10/Fedora 43** and **50.6/Fedora 44** at 100% and 150% monitor
 scale. Light/dark, Serif 12 at 125% text scale, popup controls, same-session updates,
