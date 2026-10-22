@@ -91,8 +91,9 @@ def image(args):
     archive, metadata = cache / 'image.tar.gz', cache / 'image.json'
     key = hashlib.sha256(b'\0'.join((ROOT / file).read_bytes() for file in
                          ('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', 'Makefile',
-                          'scripts/container-shell.py', '.github/ci-image-generation')) +
-                          args.profile.encode()).hexdigest()
+                          'scripts/container-shell.py', 'scripts/container-identity.py',
+                          '.github/ci-image-generation')) +
+                          f'{args.profile}:{os.getuid()}:{os.getgid()}'.encode()).hexdigest()
     origin = 'build'
     if args.reuse_local:
         origin = 'local-existing'

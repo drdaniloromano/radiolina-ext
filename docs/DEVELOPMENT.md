@@ -232,8 +232,9 @@ builds may reuse cached layers. Before security/release verification, use
 keep a separate review image. Podman uses `--pull=always`; Docker uses `--pull`.
 This updates only the selected container image, never the host's packages.
 Building the image needs network access. [.dockerignore](../.dockerignore), supported
-by both engines, excludes everything except the recipes and ignore file from the
-build context; the image contains dependencies rather than a copy of the checkout.
+by both engines, allows only the recipes, ignore file, and build-time
+`scripts/container-identity.py` helper in the build context; the image contains
+dependencies rather than a copy of the checkout.
 Tests and packaging run offline with only `extension/`, `src/`, `scripts/`, `tests/`,
 and `LICENSE` mounted read-only. Private `workspace/`, Git metadata, credentials,
 and the rest of the checkout are not mounted. Packaging mounts host-created
@@ -241,7 +242,10 @@ and the rest of the checkout are not mounted. Packaging mounts host-created
 Shell checks mount only a newly created evidence subdirectory writable, as below.
 
 [Identity selection](../scripts/container-user-flags.sh) detects the actual CLI,
-including Docker commands backed by Podman. Podman uses `--userns=keep-id`.
+including Docker commands backed by Podman. Images add the invoking numeric
+UID/GID as a container-local test account when absent, so private D-Bus can
+authenticate rootful Docker tests. Host account files are never mounted. Rebuild
+when changing the invoking identity. Podman uses `--userns=keep-id`.
 Rootful Docker uses the caller's numeric UID/GID with `--userns=host` to avoid
 daemon remapping; rootless Docker uses container UID/GID 0, mapped to its host
 user. Run rootless Docker as the same user who owns the checkout. See Docker's
@@ -365,7 +369,10 @@ it has no release, registry, or GNOME submission job. It uses a standard
 `ubuntu-24.04` VM and genuine Docker. GNOME dependencies stay in the Fedora
 containers, with Podman still supported for local development. Local validation
 does not establish a successful Actions run or genuine Docker compatibility;
-both remain unverified until observed on that backend.
+both require observed results on that backend. The first remote Docker 28.0.4
+run built GNOME 49 successfully but exposed a missing numeric account during
+private D-Bus authentication; image builds now provision that account. A complete
+remote run must pass before merging.
 
 ### Triggers, tests and image maintenance
 
@@ -389,7 +396,8 @@ which is a ceiling, not an observed typical duration.
 
 Dependency-only images are gzip archives in `build/ci-cache/`, separate from
 test artifacts. Exact cache keys include profile, runner OS/architecture,
-Dockerfile/build inputs and [.github/ci-image-generation](../.github/ci-image-generation).
+invoking UID/GID, Dockerfile/build inputs (including the account helper), and
+[.github/ci-image-generation](../.github/ci-image-generation).
 Ordinary application-source edits reuse images. Restores verify archive SHA-256,
 inputs and loaded image ID; test evidence records actual IDs and RPM versions.
 Only trusted main runs save shared caches; PRs may restore but do not save them.
@@ -453,7 +461,8 @@ Do not change settings or grant publication access just to prepare this workflow
 As checked on **2026-10-22**, [standard runner compute](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
 is free for public repositories; private GitHub Free includes 2,000 minutes/month.
 The VM has 14 GB SSD and either 4 CPUs/16 GB RAM (public) or 2 CPUs/8 GB (private).
-Visibility is currently unverified; no public-repository billing assumption is made.
+Repository visibility was verified public on 2026-10-22. Runner disk capacity
+can exceed the documented minimum; use the job log for actual available space.
 [GitHub Free storage](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
 includes 500 MB artifacts shared with Packages and a separate 10 GB cache allowance.
 [Cache eviction](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)

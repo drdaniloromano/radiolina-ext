@@ -4,6 +4,11 @@
 
 ### Development
 
+- Provision container-local numeric test accounts for the invoking UID/GID so
+  rootful Docker private D-Bus tests authenticate without host account mounts.
+  Include identity and the helper in dependency-image cache keys; preserve
+  generated-file ownership and application behavior.
+
 - Add local CI adapters around existing contained tests and packaging, with
   dependency-image cache integrity checks, current-source test gates, verified
   ZIP payloads and allowlisted bounded evidence. Keep runtime behavior unchanged.
@@ -14,6 +19,11 @@
   Remote execution and publication require separate authorization.
 
 ### Verification
+
+- Reproduce the first GitHub Docker run's UID 1001 D-Bus failure, then verify
+  the fix with automatic account injection disabled: the complete offline suite
+  passes (56 passed, one expected codec skip). Check the restricted build context
+  and contained workflow validator; a complete remote Docker rerun is still required.
 
 - Verify the local CI adapter with Podman: all three offline profiles pass
   (55 cases passed and one expected codec-related skip per profile), plus four

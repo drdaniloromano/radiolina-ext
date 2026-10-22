@@ -30,8 +30,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Start fresh and check runner
+        id: identity
         run: |
           make ci-start
+          printf 'uid=%s\ngid=%s\n' "$(id -u)" "$(id -g)" >> "$GITHUB_OUTPUT"
           docker --version
           docker info --format '{{.ServerVersion}}'
           df -h .
@@ -48,7 +50,7 @@ jobs:
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0, Node 24
         with:
           path: build/ci-cache/49
-          key: ${{ runner.os }}-${{ runner.arch }}-shell49-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-shell49-${{ steps.identity.outputs.uid }}-${{ steps.identity.outputs.gid }}-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py', 'scripts/container-identity.py') }}
       - name: Prepare GNOME 49
         run: make ci-image CI_PROFILE=49
       - name: Save trusted GNOME 49 dependency cache
@@ -69,7 +71,7 @@ jobs:
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: build/ci-cache/50
-          key: ${{ runner.os }}-${{ runner.arch }}-shell50-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-shell50-${{ steps.identity.outputs.uid }}-${{ steps.identity.outputs.gid }}-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py', 'scripts/container-identity.py') }}
       - name: Prepare GNOME 50
         run: make ci-image CI_PROFILE=50
       - name: Save trusted GNOME 50 dependency cache
@@ -88,7 +90,7 @@ jobs:
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: build/ci-cache/aac
-          key: ${{ runner.os }}-${{ runner.arch }}-aac50-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-aac50-${{ steps.identity.outputs.uid }}-${{ steps.identity.outputs.gid }}-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py', 'scripts/container-identity.py') }}
       - name: Prepare AAC and test real ADTS/M4A decoding
         run: |
           make ci-image CI_PROFILE=aac

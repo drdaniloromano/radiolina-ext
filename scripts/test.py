@@ -9,6 +9,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 subprocess.run(['python3', 'tests/e2e/package.py'], cwd=ROOT, check=True)
 subprocess.run(['python3', 'tests/e2e/container_shell.py'], cwd=ROOT, check=True)
+subprocess.run(['python3', 'tests/e2e/container_identity.py'], cwd=ROOT, check=True)
 subprocess.run(['python3', 'tests/e2e/ci.py'], cwd=ROOT, check=True)
 subprocess.run(['python3', 'tests/e2e/security.py'], cwd=ROOT, check=True)
 with tempfile.TemporaryDirectory(prefix='gnome-radio-tests-') as directory:

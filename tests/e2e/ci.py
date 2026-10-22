@@ -20,7 +20,8 @@ class CiE2E(unittest.TestCase):
         self.root = Path(self.temporary.name)
         for name in ('src', 'extension'):
             shutil.copytree(ROOT / name, self.root / name)
-        for name in ('scripts/build.py', 'scripts/ci.py', 'scripts/container-shell.py', 'LICENSE'):
+        for name in ('scripts/build.py', 'scripts/ci.py', 'scripts/container-shell.py',
+                     'scripts/container-identity.py', 'LICENSE'):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, path)

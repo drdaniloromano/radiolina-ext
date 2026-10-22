@@ -5,3 +5,6 @@
 !Dockerfile.shell
 !Dockerfile.aac
 !.dockerignore
+!scripts/
+scripts/**
+!scripts/container-identity.py

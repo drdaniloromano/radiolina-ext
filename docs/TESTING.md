@@ -93,9 +93,15 @@ Four CI boundary E2E cases cover cache hit/refresh/corruption, failed-service ow
 cleanup, failed/stale/missing test gates, real ZIP source/exclusion checks, and
 allowlisted/redacted output. Their fake engines do not establish Docker support.
 Run them alone with `python3 tests/e2e/ci.py`; they also run in the contained suite.
-The prepared Actions workflow runs both supported profiles sequentially and the
-positive AAC profile. Remote execution/genuine Docker remain unverified until
-observed. CI screenshots require human review; physical acceptance stays separate.
+A container-identity regression checks unknown numeric UID/GID provisioning,
+idempotence, existing-account preservation and invalid-ID rejection. Reproduce
+D-Bus identity failures with automatic engine account injection disabled; keep
+EXTERNAL authentication and host account isolation intact.
+The Actions workflow runs both supported profiles sequentially and the
+positive AAC profile. Its first genuine Docker run built GNOME 49 but failed
+private D-Bus authentication before service cases; complete remote execution
+remains unverified until a successful rerun. CI screenshots require human review;
+physical acceptance stays separate.
 
 Local adapter verification on **2026-10-22**, Podman 5.8.4: all three offline
 profiles pass 55 cases with one expected codec-related skip each. Actual Shell
