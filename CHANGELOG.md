@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Reassess FFmpeg wrapper/AAC coverage: both tested images lack the relevant
+  decoders. Inspect the fixed Fedora 44 wrapper source as a candidate without
+  installing it; retain successful AAC decoding, the earlier affected desktop
+  wrapper and third-party FFmpeg coverage as open work. Preserve dated evidence
+  and distinguish source fixes from verified installed runtimes.
 - Reassess WAV streaming metadata against the same profiles: Fedora 44 Good
   1.28.8 contains the upstream availability guard; Fedora 43 Good 1.26.11 lacks it.
   Verify selected parser ownership and matching source/build recipes, preserving

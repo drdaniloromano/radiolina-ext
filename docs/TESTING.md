@@ -105,9 +105,11 @@ or physical-key routing. Third-party themes and hardware suspend are not implied
 
 Validation fixtures generate MP3, FLAC, Vorbis/Opus Ogg, WAV, MP3/Opus MP4,
 and video locally. TLS tests trust an ephemeral CA only inside a disposable service
-copy, with certificate verification enabled. The default image exercises AAC's
-missing-codec error, not positive AAC decoding; that requires a suitable installed
-decoder and real AAC fixture. Native parser security is not established by these cases.
+copy, with certificate verification enabled. Both tested GNOME 49/Fedora 43 and
+GNOME 50/Fedora 44 images lack AAC decoders and exercise the missing-codec error,
+not successful AAC decoding. That requires a separately verified decoder/runtime
+and real AAC fixture. Inspecting a fixed decoder's source does not fill this gap.
+Native parser security is not established by these cases.
 
 ## Resource cleanup
 

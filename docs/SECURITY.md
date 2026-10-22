@@ -190,6 +190,17 @@ unchecked metadata chunks on a nonseekable response; initial format admission
 does not prevent the native crash. No crash payload, binary reproducibility or
 complete advisory scan was performed; other publication blockers remain open.
 
+**2026-10-22 scoped reassessment — FFmpeg wrapper:** neither tested image has
+`gst-libav`, any permitted `avdec_*` fallback, or an eligible AAC decoder. The
+wrapper path is absent in those snapshots; successful AAC decoding remains untested.
+The official Fedora 44
+[`gstreamer1-plugin-libav-1.28.8-1.fc44` source package](https://kojipkgs.fedoraproject.org/packages/gstreamer1-plugin-libav/1.28.8/1.fc44/src/gstreamer1-plugin-libav-1.28.8-1.fc44.src.rpm)
+contains the reviewed [upstream decoder/mapping fixes](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12439.patch),
+but was inspected only, not installed or tested. The earlier desktop's affected
+`1.26.11` wrapper and RPM Fusion codec coverage remain open. Updating FFmpeg alone
+does not fix the adapter; checking the adapter does not clear its loaded FFmpeg
+library. Verify both layers before testing a separately agreed codec profile.
+
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package

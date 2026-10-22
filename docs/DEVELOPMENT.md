@@ -157,8 +157,11 @@ AAC is an important distinction: [aacparse](https://gstreamer.freedesktop.org/do
 is in Good, whereas [avdec_aac](https://gstreamer.freedesktop.org/documentation/libav/avdec_aac.html)
 comes from libav, and [fdkaacdec](https://gstreamer.freedesktop.org/documentation/fdkaac/index.html)
 or [faad](https://gstreamer.freedesktop.org/documentation/faad/index.html) come from
-Bad plugins. The current Fedora image provides the parser but none of these AAC
-decoders: its tests establish missing-codec handling, not positive AAC playback.
+Bad plugins. Both tested Fedora 43/GNOME 49 and Fedora 44/GNOME 50 images provide
+the parser but none of these AAC decoders: their tests establish missing-codec
+handling, not successful AAC playback. Neither image has the libav plugin or its
+permitted fallback decoders. A fixed wrapper source candidate is documented in
+the [security review](SECURITY.md#native-decoder-release-blockers), not installed.
 An eligible decoder on the desktop host is required even when container packaging succeeds.
 
 Inspect actual availability with already installed tools, for example
