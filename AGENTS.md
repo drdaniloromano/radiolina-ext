@@ -92,11 +92,13 @@ full desktop for physical audio/media-key, lock, and suspend acceptance.
   identity, and upload only staged allowlisted evidence. Genuine Docker and remote
   runs require observed verification; Podman wrappers do not establish Docker support.
 
-Release attachments reuse the successful main build for the exact version tag;
-never rebuild or promote PR artifacts. Keep source/tag/version/checksum checks,
-read-only verification separate from the upload job, and automation code pinned
-to reviewed main. Preserve identical existing assets and reject conflicts without
-overwriting. Standalone tags must not create releases. See
+The dedicated release workflow builds a fresh installer from the exact version
+tag after its main push CI succeeds; never promote PR artifacts. Use reviewed
+main tooling, inspect tagged source without running its tooling, and keep
+source/tag/version/payload/checksum checks. Produce deterministic assets for
+retries and separate read-only building from write-capable attachment. Preserve
+identical existing assets and reject conflicts without overwriting. Standalone
+tags must not create releases. See
 [release attachments](docs/DEVELOPMENT.md#automated-release-attachments).
 
 ## Coding Style & Naming Conventions

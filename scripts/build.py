@@ -24,10 +24,13 @@ def oom_score(value):
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--oom-score-adj', type=oom_score, default=500, metavar='0..1000|inherit',
                     help='playback-service kernel OOM adjustment (default: 500; inherit disables adjustment)')
+parser.add_argument('--source-root', type=Path, default=Path(__file__).resolve().parents[1],
+                    help='source tree to package (default: repository root)')
+parser.add_argument('--build-dir', type=Path, help='output directory (default: SOURCE_ROOT/build)')
 args = parser.parse_args()
 
-ROOT = Path(__file__).resolve().parents[1]
-BUILD = ROOT / 'build'
+ROOT = args.source_root.resolve()
+BUILD = args.build_dir.resolve() if args.build_dir else ROOT / 'build'
 metadata = json.loads((ROOT / 'extension/metadata.json').read_text())
 UUID = metadata['uuid']
 destination = BUILD / UUID

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Promote an existing verified main artifact; never build, tag or publish a release."""
+"""Build a tagged-source installer and attach it to an existing GitHub Release."""
 import argparse
 import hashlib
 import io
@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 from urllib.error import HTTPError
 from urllib.parse import quote, urlencode, urlsplit
@@ -95,7 +96,7 @@ def remote_commit(api, tag):
     raise ReleaseError('Unsupported tag object chain')
 
 
-def select_artifact(api, commit):
+def successful_main_run(api, commit):
     query = urlencode({'branch': 'main', 'event': 'push', 'head_sha': commit, 'per_page': 100})
     runs = api.request('actions/workflows/ci.yml/runs?' + query)['workflow_runs']
     runs = [run for run in runs if run['head_sha'] == commit and run['event'] == 'push'
@@ -105,29 +106,28 @@ def select_artifact(api, commit):
     run = max(runs, key=lambda item: item['id'])
     if run['status'] != 'completed' or run['conclusion'] != 'success':
         raise ReleaseError('The latest main build for this commit must complete successfully')
-    artifacts = api.request(f'actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts']
-    matches = [item for item in artifacts if item['name'] == 'radiolina-install-' + commit
-               and not item['expired']]
-    if len(matches) != 1:
-        raise ReleaseError('The exact installation artifact is missing or expired; rerun its main CI')
-    artifact = matches[0]
-    if artifact['size_in_bytes'] > LIMIT:
-        raise ReleaseError('Installation artifact exceeds the size limit')
-    data = api.request(f'actions/artifacts/{artifact["id"]}/zip', binary=True)
-    if artifact.get('digest') != 'sha256:' + sha(data):
-        raise ReleaseError('Downloaded artifact differs from its GitHub digest')
-    return data, run['id']
+    return run['id']
 
 
-def unpack(data, output):
-    with zipfile.ZipFile(io.BytesIO(data)) as archive:
-        if (len(archive.namelist()) != len(FILES) or set(archive.namelist()) != set(FILES)
-                or sum(item.file_size for item in archive.infolist()) > LIMIT):
-            raise ReleaseError('Installation artifact contains unexpected files or exceeds its budget')
-        for item in archive.infolist():
-            if ((item.external_attr >> 16) & 0o170000) == 0o120000:
-                raise ReleaseError('Artifact symlinks are not allowed')
-            (output / item.filename).write_bytes(archive.read(item))
+def build_installer(source, destination):
+    # Run only this reviewed automation checkout's builder, never tagged tooling.
+    builder = Path(__file__).resolve().with_name('build.py')
+    environment = {key: value for key, value in os.environ.items()
+                   if key not in ('GH_TOKEN', 'GITHUB_TOKEN')}
+    subprocess.run([sys.executable, str(builder), '--source-root', str(source),
+                    '--build-dir', str(destination)], check=True, timeout=60,
+                   env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    bundle = destination / FILES[0]
+    # Stable archive headers and no compressor dependency make retries identical.
+    canonical = destination / 'canonical.zip'
+    with zipfile.ZipFile(bundle) as original, zipfile.ZipFile(canonical, 'w') as output:
+        for name in sorted(original.namelist()):
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            output.writestr(info, original.read(name))
+    canonical.replace(bundle)
+    return bundle
 
 
 def verify_files(directory, tag, commit):
@@ -157,23 +157,37 @@ def prepare(api, tag, output):
     commit = tagged_commit(tag)
     if remote_commit(api, tag) != commit:
         raise ReleaseError('Remote tag differs from the verified checkout')
-    data, run_id = select_artifact(api, commit)
-    output.mkdir(parents=True, exist_ok=False)
-    unpack(data, output)
-    files, metadata = verify_files(output, tag, commit)
+    run_id = successful_main_run(api, commit)
     with tempfile.TemporaryDirectory(prefix='radiolina-release-source-') as directory:
         source = Path(directory) / 'source'
         git('worktree', 'add', '--quiet', '--detach', str(source), commit)
         try:
-            if (ci.source_id(source) != metadata['source_sha256'] or
-                    ci.verify_bundle(output / FILES[0], source) != metadata['package_payload_sha256']):
-                raise ReleaseError('Build artifact does not match the complete tagged source')
+            if any(path.is_symlink() for path in source.rglob('*')):
+                raise ReleaseError('Tagged source symlinks are not allowed')
+            package = json.loads((source / 'extension/metadata.json').read_text())
+            if package['uuid'] != UUID or package['version-name'] != version_tag(tag)[1:]:
+                raise ReleaseError('Version tag does not match installation metadata')
+            bundle = build_installer(source, Path(directory) / 'package')
+            metadata = {
+                'source_commit': commit, 'source_sha256': ci.source_id(source),
+                'zip_sha256': sha(bundle.read_bytes()),
+                'package_payload_sha256': ci.verify_bundle(bundle, source),
+                'ci_run_id': run_id,
+                'builder_sha256': sha(Path(__file__).resolve().with_name('build.py').read_bytes()),
+                'verification_scope': 'Rebuilt from main-CI-tested source; ZIP contents verified against tag. '
+                                      'This release ZIP was not run in GNOME.',
+                'release_approved': False, 'physical_hardware_verified': False}
+            output.mkdir(parents=True, exist_ok=False)
+            (output / FILES[0]).write_bytes(bundle.read_bytes())
+            (output / 'SHA256SUMS').write_text(f'{metadata["zip_sha256"]}  {FILES[0]}\n')
+            (output / 'verification.json').write_text(json.dumps(metadata, indent=2) + '\n')
+            files, _ = verify_files(output, tag, commit)
         finally:
             git('worktree', 'remove', '--force', str(source))
     plan = {'tag': tag, 'commit': commit, 'repository': api.repository, 'ci_run_id': run_id,
             'assets': {name: sha(value) for name, value in files.items()}}
     (output / 'release-plan.json').write_text(json.dumps(plan, indent=2) + '\n')
-    print(f'Verified {tag} from successful main build {run_id}')
+    print(f'Built and verified {tag} from source checked by main CI run {run_id}')
 
 
 def attach(api, tag, directory, *, dry_run=False):
@@ -236,9 +250,10 @@ def main():
             attach(api, args.tag, args.directory, dry_run=args.dry_run)
     except ReleaseError as error:
         raise SystemExit(str(error)) from None
-    except (ValueError, KeyError, OSError, zipfile.BadZipFile, subprocess.CalledProcessError):
+    except (ValueError, KeyError, OSError, zipfile.BadZipFile, subprocess.CalledProcessError,
+            subprocess.TimeoutExpired):
         # No remote bodies, input URLs, signed download URLs or credentials in logs.
-        raise SystemExit('Release attachment failed. Check tag/version, successful main CI, artifact expiry, '
+        raise SystemExit('Release attachment failed. Check tag/version, successful main CI, source packaging, '
                          'release mutability and existing asset checksums; no assets are overwritten.') from None
 
 

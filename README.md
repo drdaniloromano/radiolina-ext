@@ -36,7 +36,7 @@ in a container still requires those libraries on the desktop host. See the
 
 When a [GitHub Release](https://github.com/drdaniloromano/radiolina-ext/releases)
 has installer assets, download `radiolina@drdaniloromano.github.io.zip` and
-`SHA256SUMS`. See [automatic release attachments](docs/DEVELOPMENT.md#automated-release-attachments).
+`SHA256SUMS`. See [automatic release ZIP builds](docs/DEVELOPMENT.md#automated-release-attachments).
 
 When an authorized [Actions run](https://github.com/drdaniloromano/radiolina-ext/actions)
 provides an installation artifact, extract it and install the inner extension ZIP.

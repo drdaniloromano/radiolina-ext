@@ -4,11 +4,11 @@
 
 ### Development
 
-- Automatically attach the installer ZIP, checksums and build manifest when a
-  GitHub Release is published, with a manual retry for existing releases. Reuse
-  the exact tagged commit's successful main artifact, verify it against source,
-  and separate read-only validation from write-capable attachment. Preserve
-  existing identical assets and refuse conflicts; do not rebuild, create tags,
+- Build a fresh installer ZIP from the version tag in a dedicated workflow when
+  a GitHub Release is published, with a manual retry for existing releases. Require
+  successful main CI for that source, verify the package contents, and separate
+  read-only building from write-capable attachment. Generate repeatable assets,
+  preserve existing identical files and refuse conflicts; do not create tags,
   create releases, change publication state or submit to extensions.gnome.org.
 - Add offline release-boundary E2E tests using real Git and ZIP fixtures, and
   validate both workflows. Keep application behavior and version unchanged.

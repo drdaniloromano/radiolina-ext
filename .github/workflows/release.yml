@@ -1,4 +1,4 @@
-name: Attach release files
+name: Build release ZIP
 
 on:
   release:
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify:
+  build:
     if: ${{ github.event_name == 'release' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -27,7 +27,7 @@ jobs:
     outputs:
       automation_sha: ${{ steps.automation.outputs.sha }}
     steps:
-      # Execute reviewed main tooling; the tagged source is inspected, never run.
+      # Execute reviewed main tooling; package the tagged source without executing its tooling.
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0, Node 24
         with:
           ref: main
@@ -36,7 +36,7 @@ jobs:
       - name: Record trusted automation identity
         id: automation
         run: printf 'sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Verify tagged source and existing successful main artifact
+      - name: Build and verify installer from the release tag
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -53,7 +53,7 @@ jobs:
           compression-level: 0
 
   attach:
-    needs: verify
+    needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0, Node 24
         with:
-          ref: ${{ needs.verify.outputs.automation_sha }}
+          ref: ${{ needs.build.outputs.automation_sha }}
           persist-credentials: false
           sparse-checkout: |
             scripts/release.py

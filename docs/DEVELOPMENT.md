@@ -366,7 +366,7 @@ See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recove
 
 The [test workflow](../.github/workflows/ci.yml) prepares **development artifacts**;
 it has no release, registry, or GNOME submission job. A separate
-[release workflow](../.github/workflows/release.yml) attaches verified files to
+[release workflow](../.github/workflows/release.yml) builds an installer and attaches it to
 an existing release, as described below. Testing uses a standard
 `ubuntu-24.04` VM and genuine Docker. GNOME dependencies stay in the Fedora
 containers, with Podman still supported for local development. Local validation
@@ -469,38 +469,44 @@ stations, credentials, account inventory or the entire build tree.
 
 ### Automated release attachments
 
-Publishing a GitHub Release runs **Attach release files**. It reuses the exact
-tagged commit's completed, successful **push to main** build; no GNOME tests,
-image builds, version bumps, tags or new releases are generated. The tag must
+Publishing a GitHub Release runs **Build release ZIP**. This dedicated workflow
+**creates a fresh installable ZIP from the release tag**, then attaches it to that
+release. It requires the tagged commit's completed, successful **push to main**
+checks; it does not rerun GNOME tests or build dependency images. The tag must
 match package `version-name` (`v0.5.0` for `0.5.0`) and belong to main's history.
 Standalone tag pushes do not trigger it. Source-code archives are not installers.
 
-The read-only job executes reviewed main tooling, downloads only the matching
-CI installer artifact and verifies its GitHub digest, source commit/fingerprint,
-version, license, payload and checksums against the tagged source. Tagged code
-and downloaded artifacts are inspected, never executed. A separate job uses the
-same pinned automation commit and receives `contents: write` only to attach
-`radiolina@drdaniloromano.github.io.zip`, `SHA256SUMS` and `verification.json`.
-No personal access token is needed. Release notes, tags and publication state
-remain unchanged. Existing identical files are retained; any conflict stops the
-job without overwriting assets. Retries retain completed identical assets and
-attach missing files; incomplete assets require manual repair.
+The read-only build job executes reviewed main tooling against a temporary tagged
+checkout. It never runs tagged scripts or retrieves an earlier CI ZIP. The builder
+uses the runner's existing Python standard library; no GNOME development packages,
+new dependencies or host installations are needed. It verifies every packaged
+file, runtime/style wrapper, metadata and license against the tagged source.
+Fixed ZIP headers, ordering, permissions and uncompressed entries make repeat
+builds identical without depending on a compression-library version.
 
-For an existing release, choose **Actions → Attach release files → Run workflow**,
+A separate job uses the same pinned automation commit and receives `contents:
+write` only to attach `radiolina@drdaniloromano.github.io.zip`, `SHA256SUMS` and
+`verification.json`. The manifest records source and payload hashes, the builder
+hash and successful CI run ID. It explicitly distinguishes **tested source** from
+the **newly built ZIP**, which is not itself run in GNOME by this workflow. No
+personal access token is needed. Release notes, tags and publication state remain
+unchanged. Existing identical files are retained; conflicts stop without replacing
+assets. Retries attach only missing files. Incomplete assets require manual repair;
+a later tooling change can also require manual review if it changes generated files.
+
+For an existing release, choose **Actions → Build release ZIP → Run workflow**,
 select branch **main**, and enter its existing tag, for example `v0.5.0`.
-This also handles older tags whose source predates the release workflow. Manual
-runs on feature branches are skipped. If the matching CI is pending/failed or its
-seven-day artifact has expired, rerun that exact main build successfully, then
-retry attachment; the automation does not silently rebuild or use a PR artifact.
+This also handles tags whose source predates this workflow. Manual runs on feature
+branches are skipped. Pending/failed main CI must be resolved first. Expired CI
+artifacts do not prevent building: only the successful run record is required.
 Published immutable releases cannot accept missing assets; attach files before
 publication in that mode. The workflow does not disable immutability.
 
-The transfer artifact lasts one day and contains only the three approved files
-and an internal release plan. The pinned official download action is 8.0.2
+The inter-job transfer artifact lasts one day and contains only the three approved
+files and an internal release plan. The pinned official download action is 8.0.2
 (Node 24), alongside the existing checkout/upload pins. Both workflows are checked
-by the contained validator; offline release-boundary tests run once with the
-runner's existing Python/Git. No release dependencies are installed on the host.
-Functional verification preserves `release_approved: false` in the CI manifest;
+by the contained validator; offline release-boundary tests run once using the
+runner's existing Python/Git. The manifest keeps `release_approved: false`;
 the maintainer's publication decision and [security review](SECURITY.md) stay separate.
 
 ### GitHub settings and cost limits
