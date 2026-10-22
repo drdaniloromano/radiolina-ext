@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Verification
+
+- Reassess the Opus channel-position finding against both tested runtime profiles:
+  the matching Fedora 44 Base 1.28.8 source contains the upstream fix; Fedora 43
+  Base 1.26.11 retains the affected code. Verify installed decoder/package ownership
+  and preserve private dated evidence. Other native findings and publication gates
+  remain open; no host package or application behavior changes.
+
 ## 0.4.0 — 2026-10-22
 
 Finalized locally; GitHub and extensions.gnome.org publication is pending.

@@ -170,6 +170,16 @@ bounded admission prefix does not validate every later codec frame or metadata t
 | [2026-0079: MP4 captions](https://gstreamer.freedesktop.org/security/sa-2026-0079.html) | Old code remains. Initial admission rejects non-audio tracks, but complete native container-state reachability is unverified; keep open. |
 | [2026-0078: caps comparison](https://gstreamer.freedesktop.org/security/sa-2026-0078.html), [2026-0028: buffer deserialization](https://gstreamer.freedesktop.org/security/sa-2026-0028.html) | The app builds its own pipeline strings and uses no RTP caps input; full indirect core reachability/backports remain unverified. |
 
+**2026-10-22 scoped reassessment — Opus only:** the matching Fedora 44
+[`gstreamer1-plugins-base-1.28.8-1.fc44` source package](https://kojipkgs.fedoraproject.org/packages/gstreamer1-plugins-base/1.28.8/1.fc44/src/gstreamer1-plugins-base-1.28.8-1.fc44.src.rpm)
+contains the exact [upstream channel-position guard](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/178ae5ac20db75e56d65e4c4bc142bb234387807.patch),
+and its build recipe applies no patch to that decoder. The GNOME 50 test image's
+`opusdec` is owned by that RPM build: classify this advisory as vendor-fixed at
+matching-source scope. The GNOME 49/Fedora 43 image still selects the reviewed
+`1.26.11-1.fc43` build with the affected source. This is not binary reproducibility,
+exploit testing, a fresh complete advisory scan, or clearance of other findings.
+GNOME version alone does not establish the desktop's native-library patch status.
+
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package
