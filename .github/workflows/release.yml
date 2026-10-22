@@ -1,0 +1,82 @@
+name: Attach release files
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag and GitHub Release (for example v0.5.0)
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-assets-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: ${{ github.event_name == 'release' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      automation_sha: ${{ steps.automation.outputs.sha }}
+    steps:
+      # Execute reviewed main tooling; the tagged source is inspected, never run.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0, Node 24
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record trusted automation identity
+        id: automation
+        run: printf 'sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Verify tagged source and existing successful main artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: >-
+          python3 scripts/release.py prepare --tag "$RELEASE_TAG"
+          --directory "$RUNNER_TEMP/release-assets"
+      - name: Transfer only verified release files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
+        with:
+          name: verified-release-files-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-assets/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  attach:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0, Node 24
+        with:
+          ref: ${{ needs.verify.outputs.automation_sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/release.py
+            scripts/ci.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2, Node 24
+        with:
+          name: verified-release-files-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-assets/
+          digest-mismatch: error
+      - name: Attach verified files without replacing existing assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: >-
+          python3 scripts/release.py attach --tag "$RELEASE_TAG"
+          --directory "$RUNNER_TEMP/release-assets"

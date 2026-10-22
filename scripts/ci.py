@@ -36,14 +36,15 @@ def read(path):
     return json.loads(path.read_text())
 
 
-def source_id():
+def source_id(root=None):
+    root = ROOT if root is None else root
     value = hashlib.sha256()
     for name in ('extension', 'src', 'scripts', 'tests', 'LICENSE', 'Makefile',
                  'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github'):
-        base = ROOT / name
+        base = root / name
         for path in sorted(base.rglob('*')) if base.is_dir() else [base]:
             if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc':
-                value.update(str(path.relative_to(ROOT)).encode() + b'\0' + path.read_bytes() + b'\0')
+                value.update(str(path.relative_to(root)).encode() + b'\0' + path.read_bytes() + b'\0')
     return value.hexdigest()
 
 
@@ -193,28 +194,29 @@ def payload(archive):
     return value.hexdigest()
 
 
-def verify_bundle(bundle):
-    metadata = read(ROOT / 'extension/metadata.json')
+def verify_bundle(bundle, root=None):
+    root = ROOT if root is None else root
+    metadata = read(root / 'extension/metadata.json')
     with zipfile.ZipFile(bundle) as archive:
         if archive.testzip() or len(archive.namelist()) != len(set(archive.namelist())):
             raise ValueError('Corrupt or duplicate ZIP members')
         actual = json.loads(archive.read('metadata.json'))
-        sources = {str(path.relative_to(ROOT / 'extension')): path
-                   for path in (ROOT / 'extension').rglob('*') if path.is_file()}
-        sources.update({'src/' + str(path.relative_to(ROOT / 'src')): path
-                        for path in (ROOT / 'src').rglob('*') if path.is_file()})
+        sources = {str(path.relative_to(root / 'extension')): path
+                   for path in (root / 'extension').rglob('*') if path.is_file()}
+        sources.update({'src/' + str(path.relative_to(root / 'src')): path
+                        for path in (root / 'src').rglob('*') if path.is_file()})
         runtime, stylesheet = actual['radio-runtime'], actual['radio-stylesheet']
         if set(archive.namelist()) != set(sources) | {'LICENSE', runtime, stylesheet}:
             raise ValueError('ZIP includes missing or unexpected files')
         expected = dict(metadata, **{'radio-runtime': runtime, 'radio-stylesheet': stylesheet})
-        if actual != expected or archive.read('LICENSE') != (ROOT / 'LICENSE').read_bytes():
+        if actual != expected or archive.read('LICENSE') != (root / 'LICENSE').read_bytes():
             raise ValueError('ZIP metadata/license mismatch')
         for name, path in sources.items():
             if name not in ('extension.js', 'stylesheet.css', 'metadata.json'):
                 if archive.read(name) != path.read_bytes():
                     raise ValueError(f'ZIP source mismatch: {name}')
-        source = (ROOT / 'extension/extension.js').read_bytes()
-        styles = (ROOT / 'extension/stylesheet.css').read_bytes()
+        source = (root / 'extension/extension.js').read_bytes()
+        styles = (root / 'extension/stylesheet.css').read_bytes()
         expected_runtime = 'radio-' + hashlib.sha256(source + b'\0' + styles).hexdigest()[:12] + '.js'
         expected_style = 'radio-style-' + hashlib.sha256(styles).hexdigest()[:12] + '.css'
         if (runtime != expected_runtime or stylesheet != expected_style or

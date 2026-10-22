@@ -92,6 +92,13 @@ full desktop for physical audio/media-key, lock, and suspend acceptance.
   identity, and upload only staged allowlisted evidence. Genuine Docker and remote
   runs require observed verification; Podman wrappers do not establish Docker support.
 
+Release attachments reuse the successful main build for the exact version tag;
+never rebuild or promote PR artifacts. Keep source/tag/version/checksum checks,
+read-only verification separate from the upload job, and automation code pinned
+to reviewed main. Preserve identical existing assets and reject conflicts without
+overwriting. Standalone tags must not create releases. See
+[release attachments](docs/DEVELOPMENT.md#automated-release-attachments).
+
 ## Coding Style & Naming Conventions
 
 Use four-space indentation in JavaScript/Python, ES modules, descriptive names, and focused modules. Run `git diff --check`; no formatter/linter is configured.

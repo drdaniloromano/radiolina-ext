@@ -46,7 +46,9 @@ jobs:
           --security-opt=no-new-privileges --memory=256m --cpus=1 --pids-limit=64
           -v "$PWD/.github:/repo/.github:ro" -w /repo
           docker.io/rhysd/actionlint:1.7.11@sha256:5457037ba91acd225478edac3d4b32e45cf6c10291e0dabbfd2491c63129afe1
-          -shellcheck= -pyflakes= .github/workflows/ci.yml
+          -shellcheck= -pyflakes= .github/workflows/*.yml
+      - name: Test release attachment boundaries with local fixtures
+        run: python3 tests/e2e/release.py
       - name: Restore GNOME 49 dependency image
         if: ${{ !inputs.refresh_images }}
         id: cache49
