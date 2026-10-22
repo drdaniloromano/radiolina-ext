@@ -130,7 +130,7 @@ protection from HTTP/2 defects. Assessment of the eight current CVE IDs referenc
 | Issue | Current radiolina paths |
 | --- | --- |
 | [CVE-2026-15712: GOAWAY over-read](https://bugzilla.redhat.com/show_bug.cgi?id=2500132) | Verified test builds are vendor-fixed at matching-source scope; see the reassessment below. The earlier desktop `3.6.6-3.fc43` snapshot remains conditional on HTTP/2 debug logging. The [upstream patch](https://gitlab.gnome.org/GNOME/libsoup/-/commit/3a6fb56a0cba42d11f5fd1db6dedcc7c2e92757b.patch) identifies that prerequisite; inherited settings can enable it on unfixed builds. |
-| [CVE-2026-15713: HTTP/2 cleanup](https://access.redhat.com/security/cve/cve-2026-15713) | Unknown/potentially applicable: client HTTP/2 is supported; the precise native cleanup prerequisites and installed fix remain unverified. |
+| [CVE-2026-15713](https://gitlab.gnome.org/GNOME/libsoup/-/work_items/541) | Upstream identifies authenticated-response leakage through a shared cache: justified not-applicable to current app paths, which attach no `Soup.Cache`. Both test builds include that fix at matching-source scope. The vendor's conflicting HTTP/2 cleanup description remains unresolved; see below. |
 | [CVE-2026-15709: WebSocket deflate](https://access.redhat.com/security/cve/cve-2026-15709), [CVE-2026-15711: control frames](https://bugzilla.redhat.com/show_bug.cgi?id=2500545) | Justified not-applicable: the app establishes no WebSocket connection or upgrade handshake. |
 | [CVE-2026-15714: multipart reader](https://access.redhat.com/security/cve/cve-2026-15714) | Justified not-applicable: the app reads the response stream directly and never constructs `Soup.MultipartInputStream` or requests multipart parts. |
 | [CVE-2026-77680: Range coalescing](https://access.redhat.com/security/cve/cve-2026-77680), [CVE-2026-77014: Range sorting](https://access.redhat.com/security/cve/cve-2026-77014) | Justified not-applicable: the app runs no `Soup.Server` and never invokes Range parsing APIs. |
@@ -150,6 +150,22 @@ checks confirm default debug suppression can be overridden. No request or malfor
 frame was sent; no installed source/library was changed or binary rebuilt.
 The historical desktop snapshot was not rescanned. Other libsoup CVEs and
 publication requirements remain open; this is not a complete advisory scan.
+
+**2026-10-22 cache/identity reassessment:** upstream issue 541 and its
+[patch](https://gitlab.gnome.org/GNOME/libsoup/-/commit/24fb645fa949ece7d7e10363b77cf2d5fa2c2469.patch)
+identify CVE-2026-15713 as authenticated responses being stored in a shared cache
+without explicit permission. Radiolina never attaches a cache; offline probes
+using its session constructor confirm no cache feature in either test profile.
+Both matching source RPMs apply the byte-identical upstream patch; exact
+recipe-ordered reconstruction confirms all three runtime fix contexts.
+This verifies the cache fix in `3.6.6-5.fc43` and `3.6.6-10.fc44`, without
+rebuilding binaries or running an attack. Reassess if caching is introduced.
+The [vendor tracker](https://bugzilla.redhat.com/show_bug.cgi?id=2499941) instead
+describes an HTTP/2 cleanup leak. That description is not established as fixed
+by this cache patch: retain the identity conflict and potentially applicable
+HTTP/2 claim as unknown pending authoritative clarification. This corrects the
+earlier cleanup-only assessment; it does not rescan the historical desktop or
+clear the complete advisory.
 
 **Resolution:** use the distribution's supported update process to obtain a
 vendor-fixed libsoup build. Fedora identifies `libsoup3-3.6.6-5.fc43` and

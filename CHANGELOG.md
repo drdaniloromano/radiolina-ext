@@ -4,6 +4,10 @@
 
 ### Verification
 
+- Correct CVE-2026-15713's earlier cleanup-only assessment: upstream identifies a
+  shared-cache disclosure, and both test profiles contain the exact cache fix.
+  Confirm no cache feature with offline session probes. Preserve dated evidence
+  and keep the vendor's conflicting HTTP/2 claim unresolved; no application changes.
 - Verify libsoup's GOAWAY logging backport in both test profiles through actual
   library ownership, matching source RPMs and exact recipe-ordered patch contexts.
   Both Fedora builds include the upstream length-bounded formatting fix. Retain
