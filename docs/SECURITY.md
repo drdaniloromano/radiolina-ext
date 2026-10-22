@@ -250,6 +250,17 @@ RTSP/RTP route. Not every additional parser-hardening change in the linked patch
 series is present in 1.28.8; this is a scoped comparison-fix decision. Only a benign
 owned caps comparison was run, without mixed-type crash inputs or a full advisory scan.
 
+**2026-10-22 scoped reassessment — buffer deserialization:** the same loaded
+core/package identities were rechecked. Fedora 44 `1.28.8-1.fc44` contains the
+exact [upstream cleanup fix](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/e3212c8a2c1e762182884d98d0c169adea69de13.patch):
+unmap before unref on invalid characters, and release the allocation if mapping
+fails. Classify this advisory as vendor-fixed at matching-source scope. Fedora
+43 `1.26.11-1.fc43` retains the old order; application reachability stays unknown.
+Radiolina does not directly deserialize server-provided buffer strings. A limited
+native-source scan does not prove all indirect paths impossible. A fixed, valid
+four-byte buffer value parsed successfully in both profiles; malformed input and
+the vulnerable error path were not executed. Other publication gates remain open.
+
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package

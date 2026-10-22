@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Reassess core buffer deserialization: Fedora 44 core 1.28.8 contains the exact
+  unmap-before-unref cleanup fix; Fedora 43 core 1.26.11 retains the old order.
+  Verify loaded library ownership and valid-buffer parsing in both isolated
+  profiles. Keep indirect reachability unresolved on the older runtime; retain
+  the limited caller scan privately without treating it as proof of exclusion.
 - Reassess core media-format comparison using matched source RPMs and loaded
   library ownership. Fedora 44 core 1.28.8 has the type-aware comparison fix and
   matches upstream release source; Fedora 43 core 1.26.11 lacks it, with application
