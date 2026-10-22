@@ -107,11 +107,12 @@ publication; the detailed technical findings below remain unchanged.
 | Older caption/caps/buffer reachability and libsoup identity conflicts | Focused follow-up, technical status still unknown. Resolve serious plausible exposure on the chosen runtime; metadata disagreement alone is not a confirmed vulnerability or an automatic blocker. |
 | AAC/FFmpeg and third-party codec coverage | A separate Fedora 44 profile now verifies ADTS AAC and AAC-in-M4A using the vendor libav decoder. Original Shell profiles still lack AAC decoders; other codecs/vendors remain scoped separately. Missing advisory coverage is uncertainty, not proof of a flaw or a fix. |
 | Broad desktop/system dependency findings | Vendor maintenance unless evidence establishes app-path relevance. Preserve open technical assessments; no blanket exclusions or host-wide source audit. |
-| Physical audio/media keys, lock/suspend and genuine Docker | Separate acceptance/compatibility gaps; apply the [testing requirements](TESTING.md), not CVE classifications. |
+| Physical audio/media keys, lock/suspend and genuine Docker | Separate coverage limits, not automatic blockers. Use available isolated environments for targeted checks and record untested scope. Full desktop VMs are optional; keep the [automated container checks](TESTING.md). |
 
-The immediate decision is the native-runtime baseline, followed by codec and
-desktop acceptance. No supported Shell version, format, host package or release
-status changes merely because this prioritization is recorded.
+Use the reviewed patched-runtime reference and codec results for final scoped
+review and packaging. Optional desktop checks do not require another guest OS.
+No supported Shell version, format, host package or release status changes merely
+because this prioritization is recorded.
 
 ## Repeatable advisory triage
 

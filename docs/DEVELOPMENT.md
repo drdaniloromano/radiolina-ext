@@ -302,6 +302,12 @@ The default `SHELL_VERSIONS="49 50"` runs both profiles sequentially; a per-chec
 lock rejects concurrent Shell builds/tests. To test the same core/service suite
 against the newer libraries, run `make container-test IMAGE=localhost/radiolina-shell-test:50`.
 
+These images are test fixtures, not a Fedora dependency of the extension. Other
+distributions can supply the required GNOME/GJS/native stack; report the versions
+actually tested without turning image choices into distribution restrictions.
+Keep the current contained profiles as the default; do not build a full guest OS
+just to repeat their UI tests.
+
 The runner uses the inspected image ID, read-only root/source mounts, no network,
 no extra capabilities, and no host bus, display, GPU or audio sockets. Private
 temporary storage holds a copied checkout, generated packages, HOME/XDG state, settings and the
@@ -318,7 +324,9 @@ This tests a selected distribution/runtime on the host kernel, not every distro
 or native security patch status. No real system services are supplied by the test
 bus; silent audio, headless rendering and virtual input do not establish physical
 media keys, real audibility, lock/suspend integration or hardware compatibility.
-Keep the separate manual checks and [dependency review](SECURITY.md).
+Use [targeted manual checks](TESTING.md#manual-acceptance) when an isolated desktop
+is available, and retain untested physical scope explicitly. Full desktop VMs are
+optional. The [dependency review](SECURITY.md) remains separate.
 
 | Make variable | Default | Meaning |
 | --- | --- | --- |
@@ -412,8 +420,9 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The current local release is **0.4.0**; public distribution is pending and remains
-blocked by the documented security findings and outstanding acceptance checks.
+The current local release is **0.4.0**; public distribution is pending the final
+[security priorities](SECURITY.md#release-priorities) and package review. Missing
+full-VM/hardware coverage alone does not block release; document its limitations.
 Use `MAJOR.MINOR.PATCH`:
 patches for fixes, minor increments for features/compatibility breaks during `0.x`,
 and major increments for compatibility breaks after `1.0`. Set `version-name` in

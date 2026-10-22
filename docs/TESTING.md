@@ -3,12 +3,16 @@
 ## Commands
 
 Run from the repository root; use existing tools rather than installing host dependencies.
+The default is offline service E2E plus real headless GNOME Shell containers for
+each supported Shell version. Full desktop VMs are optional, not a routine release
+prerequisite. Fedora supplies the current test images; it is not an extension
+runtime requirement or evidence of compatibility with every distribution.
 
 | Command | Purpose |
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
 | `make container-refresh` | Pull/rebuild without cache and refresh packages inside the image before security/release checks. |
-| `make container-test` | Offline packaging/security-tool/launcher E2E, 13 critical unit cases, 19 service E2E cases, and 9 transport/media/privacy cases. |
+| `make container-test` | Offline packaging/security-tool/launcher E2E, 13 critical unit cases, 19 service E2E cases, and 10 transport/media/privacy cases (positive AAC skips without codecs). |
 | `make container-shell-build SHELL_VERSIONS=49` | Build the version-specific headless Shell image, with dependencies contained. |
 | `make container-shell-test SHELL_VERSIONS=49` | Run the actual popup/lifecycle/OOM suite in the offline Shell container. |
 | `make container-shell-build` / `make container-shell-test` | Build/test both supported profiles (49/Fedora 43 and 50/Fedora 44) sequentially. |
@@ -58,11 +62,16 @@ extension runtime dependency. Container packaging supplies no host runtime libra
   packaged. Do not enable remote Eval or unsafe mode in the host Shell.
 - Headless Shell is process/settings isolation, not a security sandbox or full VM.
   Its wallpaper is disabled and llvmpipe uses two threads to limit test overhead.
-- Use a disposable desktop for real audio, physical media keys, lock, and suspend.
-  A verified profile is Fedora 43 Live / GNOME 49.1, 2 vCPUs, 2 GiB guest RAM, KVM,
-  accelerated virtio graphics, and 1280×720 display. Verify the signed ISO checksum;
-  use read-only ZIP media and user-mode networking, disable host sharing/clipboard
-  transfer, set a guest-only password for locking, and stop the VM/viewer afterward.
+- If full-desktop checks are useful, use an available isolated desktop. Do not
+  download an OS image or provision a VM as an automatic next step. If a VM is
+  deliberately used, verify its signed image, disable host sharing/clipboard
+  transfer, use a guest-only account and stop it afterward. Keep unavailable
+  physical checks explicitly untested; do not simulate them by exposing host
+  audio/display/system-bus sockets to the automated containers.
+  Prefer a minimal guest with selected GNOME/login/audio packages and disposable
+  disk overlays. Verify its Shell major and measure setup/download/disk/RAM costs;
+  a tiny base image does not establish a lightweight installed desktop. Record
+  differences such as OpenRC/elogind versus systemd/logind in the coverage scope.
 
 Logs, screenshots, and measurements go to ignored `workspace/`, including
 `shell-e2e.log`, `playback-hover-{light,dark}.png`, `large-text-*.png`, and
@@ -161,7 +170,12 @@ The same OOM verification limitations apply.
 
 ## Manual acceptance
 
-Run on each advertised GNOME version in a disposable desktop:
+Use this checklist for targeted checks when an isolated desktop is available.
+Reuse prior confirmations and repeat checks affected by changes or reported bugs;
+do not require a full VM matrix for every release. Record the exact build and
+environment. Unavailable audio/hardware/suspend checks remain documented coverage
+limits, not automatic release blockers or implied passes. Confirmed defects still
+need assessment under the [release priorities](SECURITY.md#release-priorities).
 
 1. Install the actual ZIP, enable it, and add a direct stream from
    [Nightride FM](https://nightride.fm/). Confirm audible playback, pause/resume,

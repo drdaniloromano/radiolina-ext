@@ -4,6 +4,10 @@
 
 ### Verification
 
+- Keep service E2E and headless GNOME containers as the default test workflow.
+  Make full desktop VMs optional, reuse prior manual confirmations and document
+  untested hardware scope. Clarify that Fedora is a test-image choice, not an
+  extension requirement; no application behavior or supported-version changes.
 - Add an optional contained AAC profile and real ADTS AAC/AAC-in-M4A service E2E
   coverage for playback, pause/resume, Stop and single-response handling. Required
   mode fails on missing codecs; normal tests retain missing-codec coverage.
