@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package container-shell-build container-shell-refresh container-shell-test container-aac-build container-aac-test
+.PHONY: build test test-shell test-resources security-check container-build container-refresh container-test container-resources container-security-check container-package container-shell-build container-shell-refresh container-shell-test container-aac-build container-aac-test ci-start ci-image ci-test ci-package ci-evidence
 
 CONTAINER_ENGINE ?= podman
 IMAGE ?= localhost/gnome-radio-dev:43
@@ -11,12 +11,31 @@ SHELL_THEME ?= dark
 AAC_IMAGE ?= localhost/radiolina-aac-test:44
 AAC_BASE_IMAGE ?= localhost/radiolina-shell-test:50
 REQUIRE_AAC ?= 0
+CI_PROFILE ?= 49
+CI_IMAGE_FLAGS ?=
 # Mount only build/test inputs, never the private workspace or repository metadata.
 CONTAINER_SOURCES = $(foreach path,extension src scripts tests LICENSE,-v "$(CURDIR)/$(path):/project/$(path):ro")
 CONTAINER_RUN_FLAGS = --rm --network=none --security-opt label=disable
+CONTAINER_ID_ARGS = --build-arg TEST_UID=$$(id -u) --build-arg TEST_GID=$$(id -g)
 
 build:
 	python3 scripts/build.py --oom-score-adj "$(OOM_SCORE_ADJ)"
+
+# CI adapts these same contained targets; it never uploads or publishes anything.
+ci-start:
+	python3 scripts/ci.py start
+
+ci-image:
+	python3 scripts/ci.py image --engine "$(CONTAINER_ENGINE)" --profile "$(CI_PROFILE)" $(CI_IMAGE_FLAGS)
+
+ci-test:
+	python3 scripts/ci.py test --engine "$(CONTAINER_ENGINE)" --profile "$(CI_PROFILE)"
+
+ci-package:
+	python3 scripts/ci.py package --engine "$(CONTAINER_ENGINE)"
+
+ci-evidence:
+	python3 scripts/ci.py evidence
 
 test:
 	python3 scripts/test.py
@@ -44,7 +63,7 @@ container-shell-test:
 	    --scale "$(SHELL_SCALE)" --theme "$(SHELL_THEME)"
 
 container-build:
-	$(CONTAINER_ENGINE) build -t $(IMAGE) -f Dockerfile .
+	$(CONTAINER_ENGINE) build $(CONTAINER_ID_ARGS) -t $(IMAGE) -f Dockerfile .
 
 # Explicit refresh for security/release checks; ordinary builds may reuse cache.
 container-refresh:
@@ -54,7 +73,7 @@ container-refresh:
 	    Docker\ *) pull=--pull ;; \
 	    *) printf '%s\n' 'Unsupported container engine: choose Podman or Docker.' >&2; exit 1 ;; \
 	esac; \
-	$(CONTAINER_ENGINE) build $$pull --no-cache -t $(IMAGE) -f Dockerfile .
+	$(CONTAINER_ENGINE) build $$pull --no-cache $(CONTAINER_ID_ARGS) -t $(IMAGE) -f Dockerfile .
 
 container-test:
 	@set -eu; user_flags=$$(sh scripts/container-user-flags.sh $(CONTAINER_ENGINE)); \

@@ -1,9 +1,50 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-10-22
+
+Prepared for merge; finalize by tagging the reviewed `main` commit `v0.5.0`
+after its checks pass. GitHub Releases and extensions.gnome.org publication
+remain separate from CI development artifacts and subject to the
+[existing publication priorities](docs/SECURITY.md#release-priorities).
+
+### Development
+
+- Reuse dependency images across repeat same-repository PR runs using GitHub's
+  isolated merge-ref caches; keep main's shared cache and fork restore-only policy.
+  Skip image export/compression when cache saving is disabled. Preserve every
+  test profile, package gate, resource limit and cache-integrity check.
+- Provision container-local numeric test accounts for the invoking UID/GID so
+  rootful Docker private D-Bus tests authenticate without host account mounts.
+  Include identity and the helper in dependency-image cache keys; preserve
+  generated-file ownership and application behavior.
+- Add local CI adapters around existing contained tests and packaging, with
+  dependency-image cache integrity checks, current-source test gates, verified
+  ZIP payloads and allowlisted bounded evidence. Keep runtime behavior unchanged.
+- Include final/failure Shell screenshots in selected CI evidence while excluding
+  saved-station files, with an explicit failed-run artifact regression check.
+- Prepare GitHub Actions test/build automation using pinned actions, sequential
+  GNOME 49/50 profiles, positive AAC tests and short-lived development artifacts.
+  Remote execution and publication require separate authorization.
 
 ### Verification
 
+- Reproduce the first GitHub Docker run's UID 1001 D-Bus failure, then verify
+  the fix with automatic account injection disabled: the complete offline suite
+  passes (56 passed, one expected codec skip). Check the restricted build context
+  and contained workflow validator.
+- Verify the corrected PR on genuine Docker 28.0.4 in GitHub Actions: all three
+  profiles pass 56 cases with one expected codec skip each, plus four GNOME 49/50
+  Shell runs at 100%/150%. Check the downloaded ZIP against current source and
+  its checksum, and review all four popup screenshots. Shell OOM scores remain
+  unchanged at 0 while playback services retain 500 through SIGKILL/Play recovery.
+  These results cover the CI implementation before the metadata-only version bump;
+  the updated PR and merged `main` must pass before tagging 0.5.0.
+- Verify the local CI adapter with Podman: all three offline profiles pass
+  (55 cases passed and one expected codec-related skip per profile), plus four
+  actual GNOME 49/50 Shell runs at 100%/150%. Preserve service-only OOM score 500,
+  unchanged Shell scores, crash recovery, source-matched ZIPs and artifact privacy.
+  A real compressed dependency-image save/load round-trip retains its image ID.
+  The subsequent remote Docker run is recorded above; security findings stay open.
 - Recheck the submission ZIP against current source, metadata and license;
   document the purposes of its two packaging metadata fields and refresh private
   reviewer notes. Preserve test/security limitations; no runtime changes or upload.
@@ -15,7 +56,8 @@
   coverage for playback, pause/resume, Stop and single-response handling. Required
   mode fails on missing codecs; normal tests retain missing-codec coverage.
   Verify Fedora libav/FFmpeg ownership, offline tests and scoped vendor advisories
-  without changing host packages or application behavior; Docker remains untested.
+  without changing host packages or application behavior. The subsequent remote
+  Docker run, including AAC, is recorded above.
 - Prioritize security review by actual application exposure: retain known native
   runtime blockers, distinguish documented uncertainties and distribution
   maintenance, and reserve deep source investigation for important ambiguities.

@@ -16,6 +16,11 @@ RUN dnf -y upgrade --refresh && \
         "GNOME Shell ${GNOME_VERSION}"|"GNOME Shell ${GNOME_VERSION}."*) ;; \
         *) printf '%s\n' "Unexpected Shell version: $version" >&2; exit 1 ;; \
     esac
+ARG TEST_UID=1000
+ARG TEST_GID=1000
+COPY scripts/container-identity.py /tmp/radiolina-container-identity.py
+RUN python3 /tmp/radiolina-container-identity.py "$TEST_UID" "$TEST_GID" && \
+    rm /tmp/radiolina-container-identity.py
 ENV LANG=C.UTF-8 GIO_USE_VFS=local PYTHONDONTWRITEBYTECODE=1
 WORKDIR /project
 CMD ["python3", "scripts/test.py"]

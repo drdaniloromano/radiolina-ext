@@ -85,6 +85,12 @@ full desktop for physical audio/media-key, lock, and suspend acceptance.
   Evidence goes to a fresh ignored `build/shell-tests/` directory. Additional
   profiles do not establish compatibility until the declared-version suite passes.
 - `make build` / `make test`: use already installed tools without dependency installation.
+- `make ci-start`, `make ci-image` / `make ci-test CI_PROFILE=49` (then `50`, `aac`),
+  `make ci-package`, `make ci-evidence`: local Actions orchestration; see
+  [CI maintenance and artifacts](docs/DEVELOPMENT.md#github-actions-test-and-build).
+  Keep cache refresh distinct from security approval, verify artifact/source/runtime
+  identity, and upload only staged allowlisted evidence. Genuine Docker and remote
+  runs require observed verification; Podman wrappers do not establish Docker support.
 
 ## Coding Style & Naming Conventions
 

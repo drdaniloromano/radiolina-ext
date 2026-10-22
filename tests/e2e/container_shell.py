@@ -154,6 +154,8 @@ class ContainerShellE2E(unittest.TestCase):
                 self.assertIn('--no-cache', build)
                 self.assertIn('FEDORA_VERSION=43', build)
                 self.assertIn('GNOME_VERSION=49', build)
+                self.assertIn(f'TEST_UID={os.getuid()}', build)
+                self.assertIn(f'TEST_GID={os.getgid()}', build)
                 result = self.launch()
                 self.assertEqual(result.returncode, 0, result.stderr)
                 command = next(args for args in self.commands() if args[0] == 'run')

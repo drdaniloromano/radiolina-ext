@@ -6,6 +6,7 @@ import datetime
 import fcntl
 import hashlib
 import json
+import os
 from pathlib import Path
 import shlex
 import signal
@@ -72,7 +73,9 @@ def main():
                     flags = ['--pull=always' if version.startswith('podman ') else '--pull', '--no-cache']
                 run([*engine, 'build', *flags, '-t', image, '-f', 'Dockerfile.shell',
                      '--build-arg', f'FEDORA_VERSION={PROFILES[major]}',
-                     '--build-arg', f'GNOME_VERSION={major}', '.'])
+                     '--build-arg', f'GNOME_VERSION={major}',
+                     '--build-arg', f'TEST_UID={os.getuid()}',
+                     '--build-arg', f'TEST_GID={os.getgid()}', '.'])
                 continue
             image_id = run([*engine, 'image', 'inspect', '--format', '{{.Id}}', image],
                            capture_output=True, text=True).stdout.strip()

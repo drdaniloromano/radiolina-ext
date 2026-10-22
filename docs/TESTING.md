@@ -12,7 +12,7 @@ runtime requirement or evidence of compatibility with every distribution.
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
 | `make container-refresh` | Pull/rebuild without cache and refresh packages inside the image before security/release checks. |
-| `make container-test` | Offline packaging/security-tool/launcher E2E, 13 critical unit cases, 19 service E2E cases, and 10 transport/media/privacy cases (positive AAC skips without codecs). |
+| `make container-test` | Offline packaging/security-tool/launcher/CI-boundary E2E, 13 critical unit cases, 19 service E2E cases, and 10 transport/media/privacy cases (positive AAC skips without codecs). |
 | `make container-shell-build SHELL_VERSIONS=49` | Build the version-specific headless Shell image, with dependencies contained. |
 | `make container-shell-test SHELL_VERSIONS=49` | Run the actual popup/lifecycle/OOM suite in the offline Shell container. |
 | `make container-shell-build` / `make container-shell-test` | Build/test both supported profiles (49/Fedora 43 and 50/Fedora 44) sequentially. |
@@ -22,6 +22,7 @@ runtime requirement or evidence of compatibility with every distribution.
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
+| `make ci-start`, then `ci-image`/`ci-test CI_PROFILE=49`, `50`, `aac`, then `ci-package`/`ci-evidence` | Run the local equivalent of Actions, gate the installation ZIP on current successful tests, and stage allowlisted evidence. See [CI commands and artifacts](DEVELOPMENT.md#github-actions-test-and-build). |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
 | `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow using an already installed GNOME 49/50. |
@@ -87,6 +88,32 @@ Six launcher E2E cases use fake engines to cover private mount/resource boundari
 sequential versions, per-checkout locking, failure/interruption cleanup/status retention, rejected
 profiles/engines, and Podman/Docker refresh/identity contracts. They do not substitute
 for genuine Docker execution or actual per-version Shell tests.
+
+Five CI boundary E2E cases cover cache hit/refresh/corruption, failed-service owned
+cleanup, failed/stale/missing test gates, real ZIP source/exclusion checks, and
+allowlisted/redacted output. They also verify that restore-only cold builds retain
+runtime evidence without exporting unused image archives, and reject invalid cache
+policy before image preparation. Their fake engines do not establish Docker support.
+Run them alone with `python3 tests/e2e/ci.py`; they also run in the contained suite.
+A container-identity regression checks unknown numeric UID/GID provisioning,
+idempotence, existing-account preservation and invalid-ID rejection. Reproduce
+D-Bus identity failures with automatic engine account injection disabled; keep
+EXTERNAL authentication and host account isolation intact.
+The Actions workflow runs both supported profiles sequentially and the
+positive AAC profile. The first genuine Docker run failed private D-Bus
+authentication before service cases; after numeric-account provisioning,
+[run 39822728172](https://github.com/drdaniloromano/radiolina-ext/actions/runs/39822728172)
+passed all three profiles (56 passes and one expected codec skip each), four
+Shell runs and package/artifact verification on Docker 28.0.4. All four popup
+screenshots were reviewed. Each new PR revision still requires its own green
+checks; physical acceptance stays separate.
+
+Local adapter verification on **2026-10-22**, Podman 5.8.4: all three offline
+profiles pass 55 cases with one expected codec-related skip each. Actual Shell
+49.10/50.6 pass both scale/theme runs; service score stays 500 through SIGKILL/
+Play recovery while Shell stays 200. The verified installation payload matches
+all four Shell runs. A dependency-image cache round-trip retains its image ID
+(479 MiB compressed). These results do not establish remote Actions or Docker.
 
 The versioned Podman profiles passed all 51 offline cases each, plus actual Shell
 workflows on **49.10/Fedora 43** and **50.6/Fedora 44** at 100% and 150% monitor

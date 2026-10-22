@@ -126,6 +126,7 @@ the ZIP or installed onto the host by the build scripts.
 | Installed extension | GNOME Shell 49/50; GJS and GI bindings for GLib/Gio/GLibUnix, GStreamer 1.x, and libsoup 3; session D-Bus and desktop audio. Shell supplies St/Clutter/Pango. | Desktop host. |
 | Playback | Native GIO source, audio conversion/resampling/volume, buffering, and an available audio sink; parser/decoder for the chosen format. Base/Good plugins cover the verified common set, with AAC exceptions below. | Desktop host; a silent sink replaces desktop audio in tests. |
 | Container packaging | Make, POSIX shell/basic user-ID tools, local Podman or Docker; network access for image creation. Python and development packages come from [Dockerfile](../Dockerfile). | Host needs the engine/Make, not the image's GJS/Python libraries. |
+| CI adapter (`make ci-*`) | Existing Python 3.11+ standard library, Make and the local engine; no third-party host modules. | GitHub runner VM or already-equipped developer host; these targets install no host dependencies. |
 | Direct packaging (`make build`) | Python 3 standard library; Make for the convenience target. No GJS/media stack is needed just to create the ZIP. | Existing host tools; no dependency installation. |
 | Service/media tests (`make test`) | Runtime GJS/GI/GStreamer/libsoup plus Python 3, PyGObject, `dbus-run-session`, GStreamer command-line tools/fixture encoders, and OpenSSL. | Development image for `make container-test`; existing host tools for direct testing. |
 | Shell tests | GNOME Shell 49/50 with headless rendering, Python/GI, service-test tools, and extension-management tools. | Versioned Shell container or disposable desktop; the smaller service image does not provide Shell. |
@@ -231,8 +232,9 @@ builds may reuse cached layers. Before security/release verification, use
 keep a separate review image. Podman uses `--pull=always`; Docker uses `--pull`.
 This updates only the selected container image, never the host's packages.
 Building the image needs network access. [.dockerignore](../.dockerignore), supported
-by both engines, excludes everything except the recipes and ignore file from the
-build context; the image contains dependencies rather than a copy of the checkout.
+by both engines, allows only the recipes, ignore file, and build-time
+`scripts/container-identity.py` helper in the build context; the image contains
+dependencies rather than a copy of the checkout.
 Tests and packaging run offline with only `extension/`, `src/`, `scripts/`, `tests/`,
 and `LICENSE` mounted read-only. Private `workspace/`, Git metadata, credentials,
 and the rest of the checkout are not mounted. Packaging mounts host-created
@@ -240,7 +242,10 @@ and the rest of the checkout are not mounted. Packaging mounts host-created
 Shell checks mount only a newly created evidence subdirectory writable, as below.
 
 [Identity selection](../scripts/container-user-flags.sh) detects the actual CLI,
-including Docker commands backed by Podman. Podman uses `--userns=keep-id`.
+including Docker commands backed by Podman. Images add the invoking numeric
+UID/GID as a container-local test account when absent, so private D-Bus can
+authenticate rootful Docker tests. Host account files are never mounted. Rebuild
+when changing the invoking identity. Podman uses `--userns=keep-id`.
 Rootful Docker uses the caller's numeric UID/GID with `--userns=host` to avoid
 daemon remapping; rootless Docker uses container UID/GID 0, mapped to its host
 user. Run rootless Docker as the same user who owns the checkout. See Docker's
@@ -357,6 +362,140 @@ universal kill order: other managers such as [systemd-oomd](https://www.freedesk
 use their own policies. There is no system-wide OOM setting or daemon dependency.
 See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recovery).
 
+## GitHub Actions test and build
+
+The [workflow](../.github/workflows/ci.yml) prepares **development artifacts**;
+it has no release, registry, or GNOME submission job. It uses a standard
+`ubuntu-24.04` VM and genuine Docker. GNOME dependencies stay in the Fedora
+containers, with Podman still supported for local development. Local validation
+does not establish a successful Actions run or genuine Docker compatibility;
+both require observed results on that backend. The first remote Docker 28.0.4
+run exposed a missing numeric account during private D-Bus authentication;
+image builds now provision that account. The corrected
+[PR run](https://github.com/drdaniloromano/radiolina-ext/actions/runs/39822728172)
+passed all three profiles, four Shell runs, packaging and artifact uploads.
+Require green checks for the latest PR revision before merging.
+
+### Triggers, tests and image maintenance
+
+Pushes to `main`, pull requests and manual dispatch run one sequential job.
+Feature-branch pushes do not duplicate PR runs; obsolete runs on the same PR/ref
+are cancelled. No tag trigger, write token, publication secret or
+`pull_request_target` is used. Official actions are pinned to reviewed commits
+(checkout 6.1.0, cache 5.1.0, upload-artifact 7.0.2; Node 24). The workflow validator
+also uses an immutable container digest; update pins deliberately and revalidate.
+
+The adapter reuses Make: profile 49/Fedora 43 and profile 50/Fedora 44 each run
+the full offline suite plus actual headless Shell at dark/100% and light/150%.
+The existing assertions exercise both themes, large text, lifecycle and OOM
+recovery; screenshots still need human review. A separate 50-based AAC profile
+requires actual ADTS/M4A decoding. Packaging follows all required successful
+tests and verifies the final payload against both Shell-tested packages.
+Tests retain private buses/settings, silent audio, no network or host desktop
+sockets, and owned cleanup. CI service runs also have 1 GiB/two CPU/256 PID caps;
+Shell runs retain their ten-minute cap. The overall job is capped at 60 minutes,
+which is a ceiling, not an observed typical duration.
+
+Dependency-only images are gzip archives in `build/ci-cache/`, separate from
+test artifacts. Exact cache keys include profile, runner OS/architecture,
+invoking UID/GID, Dockerfile/build inputs (including the account helper), and
+[.github/ci-image-generation](../.github/ci-image-generation).
+Ordinary application-source edits reuse images. Restores verify archive SHA-256,
+inputs and loaded image ID; test evidence records actual IDs and RPM versions.
+Trusted main runs save shared caches. Same-repository PRs may also save their
+dependency images, but GitHub confines those entries to that PR's merge ref;
+main and other PRs cannot restore them. Fork PRs remain restore-only. See
+[GitHub's cache scope rules](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache).
+An absent/evicted cache rebuilds the image. Manual **refresh_images** bypasses
+cache and rebuilds with refreshed container packages; this does not approve them.
+Actions sets `CI_CACHE_EXPORT=0` when saving is disabled, avoiding unused image
+exports/compression. Local commands default to exporting; set that variable to
+`0` for a restore-only or throwaway build. Cache reads still verify checksums,
+build inputs and image identity. The first eligible run must populate its cache;
+neither a new PR cache nor a refresh run seeds main's cache.
+To adopt a reviewed baseline for normal runs, increment the tracked generation
+in a focused change after the [security review](SECURITY.md). Cached functional
+tests never replace advisory checks or update users' desktop libraries.
+
+The first successful remote job took **15m19s**: GNOME 49 tests 4m58s, GNOME 50
+tests 5m06s, AAC preparation/tests 2m41s, and other image preparation 2m14s.
+No dependency cache existed then. Warm-cache hosted timings must be measured;
+image reuse does not shorten the tests or establish a guaranteed run duration.
+All profiles/scales remain sequential to keep resource use bounded.
+
+Run the same orchestration locally (it resets only `build/ci/`):
+
+```sh
+make ci-start
+make ci-image CI_PROFILE=49
+make ci-test CI_PROFILE=49
+make ci-image CI_PROFILE=50
+make ci-test CI_PROFILE=50
+make ci-image CI_PROFILE=aac
+make ci-test CI_PROFILE=aac
+make ci-package
+make ci-evidence
+```
+
+Add `CONTAINER_ENGINE=docker` consistently for genuine Docker. Existing local
+images can be inspected/tested with `CI_IMAGE_FLAGS=--reuse-local` and
+`CI_IMAGE_PREFIX`/`CI_AAC_IMAGE` environment overrides; this mode never seeds a
+shared cache and is rejected in Actions. `CI_IMAGE_FLAGS=--refresh` requests an
+uncached rebuild. Do not invoke `ci-start` during an active run.
+
+### Downloading and installing the artifact
+
+Open **Actions → Test and build → successful run → Artifacts**, then download
+`radiolina-install-<commit>`. GitHub may require sign-in. Extract the outer
+artifact archive; install the inner **radiolina@drdaniloromano.github.io.zip**,
+not the outer archive or GitHub's source-code ZIP. `SHA256SUMS` and
+`verification.json` identify its checksum, source and tested runtimes:
+
+```sh
+sha256sum -c SHA256SUMS
+gnome-extensions install --force radiolina@drdaniloromano.github.io.zip
+```
+
+Installation needs the [desktop runtime](#dependencies-and-codecs), but no
+checkout, Make or container tools. Follow the [installation guide](USER_GUIDE.md#same-session-installation-and-updates)
+to enable/reload the extension. CI outputs expire after **7 days**; selected
+test logs/measurements/screenshots, including failures, expire after **3 days**.
+Logs have URL redaction and a 1 MiB tail limit; the selected evidence budget is
+25 MiB/run with 5 MiB/file limits. Full raw local logs remain under `build/ci/`.
+Only staged allowlisted outputs are uploaded, never private workspace, saved
+stations, credentials, account inventory or the entire build tree.
+
+### GitHub settings and cost limits
+
+Before separately authorizing a push/run, verify repository visibility and
+**Settings → Actions → General**: permit the pinned official actions, keep the
+default workflow token read-only, and retain approval requirements for untrusted
+fork workflows. Allow the configured cache/artifact retention within account
+policy. No PAT, deployment environment, registry login or paid runner is needed.
+Do not change settings or grant publication access just to prepare this workflow.
+
+As checked on **2026-10-22**, [standard runner compute](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+is free for public repositories; private GitHub Free includes 2,000 minutes/month.
+The VM has 14 GB SSD and either 4 CPUs/16 GB RAM (public) or 2 CPUs/8 GB (private).
+Repository visibility was verified public on 2026-10-22. Runner disk capacity
+can exceed the documented minimum; use the job log for actual available space.
+[GitHub Free storage](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+includes 500 MB artifacts shared with Packages and a separate 10 GB cache allowance.
+[Cache eviction](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)
+can occur after seven days without access or at capacity; leave paid expansion
+disabled. Each compressed profile is capped at 3 GiB. The workflow removes owned
+archives/images between profiles to limit ephemeral disk usage; multiple cache
+generations can still cause eviction. There are two uploaded artifacts per run,
+well below the action's [500-per-job limit](https://github.com/actions/upload-artifact#number-of-artifacts).
+Configured retention cannot exceed repository policy. The hosted job maximum is
+[six hours](https://docs.github.com/en/actions/reference/limits); our cap is lower.
+
+Actual remote cold/warm durations, peak disk and storage are **unmeasured**. Record
+them on the first authorized run, compare monthly runs × observed runner-minutes
+with private allowances, and shorten retention if needed. Neither green CI nor
+an empty vendor advisory result clears [open findings](SECURITY.md#release-priorities).
+Hardware audio/keys, real lock/suspend and destination desktops are outside this CI.
+
 ## Input and resource bounds
 
 | Input | Bounds and behavior |
@@ -424,7 +563,8 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The current local release is **0.4.0**; public distribution is pending the final
+The package version is **0.5.0**, prepared for merge; public distribution is
+pending the final
 [security priorities](SECURITY.md#release-priorities) and package review. Missing
 full-VM/hardware coverage alone does not block release; document its limitations.
 Use `MAJOR.MINOR.PATCH`:
@@ -438,3 +578,11 @@ For a finalized release, date the changelog entry, tag the reviewed commit
 version or Unreleased entry creates neither a tag nor a public release. Keep original
 MIT notices in the package; platform dependencies retain their own licenses.
 Retain the [provenance findings and review limits](PROVENANCE.md).
+
+Prepare the version and changelog in a PR, wait for its current checks, merge,
+then wait for the resulting `main` build. Tag that reviewed `main` commit;
+do not tag the feature branch in advance. The current workflow does not create
+tags or GitHub Releases. A GitHub Release adds notes and durable downloads to a
+tag; attaching the verified `main` ZIP is a separate publication step. Actions
+artifacts expire and are not release assets. Creating a tag alone does not run
+this workflow, so use the already verified build from the tagged commit.
