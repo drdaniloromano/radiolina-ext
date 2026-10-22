@@ -25,6 +25,9 @@ jobs:
     env:
       CONTAINER_ENGINE: docker
       CI_IMAGE_FLAGS: ${{ inputs.refresh_images && '--refresh' || '' }}
+      # PR caches stay in their merge-ref scope; main cannot restore them.
+      # Fork PRs remain restore-only; refresh runs do not replace reviewed caches.
+      CI_CACHE_EXPORT: ${{ !inputs.refresh_images && ((github.ref == 'refs/heads/main' && github.event_name != 'pull_request') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && '1' || '0' }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0, Node 24
         with:
@@ -53,8 +56,8 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-shell49-${{ steps.identity.outputs.uid }}-${{ steps.identity.outputs.gid }}-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py', 'scripts/container-identity.py') }}
       - name: Prepare GNOME 49
         run: make ci-image CI_PROFILE=49
-      - name: Save trusted GNOME 49 dependency cache
-        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !inputs.refresh_images && steps.cache49.outputs.cache-hit != 'true' }}
+      - name: Save scoped GNOME 49 dependency cache
+        if: ${{ env.CI_CACHE_EXPORT == '1' && steps.cache49.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: build/ci-cache/49
@@ -74,8 +77,8 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-shell50-${{ steps.identity.outputs.uid }}-${{ steps.identity.outputs.gid }}-${{ hashFiles('Dockerfile.shell', 'Dockerfile.aac', '.dockerignore', '.github/ci-image-generation', 'Makefile', 'scripts/container-shell.py', 'scripts/container-identity.py') }}
       - name: Prepare GNOME 50
         run: make ci-image CI_PROFILE=50
-      - name: Save trusted GNOME 50 dependency cache
-        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !inputs.refresh_images && steps.cache50.outputs.cache-hit != 'true' }}
+      - name: Save scoped GNOME 50 dependency cache
+        if: ${{ env.CI_CACHE_EXPORT == '1' && steps.cache50.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: build/ci-cache/50
@@ -95,8 +98,8 @@ jobs:
         run: |
           make ci-image CI_PROFILE=aac
           make ci-test CI_PROFILE=aac
-      - name: Save trusted AAC dependency cache
-        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !inputs.refresh_images && steps.cacheaac.outputs.cache-hit != 'true' }}
+      - name: Save scoped AAC dependency cache
+        if: ${{ env.CI_CACHE_EXPORT == '1' && steps.cacheaac.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: build/ci-cache/aac

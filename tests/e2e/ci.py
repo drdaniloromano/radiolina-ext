@@ -39,7 +39,8 @@ class CiE2E(unittest.TestCase):
         self.ci.ROOT, self.ci.STATE = self.root, self.state
 
     def command(self, action, **changes):
-        env = dict(os.environ, **changes)
+        env = dict(os.environ, CI_CACHE_EXPORT='1')
+        env.update(changes)
         env.pop('GITHUB_ACTIONS', None)
         return subprocess.run([sys.executable, 'scripts/ci.py', action, '--engine', 'podman'],
                               cwd=self.root, env=env, capture_output=True, text=True)
@@ -128,6 +129,20 @@ sys.exit(int(os.environ.get('FAKE_MAKE_FAIL', '0')))
         make.chmod(0o755)
         return {'PATH': str(directory) + os.pathsep + os.environ['PATH'],
                 'FAKE_CALLS': str(self.root / 'calls.jsonl')}
+
+    def test_restore_only_build_skips_unused_export_and_rejects_invalid_policy(self):
+        env = self.fake_tools()
+        built = self.command('image', **env, CI_CACHE_EXPORT='0')
+        self.assertEqual(built.returncode, 0, built.stderr)
+        self.assertEqual(json.loads((self.state / 'image-49.json').read_text())['origin'], 'build')
+        self.assertFalse((self.root / 'build/ci-cache/49/image.tar.gz').exists())
+        calls = [json.loads(row) for row in (self.root / 'calls.jsonl').read_text().splitlines()]
+        self.assertFalse(any(row[:1] == ['save'] for row in calls))
+        bad = self.command('image', **env, CI_CACHE_EXPORT='invalid')
+        self.assertNotEqual(bad.returncode, 0)
+        self.assertIn('CI_CACHE_EXPORT must be 0 or 1', bad.stderr)
+        self.assertEqual((self.root / 'calls.jsonl').read_text().splitlines(),
+                         [json.dumps(row) for row in calls])
 
     def test_cache_hit_refresh_corruption_and_failed_service_cleanup(self):
         env = self.fake_tools()

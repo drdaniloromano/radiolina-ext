@@ -89,9 +89,11 @@ sequential versions, per-checkout locking, failure/interruption cleanup/status r
 profiles/engines, and Podman/Docker refresh/identity contracts. They do not substitute
 for genuine Docker execution or actual per-version Shell tests.
 
-Four CI boundary E2E cases cover cache hit/refresh/corruption, failed-service owned
+Five CI boundary E2E cases cover cache hit/refresh/corruption, failed-service owned
 cleanup, failed/stale/missing test gates, real ZIP source/exclusion checks, and
-allowlisted/redacted output. Their fake engines do not establish Docker support.
+allowlisted/redacted output. They also verify that restore-only cold builds retain
+runtime evidence without exporting unused image archives, and reject invalid cache
+policy before image preparation. Their fake engines do not establish Docker support.
 Run them alone with `python3 tests/e2e/ci.py`; they also run in the contained suite.
 A container-identity regression checks unknown numeric UID/GID provisioning,
 idempotence, existing-account preservation and invalid-ID rejection. Reproduce

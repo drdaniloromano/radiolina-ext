@@ -402,12 +402,26 @@ invoking UID/GID, Dockerfile/build inputs (including the account helper), and
 [.github/ci-image-generation](../.github/ci-image-generation).
 Ordinary application-source edits reuse images. Restores verify archive SHA-256,
 inputs and loaded image ID; test evidence records actual IDs and RPM versions.
-Only trusted main runs save shared caches; PRs may restore but do not save them.
+Trusted main runs save shared caches. Same-repository PRs may also save their
+dependency images, but GitHub confines those entries to that PR's merge ref;
+main and other PRs cannot restore them. Fork PRs remain restore-only. See
+[GitHub's cache scope rules](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache).
 An absent/evicted cache rebuilds the image. Manual **refresh_images** bypasses
 cache and rebuilds with refreshed container packages; this does not approve them.
+Actions sets `CI_CACHE_EXPORT=0` when saving is disabled, avoiding unused image
+exports/compression. Local commands default to exporting; set that variable to
+`0` for a restore-only or throwaway build. Cache reads still verify checksums,
+build inputs and image identity. The first eligible run must populate its cache;
+neither a new PR cache nor a refresh run seeds main's cache.
 To adopt a reviewed baseline for normal runs, increment the tracked generation
 in a focused change after the [security review](SECURITY.md). Cached functional
 tests never replace advisory checks or update users' desktop libraries.
+
+The first successful remote job took **15m19s**: GNOME 49 tests 4m58s, GNOME 50
+tests 5m06s, AAC preparation/tests 2m41s, and other image preparation 2m14s.
+No dependency cache existed then. Warm-cache hosted timings must be measured;
+image reuse does not shorten the tests or establish a guaranteed run duration.
+All profiles/scales remain sequential to keep resource use bounded.
 
 Run the same orchestration locally (it resets only `build/ci/`):
 

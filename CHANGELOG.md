@@ -9,6 +9,10 @@ remain separate from CI development artifacts and subject to the
 
 ### Development
 
+- Reuse dependency images across repeat same-repository PR runs using GitHub's
+  isolated merge-ref caches; keep main's shared cache and fork restore-only policy.
+  Skip image export/compression when cache saving is disabled. Preserve every
+  test profile, package gate, resource limit and cache-integrity check.
 - Provision container-local numeric test accounts for the invoking UID/GID so
   rootful Docker private D-Bus tests authenticate without host account mounts.
   Include identity and the helper in dependency-image cache keys; preserve

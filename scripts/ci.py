@@ -86,6 +86,9 @@ def make(engine, target, **values):
 
 
 def image(args):
+    export_cache = os.environ.get('CI_CACHE_EXPORT', '1')
+    if export_cache not in ('0', '1'):
+        raise ValueError('CI_CACHE_EXPORT must be 0 or 1')
     name = image_name(args.profile)
     cache = ROOT / 'build/ci-cache' / args.profile
     archive, metadata = cache / 'image.tar.gz', cache / 'image.json'
@@ -128,7 +131,7 @@ def image(args):
                          'gnome-shell', 'mutter', 'gjs', 'gstreamer1',
                          'gstreamer1-plugins-base', 'gstreamer1-plugins-good', 'libsoup3',
                          *(['gstreamer1-plugin-libav', 'libavcodec-free'] if args.profile == 'aac' else [])]).splitlines()})
-    if origin == 'build':
+    if origin == 'build' and export_cache == '1':
         cache.mkdir(parents=True, exist_ok=True)
         temporary = cache / 'image.partial.gz'
         try:
