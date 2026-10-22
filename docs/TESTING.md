@@ -12,7 +12,7 @@ runtime requirement or evidence of compatibility with every distribution.
 | --- | --- |
 | `make container-build` | Build the Fedora 43 development image; network access required. |
 | `make container-refresh` | Pull/rebuild without cache and refresh packages inside the image before security/release checks. |
-| `make container-test` | Offline packaging/security-tool/launcher E2E, 13 critical unit cases, 19 service E2E cases, and 10 transport/media/privacy cases (positive AAC skips without codecs). |
+| `make container-test` | Offline packaging/security-tool/launcher/CI-boundary E2E, 13 critical unit cases, 19 service E2E cases, and 10 transport/media/privacy cases (positive AAC skips without codecs). |
 | `make container-shell-build SHELL_VERSIONS=49` | Build the version-specific headless Shell image, with dependencies contained. |
 | `make container-shell-test SHELL_VERSIONS=49` | Run the actual popup/lifecycle/OOM suite in the offline Shell container. |
 | `make container-shell-build` / `make container-shell-test` | Build/test both supported profiles (49/Fedora 43 and 50/Fedora 44) sequentially. |
