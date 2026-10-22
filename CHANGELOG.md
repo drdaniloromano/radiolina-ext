@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Verify libsoup's GOAWAY logging backport in both test profiles through actual
+  library ownership, matching source RPMs and exact recipe-ordered patch contexts.
+  Both Fedora builds include the upstream length-bounded formatting fix. Retain
+  dated evidence and benign logging checks; other CVEs and the earlier desktop
+  snapshot are not cleared. No malformed traffic, package or application changes.
 - Reassess core buffer deserialization: Fedora 44 core 1.28.8 contains the exact
   unmap-before-unref cleanup fix; Fedora 43 core 1.26.11 retains the old order.
   Verify loaded library ownership and valid-buffer parsing in both isolated

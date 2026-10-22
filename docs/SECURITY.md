@@ -129,7 +129,7 @@ protection from HTTP/2 defects. Assessment of the eight current CVE IDs referenc
 
 | Issue | Current radiolina paths |
 | --- | --- |
-| [CVE-2026-15712: GOAWAY over-read](https://bugzilla.redhat.com/show_bug.cgi?id=2500132) | Open, conditional on HTTP/2 debug logging. The [upstream patch](https://gitlab.gnome.org/GNOME/libsoup/-/commit/3a6fb56a0cba42d11f5fd1db6dedcc7c2e92757b.patch) identifies the logging prerequisite. Normal dropped debug messages avoid the formatting operation; inherited debug settings can enable it. |
+| [CVE-2026-15712: GOAWAY over-read](https://bugzilla.redhat.com/show_bug.cgi?id=2500132) | Verified test builds are vendor-fixed at matching-source scope; see the reassessment below. The earlier desktop `3.6.6-3.fc43` snapshot remains conditional on HTTP/2 debug logging. The [upstream patch](https://gitlab.gnome.org/GNOME/libsoup/-/commit/3a6fb56a0cba42d11f5fd1db6dedcc7c2e92757b.patch) identifies that prerequisite; inherited settings can enable it on unfixed builds. |
 | [CVE-2026-15713: HTTP/2 cleanup](https://access.redhat.com/security/cve/cve-2026-15713) | Unknown/potentially applicable: client HTTP/2 is supported; the precise native cleanup prerequisites and installed fix remain unverified. |
 | [CVE-2026-15709: WebSocket deflate](https://access.redhat.com/security/cve/cve-2026-15709), [CVE-2026-15711: control frames](https://bugzilla.redhat.com/show_bug.cgi?id=2500545) | Justified not-applicable: the app establishes no WebSocket connection or upgrade handshake. |
 | [CVE-2026-15714: multipart reader](https://access.redhat.com/security/cve/cve-2026-15714) | Justified not-applicable: the app reads the response stream directly and never constructs `Soup.MultipartInputStream` or requests multipart parts. |
@@ -140,8 +140,20 @@ The Range notice also cites CVE-2025-32907 as historical context. Its
 [server Range handling](https://access.redhat.com/security/cve/cve-2026-77680)
 is outside the same current app paths; this is not an additional new finding.
 
+**2026-10-22 GOAWAY reassessment:** the loaded libsoup libraries belong to
+`3.6.6-5.fc43` and `3.6.6-10.fc44`. Their matching official source RPMs include
+the exact upstream GOAWAY patch, applied by both build recipes. Reconstructing
+the HTTP/2 source in declared patch order with exact contexts confirms `%.*s`
+plus the frame's explicit data length; classify this CVE as vendor-fixed at
+matching-source scope for both test profiles. Separate process-local logging
+checks confirm default debug suppression can be overridden. No request or malformed
+frame was sent; no installed source/library was changed or binary rebuilt.
+The historical desktop snapshot was not rescanned. Other libsoup CVEs and
+publication requirements remain open; this is not a complete advisory scan.
+
 **Resolution:** use the distribution's supported update process to obtain a
-vendor-fixed libsoup build. Fedora identifies `libsoup3-3.6.6-5.fc43` as fixing
+vendor-fixed libsoup build. Fedora identifies `libsoup3-3.6.6-5.fc43` and
+`libsoup3-3.6.6-10.fc44` as fixing
 the GOAWAY issue; that fact alone does not verify every CVE in the advisory.
 Confirm fixes/backports individually, restart affected processes, and rerun
 inventory plus relevant transport tests in isolation. Keep debug logging disabled
