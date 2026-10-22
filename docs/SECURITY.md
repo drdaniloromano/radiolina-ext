@@ -201,6 +201,17 @@ but was inspected only, not installed or tested. The earlier desktop's affected
 does not fix the adapter; checking the adapter does not clear its loaded FFmpeg
 library. Verify both layers before testing a separately agreed codec profile.
 
+**2026-10-22 scoped reassessment — ID3v2:** both images' `id3demux` loads
+`libgsttag` from the matching Base RPM. Fedora 44's reviewed `1.28.8-1.fc44`
+source contains the [upstream ID3 fixes](https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11794.patch):
+initialized peak state, the RVA2 remaining-byte check, and local-copy custom-frame
+sanitization. Classify this advisory as vendor-fixed at matching-source scope for
+that profile; Fedora 43's `1.26.11-1.fc43` retains the affected contexts. The total
+ID3 size limit does not validate individual frames. This is source and loaded-library
+ownership evidence, without hostile-tag tests or binary reproducibility; other
+findings remain open. The advisory describes a very-low-impact read and custom-tag
+data corruption, not an established code-execution result.
+
 **Release requirement:** use native packages with these fixes or verified vendor
 backports, then repeat isolated compatibility tests and target-desktop checks.
 The linked upstream notices identify fixes through the `1.28.8` release; a package

@@ -4,6 +4,11 @@
 
 ### Verification
 
+- Reassess ID3v2 parsing through the actual demuxer/tag-library ownership: Fedora
+  44 Base 1.28.8 contains the reviewed peak-read and custom-frame fixes; Fedora 43
+  Base 1.26.11 retains affected code. Preserve dated private source comparisons,
+  including intermediate patch contexts, without executing hostile tags or
+  changing application behavior. Other publication gates remain open.
 - Reassess FFmpeg wrapper/AAC coverage: both tested images lack the relevant
   decoders. Inspect the fixed Fedora 44 wrapper source as a candidate without
   installing it; retain successful AAC decoding, the earlier affected desktop
