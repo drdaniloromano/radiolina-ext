@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Development
+
+- Add local CI adapters around existing contained tests and packaging, with
+  dependency-image cache integrity checks, current-source test gates, verified
+  ZIP payloads and allowlisted bounded evidence. Keep runtime behavior unchanged.
+
 ### Verification
 
 - Recheck the submission ZIP against current source, metadata and license;
