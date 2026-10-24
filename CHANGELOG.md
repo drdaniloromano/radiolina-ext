@@ -15,6 +15,9 @@
 
 ### Development
 
+- Document EGO-A-005 for [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  Copy URL is an explicit clipboard write, already declared in the extension
+  description. Keep the feature and manual-review finding visible.
 - Explain EGO-P-007 in [GNOME review 77008](https://extensions.gnome.org/review/77008):
   the flagged modules belong to the separately launched playback service. Keep
   the required files, process separation and visible warning for human review.

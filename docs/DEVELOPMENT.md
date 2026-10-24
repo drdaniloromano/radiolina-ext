@@ -573,6 +573,14 @@ Keep these modules in the ZIP and keep playback outside Shell. The warning remai
 visible for human review. Service E2E and GNOME 49/50 lifecycle tests exercise the
 service's startup, playback and cleanup; this does not extend Shexli's coverage.
 
+#### EGO-A-005: Copy URL clipboard write
+
+Copy stream URL writes the URL shown in the station editor to the clipboard only
+when its button is activated. Radiolina does not read or monitor clipboard contents.
+The [extension description](../extension/metadata.json) declares this access, and
+the [user guide](USER_GUIDE.md#url-privacy) explains that clipboard history may
+retain private URLs. Keep the manual-review finding visible for the reviewer.
+
 ### GitHub settings and cost limits
 
 Before separately authorizing a push/run, verify repository visibility and
