@@ -4,6 +4,10 @@
 
 ### Fixes
 
+- Address EGO-L-003 from [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  bind UI signals to the owning indicator and station-row actions to their row
+  using GNOME's lifetime-aware connections. Verify retained action sources cannot
+  call retired owners and signal trackers are released on repeated disable.
 - Address EGO-X-004 from [GNOME review 77008](https://extensions.gnome.org/review/77008):
   load the bundled D-Bus interface XML asynchronously, wait for proxy readiness
   before starting playback, and consume cancelled/stale results without reviving

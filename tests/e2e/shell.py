@@ -1476,6 +1476,34 @@ class ShellE2E(unittest.TestCase):
                  'global._radioPointer.notify_button(GLib.get_monotonic_time(), 1, global._radioClutter.ButtonState.RELEASED); true')
         wait(lambda: evaluate(f'!{INDICATOR}.menu.isOpen'), 'outside click still dismisses popup')
 
+        # A row can be rebuilt before the indicator dies. Retain an action source
+        # independently so widget destruction cannot mask a lingering callback.
+        evaluate(f'''(() => {{
+            const i = {INDICATOR};
+            const [id, row] = i._recentButtons.entries().next().value;
+            global._radioRowProbe = {{button: row.play, calls: 0, original: i._call}};
+            i._call = () => global._radioRowProbe.calls++;
+            row.play.get_parent().remove_child(row.play);
+            row.play.emit('clicked', 1);
+        }})(); true''')
+        self.assertEqual(evaluate('global._radioRowProbe.calls'), 1, 'Retained row action works while its owner lives')
+        evaluate(f'''(() => {{
+            const i = {INDICATOR};
+            const [id, row] = i._recentButtons.entries().next().value;
+            i._recentButtons.delete(id);
+            row.select.destroy();
+            global._radioRowProbe.button.emit('clicked', 1);
+            i._call = global._radioRowProbe.original;
+            i._stationSignature = null;
+            i._render();
+        }})(); true''')
+        self.assertEqual(evaluate('global._radioRowProbe.calls'), 1,
+                         'A live detached button cannot invoke its destroyed row callback')
+        evaluate('global._radioRowProbe.button.destroy(); global._radioRowProbe = null; true')
+        evaluate('Main.createLookingGlass()._evaluate("global._radioSignalDebug = '
+                 'await import(\'resource:///org/gnome/shell/misc/signalTracker.js\')"); true')
+        wait(lambda: evaluate('Boolean(global._radioSignalDebug?.debugGetSignalTrackers)'), 'signal tracker debug view ready')
+
         # Exercise repeated ownership teardown without forcing Shell garbage collection.
         lifecycle_samples = []
         panel_count = None
@@ -1483,6 +1511,16 @@ class ShellE2E(unittest.TestCase):
             pid = evaluate(f'{INDICATOR}._extension._process.get_identifier()')
             evaluate(f'''(() => {{
                 global._radioRetired = {INDICATOR};
+                global._radioRetiredOwners = [global._radioRetired,
+                    ...[...global._radioRetired._stationButtons.values(),
+                        ...global._radioRetired._recentButtons.values()].map(row => row.select)];
+                if ({cycle} === 0) {{
+                    global._radioDetachedControl = global._radioRetired._cancel;
+                    global._radioDetachedCalls = 0;
+                    global._radioRetired._closeForm = () => global._radioDetachedCalls++;
+                    global._radioDetachedControl.get_parent().remove_child(global._radioDetachedControl);
+                    global._radioDetachedControl.emit('clicked', 1);
+                }}
                 global._radioDestroyed = 0; global._radioMenuDestroyed = 0;
                 global._radioRetired.connect('destroy', () => global._radioDestroyed++);
                 global._radioRetired.menu.actor.connect('destroy', () => global._radioMenuDestroyed++);
@@ -1494,6 +1532,16 @@ class ShellE2E(unittest.TestCase):
                 '!global._radioRetired._alive && global._radioRetired._cancellable.is_cancelled() && '
                 '!global._radioRetired._proxy && !global._radioRetired._quitSource && '
                 '!global._radioRetired._extension._starting && !global._radioRetired._extension._startToken'))
+            self.assertTrue(evaluate('''!global._radioRetiredOwners.some(owner =>
+                [...global._radioSignalDebug.debugGetSignalTrackers()].some(([emitter, tracker]) =>
+                    emitter === owner || tracker._map.has(owner)))'''),
+                'GNOME signal tracking retains neither retired indicators nor station rows')
+            if cycle == 0:
+                self.assertEqual(evaluate('global._radioDetachedCalls'), 1)
+                evaluate("global._radioDetachedControl.emit('clicked', 1); true")
+                self.assertEqual(evaluate('global._radioDetachedCalls'), 1,
+                                 'A live detached control cannot call its disabled indicator')
+                evaluate('global._radioDetachedControl.destroy(); global._radioDetachedControl = null; true')
             self.assertEqual(own_styles(), [])
             count = evaluate('Main.panel._rightBox.get_children().length')
             if panel_count is None:
@@ -1520,7 +1568,7 @@ class ShellE2E(unittest.TestCase):
                 self.assertEqual(evaluate('Main.panel._rightBox.get_children().length'), panel_count)
             lifecycle_samples.append({'cycle': cycle + 1, 'retired_pid': pid,
                                       'disabled_panel_children': count})
-            evaluate(f"global._radioRetired = null; global._radioCancelled = null; "
+            evaluate(f"global._radioRetired = null; global._radioRetiredOwners = null; global._radioCancelled = null; "
                      f"Main.extensionManager.enableExtension('{UUID}'); true")
             wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner) && '
                                   f'!{INDICATOR}._extension._starting'), 'repeated enable ready')
@@ -1528,6 +1576,8 @@ class ShellE2E(unittest.TestCase):
         self.assertEqual(shell_oom.read_text(), shell_oom_before)
         Path('workspace/shell-resource-lifecycle.json').write_text(json.dumps({
             'cycles': lifecycle_samples, 'cancelled_starts': 5, 'forced_gc': False,
+            'retained_control_disconnected': True, 'retained_row_action_disconnected': True,
+            'retired_signal_trackers_removed': True,
             'shell_score_unchanged': True}, indent=2) + '\n')
         print('Resource lifecycle: 10 disable/enable cycles and 5 cancelled starts; '
               'owned actors/services removed and Shell OOM score unchanged')

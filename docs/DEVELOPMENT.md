@@ -56,6 +56,12 @@ Play or station/settings operations start it on demand. An unexpected service
 exit preserves the indicator for explicit retry, with stale metadata cleared.
 Screen lock follows GNOME's default `user` session mode: stop on lock, idle on unlock.
 
+UI signals use GNOME's `connectObject()` lifetime tracking: fixed controls track
+their indicator, while station-row action buttons track their individual row.
+Destroying either the source widget or tracked owner removes the connection;
+row rebuilds release handlers before extension disable. D-Bus property/signal
+handler IDs retain their explicit proxy disconnect path in indicator destruction.
+
 UI call generations/cancellables prevent stale replies from updating removed UI
 or undoing a newer Stop. Service load generations/cancellables prevent a slow
 playlist or obsolete source from starting after a switch, edit, Pause, or Stop.
