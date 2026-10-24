@@ -2,8 +2,33 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-10-24
+
+### Fixes
+
+- Address EGO-L-003 from [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  bind UI signals to the owning indicator and station-row actions to their row
+  using GNOME's lifetime-aware connections. Verify retained action sources cannot
+  call retired owners and signal trackers are released on repeated disable.
+- Address EGO-X-004 from [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  load the bundled D-Bus interface XML asynchronously, wait for proxy readiness
+  before starting playback, and consume cancelled/stale results without reviving
+  disabled UI. Missing or malformed XML reports a bounded startup error.
+
 ### Development
 
+- Document EGO-A-005 for [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  Copy URL is an explicit clipboard write, already declared in the extension
+  description. Keep the feature and manual-review finding visible.
+- Explain EGO-P-007 in [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  the flagged modules belong to the separately launched playback service. Keep
+  the required files, process separation and visible warning for human review.
+- Analyze the final ZIP with contained, pinned Shexli before development/release
+  uploads. Reject analyzer errors, crashes and invalid reports; preserve warnings
+  and manual-review findings as review evidence. Keep host dependencies unchanged.
+- Pin the analyzer's Tree-sitter dependency to 0.25.2 after reproducing the
+  [upstream 0.26 crash](https://gitlab.gnome.org/Infrastructure/extensions-web/-/work_items/398).
+  Record static-analysis coverage limits; no application behavior/version changes.
 - Build a fresh installer ZIP from the version tag in a dedicated workflow when
   a GitHub Release is published, with a manual retry for existing releases. Require
   successful main CI for that source, verify the package contents, and separate

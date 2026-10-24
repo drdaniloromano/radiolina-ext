@@ -44,13 +44,23 @@ recording, account system, or podcast subsystem.
 
 ### Lifecycle and cancellation
 
-`enable()` loads owned styles, creates the indicator, and starts the service.
+`enable()` loads owned styles and creates the indicator. Its bundled D-Bus XML
+loads asynchronously with the indicator's cancellable; service startup waits for
+the proxy to be ready. A missing or malformed interface reports a startup error
+without launching the backend. Read results are always finished, then discarded
+if the indicator was disabled; a replacement indicator owns its own initialization.
 `disable()` destroys UI/subscriptions, unloads its stylesheet, and requests service
 shutdown without blocking Shell. Service teardown handles SIGTERM/SIGINT and loss
 of its owning Shell D-Bus connection. Infobox Stop exits the backend; subsequent
 Play or station/settings operations start it on demand. An unexpected service
 exit preserves the indicator for explicit retry, with stale metadata cleared.
 Screen lock follows GNOME's default `user` session mode: stop on lock, idle on unlock.
+
+UI signals use GNOME's `connectObject()` lifetime tracking: fixed controls track
+their indicator, while station-row action buttons track their individual row.
+Destroying either the source widget or tracked owner removes the connection;
+row rebuilds release handlers before extension disable. D-Bus property/signal
+handler IDs retain their explicit proxy disconnect path in indicator destruction.
 
 UI call generations/cancellables prevent stale replies from updating removed UI
 or undoing a newer Stop. Service load generations/cancellables prevent a slow
@@ -509,6 +519,68 @@ by the contained validator; offline release-boundary tests run once using the
 runner's existing Python/Git. The manifest keeps `release_approved: false`;
 the maintainer's publication decision and [security review](SECURITY.md) stay separate.
 
+### Post-build static review
+
+Run [Shexli](https://pypi.org/project/shexli/) **after creating the installable ZIP
+and before uploading it**. Both workflows do this; an Actions report is retained
+with test evidence, separately from the installer. It neither modifies the ZIP nor
+installs dependencies on the desktop. For local preflight:
+
+```sh
+make container-package
+make container-check-package PACKAGE_ZIP=build/radiolina@drdaniloromano.github.io.zip
+# Optional: CONTAINER_ENGINE=docker; PACKAGE_CHECK_OUTPUT=build/my-package-check
+```
+
+Only the tool image build needs network access. Its Python image and three wheel
+versions/hashes are pinned in [the recipe](../Dockerfile.shexli) and
+[requirements](../scripts/shexli-requirements.txt). Analysis runs unprivileged,
+offline, with a read-only filesystem, a temporary directory, bounded CPU/memory,
+and only a snapshot of the ZIP mounted. No workspace, home, desktop bus or socket
+is exposed. Local reports default to ignored `build/package-check/` and include
+raw JSON, stderr, package checksum, image identity and an explicit review summary.
+Use a dedicated report directory; unrelated files are preserved and rejected.
+
+Shexli 0.2.1 returns zero even when it finds errors. Our gate validates its JSON
+schema/counts/coverage and blocks errors, crashes, missing or inconsistent reports.
+Warnings and `manual_review` items remain visible with `review_required: true`;
+they do not stop artifact uploads and are not a publication approval. Review them
+before GNOME submission. Never add automatic suppressions. The parser is pinned
+to Tree-sitter 0.25.2: 0.26 reproduced a native crash, tracked in the
+[open upstream issue](https://gitlab.gnome.org/Infrastructure/extensions-web/-/work_items/398).
+Review tool/image pins deliberately; do not float dependency upgrades inside CI.
+
+The **2026-10-22 / v0.5.0** ZIP analysis completed with zero errors, three warnings
+and one manual-review item: a synchronous local XML read, explicit clipboard write,
+files the analyzer considers unreachable, and signal-cleanup patterns. These are
+review prompts, not confirmed defects or automatically dismissed findings.
+Only **two JavaScript files** were recognized as reachable; the separate playback
+service and its modules still need our existing tests and human review. Static
+analysis does not execute the extension, test native decoders, scan dependencies
+for CVEs or replace GNOME's review. Local Podman execution is verified; the local
+`docker` command is a Podman wrapper, so genuine Docker verification requires the
+new hosted workflow run. No hosted run or submission is implied by local results.
+
+#### EGO-P-007: playback service files
+
+The files flagged in [review 77008](https://extensions.gnome.org/review/77008) are
+required by [the playback service](../src/service/main.js). The
+[Shell adapter](../extension/extension.js) launches it as a separate `gjs -m`
+process through `Gio.Subprocess.new(args, ...)`. Shexli 0.2.1 does not follow that
+named argument array, so it misses the service and its imports.
+
+Keep these modules in the ZIP and keep playback outside Shell. The warning remains
+visible for human review. Service E2E and GNOME 49/50 lifecycle tests exercise the
+service's startup, playback and cleanup; this does not extend Shexli's coverage.
+
+#### EGO-A-005: Copy URL clipboard write
+
+Copy stream URL writes the URL shown in the station editor to the clipboard only
+when its button is activated. Radiolina does not read or monitor clipboard contents.
+The [extension description](../extension/metadata.json) declares this access, and
+the [user guide](USER_GUIDE.md#url-privacy) explains that clipboard history may
+retain private URLs. Keep the manual-review finding visible for the reviewer.
+
 ### GitHub settings and cost limits
 
 Before separately authorizing a push/run, verify repository visibility and
@@ -607,10 +679,11 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The current tagged package version is **0.5.0**, with a maintainer-published
-GitHub Release. GNOME Extensions submission is pending the final
-[security priorities](SECURITY.md#release-priorities) and package review. Missing
-full-VM/hardware coverage alone does not block release; document its limitations.
+The package version is defined in [metadata.json](../extension/metadata.json).
+See [GitHub Releases](https://github.com/drdaniloromano/radiolina-ext/releases)
+for published versions. GNOME Extensions review is separate from GitHub releases;
+retain the [security priorities](SECURITY.md#release-priorities) and package-review
+limits. Missing full-VM/hardware coverage alone does not block release; document it.
 Use `MAJOR.MINOR.PATCH`:
 patches for fixes, minor increments for features/compatibility breaks during `0.x`,
 and major increments for compatibility breaks after `1.0`. Set `version-name` in

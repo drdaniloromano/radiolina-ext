@@ -25,7 +25,7 @@ class CiE2E(unittest.TestCase):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, path)
-        for name in ('Makefile', 'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac',
+        for name in ('Makefile', 'Dockerfile', 'Dockerfile.shell', 'Dockerfile.aac', 'Dockerfile.shexli',
                      '.dockerignore', '.github/ci-image-generation'):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -80,12 +80,18 @@ class CiE2E(unittest.TestCase):
         (self.root / 'workspace/stations.json').write_text('PRIVATE_STATION_MARKER')
         (self.state / 'service-49.log').write_text('failure https://user:secret@example.test/live\n')
         (self.state / 'private.txt').write_text('PRIVATE_STATE_MARKER')
+        static = self.state / 'shexli'
+        static.mkdir()
+        (static / 'report.json').write_text('{"static_review": "fixture"}')
+        (static / 'private.txt').write_text('PRIVATE_STATIC_MARKER')
         self.ci.run = lambda *_args, **_kwargs: 'fixture commit'
         self.ci.evidence(None)
         files = list((self.state / 'artifacts/test-evidence').glob('*'))
         content = b''.join(path.read_bytes() for path in files)
         self.assertIn(b'<url>', content)
-        for private in (b'PRIVATE_STATION_MARKER', b'PRIVATE_STATE_MARKER', b'user:secret'):
+        self.assertIn(b'static_review', content)
+        for private in (b'PRIVATE_STATION_MARKER', b'PRIVATE_STATE_MARKER',
+                        b'PRIVATE_STATIC_MARKER', b'user:secret'):
             self.assertNotIn(private, content)
         run = self.root / 'build/shell-tests/49/failed-run'
         (run / 'evidence').mkdir(parents=True)

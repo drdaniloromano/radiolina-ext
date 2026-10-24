@@ -3,7 +3,7 @@
 Lightweight internet radio for **GNOME Shell**, controlled entirely from the top bar.
 A compact native popup keeps playback and saved stations close at hand.
 
-**Version:** **0.5.0**. GNOME Extensions submission is pending.
+**Version:** **0.6.0**. GNOME Extensions approval is pending.
 Supports **GNOME Shell 49 and 50**.
 See the [changelog](CHANGELOG.md) for completed changes.
 See the [runtime security review and remaining verification](docs/SECURITY.md#release-priorities).

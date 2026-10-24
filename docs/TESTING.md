@@ -22,10 +22,12 @@ runtime requirement or evidence of compatibility with every distribution.
 | `make container-resources` | Opt-in ten-minute Linux resource E2E in the offline image; local fixtures, private D-Bus/XDG, silent audio, no forced GC. |
 | `make test-resources` | The same probe using already installed host tools and isolated state. |
 | `make container-package` | Write the runtime ZIP under `build/`. |
+| `make container-check-package PACKAGE_ZIP=build/radiolina@drdaniloromano.github.io.zip` | Analyze an already-built ZIP with pinned Shexli. Initial tool-image build needs network; analysis is offline and limited to the package. |
 | `make ci-start`, then `ci-image`/`ci-test CI_PROFILE=49`, `50`, `aac`, then `ci-package`/`ci-evidence` | Run the local equivalent of Actions, gate the installation ZIP on current successful tests, and stage allowlisted evidence. See [CI commands and artifacts](DEVELOPMENT.md#github-actions-test-and-build). |
 | `make test` | Run packaging/unit/service/transport-media checks with already installed host tools. |
 | `python3 tests/e2e/package.py` | Packaging check alone; Python standard library only. |
 | `python3 tests/e2e/release.py` | Offline release builds/uploads with real temporary Git repositories/ZIPs and a fixture GitHub API; existing Git and Python only. Runs once on the Actions runner, outside the GNOME dependency images. |
+| `python3 tests/e2e/package_check.py` | Offline analyzer-gate cases: zero-exit findings, crash/malformed report rejection, ZIP-only container mount and unrelated-file preservation. |
 | `make test-shell OOM_SCORE_ADJ=500` | Build and run the real popup/lifecycle/OOM workflow using an already installed GNOME 49/50. |
 | `GNOME_RADIO_TEST_SCALE=1.5 GNOME_RADIO_TEST_THEME=light make test-shell` | Repeat at 150% monitor scaling with light/dark checks. |
 | `git diff --check` | Check patch whitespace. |
@@ -118,6 +120,13 @@ and attachment dry-run are separate read-only checks; they do not verify the
 write-capable job or published assets. The release ZIP is rebuilt from tested
 source and checked file by file; this workflow does not execute it inside GNOME.
 
+The contained Shexli check runs after ZIP creation and before either upload path.
+Local Podman tests verify real warning/manual-review output and rejection of a
+malformed-metadata ZIP with two errors, despite the analyzer's zero exit code.
+Five fixture cases cover the gate's isolation and failure handling. Genuine Docker
+for this new step remains untested locally (`docker` is a Podman wrapper).
+See [static-review policy and coverage limits](DEVELOPMENT.md#post-build-static-review).
+
 Local adapter verification on **2026-10-22**, Podman 5.8.4: all three offline
 profiles pass 55 cases with one expected codec-related skip each. Actual Shell
 49.10/50.6 pass both scale/theme runs; service score stays 500 through SIGKILL/
@@ -142,7 +151,7 @@ full lock/suspend integration or genuine Docker behavior.
 | Transport/media E2E | Actual same-response decoding, misleading extensions/headers, HTML/HLS/video rejection before decoder construction, bounded ID3/ICY/gzip playlists, five-hop redirect boundary, credentials/fragments/schemes, trusted local TLS upgrade/downgrade and playlist-entry policy. |
 | Privacy | Token-bearing path/query URLs reach actual playback unchanged; MPRIS properties/signals omit URLs and State omits final redirects. Full saved/editor URLs and private mode persist. Disposable native/JS error traps cover HTTP, player bus, startup and saves without exposing injected secrets in application errors/logs; public-message unit bounds remain enforced. |
 | Shell E2E | Real ZIP install/replacement/uninstall and legacy-ID migration; saved bytes preserved; native pointer/keyboard controls, shared playback hover/focus, row-action exit, search, 30/70 editor, mutually exclusive views, optional Stop, fixed dimensions/aligned spacing, state icons, silent native media card, service crash/recovery. |
-| Theme/lifecycle | Native light/dark changes, 100%/150% display scales, Serif 12 with 125% text scaling, cached-module/CSS updates, delayed startup/cancellation/early exit, rapid Stop/restart, disable/enable, foreign indicator/style ownership, unsupported grouping fallback. |
+| Theme/lifecycle | Native light/dark changes, 100%/150% display scales, Serif 12 with 125% text scaling, cached-module/CSS updates, asynchronous interface loading (responsive popup, late result after disable, replacement readiness, cancelled native read, missing/malformed XML recovery), retained buttons cannot call destroyed row/indicator owners, retired signal trackers removed, delayed startup/cancellation/early exit, rapid Stop/restart, disable/enable, foreign indicator/style ownership, unsupported grouping fallback. |
 
 The service tests execute the packaged-compatible standalone GJS entry. The
 transport-stall test disables the HTTP source's timeout in a disposable copy to

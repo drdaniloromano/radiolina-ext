@@ -4,7 +4,9 @@
 !Dockerfile
 !Dockerfile.shell
 !Dockerfile.aac
+!Dockerfile.shexli
 !.dockerignore
 !scripts/
 scripts/**
 !scripts/container-identity.py
+!scripts/shexli-requirements.txt

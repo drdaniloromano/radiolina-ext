@@ -67,24 +67,25 @@ class RadioIndicator extends PanelMenu.Button {
         this._play = new St.Button({child: playback, style_class: 'button flat gnome-radio-playback',
             x_expand: true, can_focus: true, track_hover: true, accessible_name: 'Play radio',
             y_align: Clutter.ActorAlign.CENTER});
-        this._play.connect('clicked', () => this._call('PlayPause', null));
+        // Fixed controls track the indicator; row actions track their shorter-lived row.
+        this._play.connectObject('clicked', () => this._call('PlayPause', null), this);
         details.add_child(this._play);
         this._stopButton = new St.Button({child: new St.Icon({icon_name: 'media-playback-stop-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             accessible_name: 'Stop and release playback resources', y_align: Clutter.ActorAlign.CENTER});
-        this._stopButton.connect('clicked', () => this._stopPlayback());
+        this._stopButton.connectObject('clicked', () => this._stopPlayback(), this);
         details.add_child(this._stopButton);
         this._quitButton = new St.Button({child: new St.Icon({icon_name: 'system-shutdown-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             accessible_name: 'Quit radiolina', y_align: Clutter.ActorAlign.CENTER});
-        this._quitButton.connect('clicked', () => {
+        this._quitButton.connectObject('clicked', () => {
             if (this._quitSource) return;
             this._quitSource = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
                 this._quitSource = null;
                 if (this._alive) Main.extensionManager.disableExtension(extension.uuid);
                 return GLib.SOURCE_REMOVE;
             });
-        });
+        }, this);
         details.add_child(this._quitButton);
         this.menu.addMenuItem(details);
         this._errorRow = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
@@ -123,7 +124,7 @@ class RadioIndicator extends PanelMenu.Button {
         this._expandButton = new St.Button({child: this._expandIcon,
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             y_align: Clutter.ActorAlign.CENTER, accessible_name: 'Show saved stations'});
-        this._expandButton.connect('clicked', () => this._setStationsExpanded(!this._stationsExpanded));
+        this._expandButton.connectObject('clicked', () => this._setStationsExpanded(!this._stationsExpanded), this);
         toolbar.add_child(this._expandButton);
         this._toolbarSpacer = new St.Widget({x_expand: true});
         toolbar.add_child(this._toolbarSpacer);
@@ -134,29 +135,29 @@ class RadioIndicator extends PanelMenu.Button {
             style_class: 'search-entry-icon', icon_size: 16}));
         this._searchEntry.set_secondary_icon(new St.Icon({icon_name: 'edit-clear-symbolic',
             style_class: 'search-entry-icon', icon_size: 16}));
-        this._searchEntry.connect('secondary-icon-clicked', () => {
+        this._searchEntry.connectObject('secondary-icon-clicked', () => {
             this._searchEntry.set_text('');
             this._searchEntry.grab_key_focus();
-        });
-        this._searchEntry.clutter_text.connect('text-changed', () => this._render());
+        }, this);
+        this._searchEntry.clutter_text.connectObject('text-changed', () => this._render(), this);
         toolbar.add_child(this._searchEntry);
         this._searchEntry.hide();
         this._searchButton = new St.Button({child: new St.Icon({icon_name: 'edit-find-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true, y_align: Clutter.ActorAlign.CENTER,
             accessible_name: 'Search saved stations'});
-        this._searchButton.connect('clicked', () => this._toggleSearch());
+        this._searchButton.connectObject('clicked', () => this._toggleSearch(), this);
         this._add = new St.Button({child: new St.Icon({icon_name: 'list-add-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true, y_align: Clutter.ActorAlign.CENTER,
             accessible_name: 'Add station'});
-        this._add.connect('clicked', () => this._openAddForm());
+        this._add.connectObject('clicked', () => this._openAddForm(), this);
         toolbar.add_child(this._searchButton);
         toolbar.add_child(this._add);
         this._settingsButton = new St.Button({child: new St.Icon({icon_name: 'preferences-system-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             y_align: Clutter.ActorAlign.CENTER, accessible_name: 'Settings'});
-        this._settingsButton.connect('clicked', () => {
+        this._settingsButton.connectObject('clicked', () => {
             this._showView(this._settingsSection.actor.visible ? null : 'settings');
-        });
+        }, this);
         toolbar.add_child(this._settingsButton);
         this.menu.addMenuItem(toolbar);
         this._stations = new PopupMenu.PopupMenuSection();
@@ -173,14 +174,14 @@ class RadioIndicator extends PanelMenu.Button {
 
         this._settingsSection = new PopupMenu.PopupMenuSection();
         this._showStopToggle = new PopupMenu.PopupSwitchMenuItem('Show Stop button', false);
-        this._showStopToggle.connect('toggled', (_item, enabled) => {
+        this._showStopToggle.connectObject('toggled', (_item, enabled) => {
             if (!this._syncingSettings) this._call('SetShowStopButton', new GLibVariant('(b)', [enabled]));
-        });
+        }, this);
         this._settingsSection.addMenuItem(this._showStopToggle);
         this._groupToggle = new PopupMenu.PopupSwitchMenuItem('Group with other app indicators', false);
-        this._groupToggle.connect('toggled', (_item, enabled) => {
+        this._groupToggle.connectObject('toggled', (_item, enabled) => {
             if (!this._syncingSettings) this._call('SetGroupWithAppIndicators', new GLibVariant('(b)', [enabled]));
-        });
+        }, this);
         this._settingsSection.addMenuItem(this._groupToggle);
         const helpRow = text => {
             const row = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
@@ -204,10 +205,10 @@ class RadioIndicator extends PanelMenu.Button {
         this._recentMore = new St.Button({child: new St.Icon({icon_name: 'list-add-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             accessible_name: 'Show more recent stations'});
-        this._recentLess.connect('clicked', () => this._call('SetRecentLimit',
-            new GLibVariant('(u)', [(this._state.recentLimit ?? 3) - 1])));
-        this._recentMore.connect('clicked', () => this._call('SetRecentLimit',
-            new GLibVariant('(u)', [(this._state.recentLimit ?? 3) + 1])));
+        this._recentLess.connectObject('clicked', () => this._call('SetRecentLimit',
+            new GLibVariant('(u)', [(this._state.recentLimit ?? 3) - 1])), this);
+        this._recentMore.connectObject('clicked', () => this._call('SetRecentLimit',
+            new GLibVariant('(u)', [(this._state.recentLimit ?? 3) + 1])), this);
         [this._recentLess, this._recentCount, this._recentMore].forEach(actor => recentOption.add_child(actor));
         this._settingsSection.addMenuItem(recentOption);
         this.menu.addMenuItem(this._settingsSection);
@@ -217,33 +218,52 @@ class RadioIndicator extends PanelMenu.Button {
         // St.Entry measures hidden hints too. Refresh their inherited font when
         // the theme changes, even while populated fields hide the hint actor.
         for (const entry of [this._searchEntry, this._nameEntry, this._urlEntry])
-            entry.connect('style-changed', () => entry.get_hint_actor()?.ensure_style());
+            entry.connectObject('style-changed', () => entry.get_hint_actor()?.ensure_style(), this);
         // These controls update an inline panel; activation must not dismiss it.
         for (const menu of [this.menu, this._recent, this._stations, this._settingsSection])
             menu.itemActivated = () => {};
-        this.menu.actor.connect('captured-event', (_actor, event) => this._searchKey(event));
-        this.menu.connect('open-state-changed', (_menu, open) => {
+        this.menu.actor.connectObject('captured-event', (_actor, event) => this._searchKey(event), this);
+        this.menu.connectObject('open-state-changed', (_menu, open) => {
             if (!open && this._alive) {
                 this._showView(null);
             }
-        });
+        }, this);
         this._render();
 
         const xmlFile = extension.dir.get_child('src').get_child('service').get_child('radio.xml');
-        const xml = new TextDecoder().decode(xmlFile.load_contents(null)[1]);
-        const Proxy = Gio.DBusProxy.makeProxyWrapper(xml);
-        this._proxy = new Proxy(Gio.DBus.session, BUS, PATH, (proxy, error) => {
-            if (!this._alive)
-                return;
-            if (error) {
-                this._showError('radiolina service unavailable. Disable and re-enable the extension to retry.');
-                return;
-            }
-            this._propertySignal = proxy.connect('g-properties-changed', () => this._sync());
-            this._ownerSignal = proxy.connect('notify::g-name-owner', () => this._sync());
-            this._raiseSignal = proxy.connectSignal('Raise', () => this.menu.open());
-            this._sync();
-        }, this._cancellable);
+        this._proxyReady = this._loadProxy(xmlFile);
+    }
+
+    _loadProxy(xmlFile) {
+        // Resolve false on failure/cancellation: an already retired indicator may
+        // have no startup waiter, and must never produce an unhandled rejection.
+        return new Promise(resolve => {
+            xmlFile.load_contents_async(this._cancellable, (file, result) => {
+                try {
+                    // Always finish the operation, even after disable, to consume
+                    // its result before checking whether this UI still owns it.
+                    const [, contents] = file.load_contents_finish(result);
+                    if (!this._alive || this._cancellable.is_cancelled()) {
+                        resolve(false);
+                        return;
+                    }
+                    const Proxy = Gio.DBusProxy.makeProxyWrapper(new TextDecoder().decode(contents));
+                    this._proxy = new Proxy(Gio.DBus.session, BUS, PATH, (proxy, error) => {
+                        if (!this._alive || this._cancellable.is_cancelled() || error) {
+                            resolve(false);
+                            return;
+                        }
+                        this._propertySignal = proxy.connect('g-properties-changed', () => this._sync());
+                        this._ownerSignal = proxy.connect('notify::g-name-owner', () => this._sync());
+                        this._raiseSignal = proxy.connectSignal('Raise', () => this.menu.open());
+                        this._sync();
+                        resolve(true);
+                    }, this._cancellable);
+                } catch {
+                    resolve(false);
+                }
+            });
+        });
     }
 
     _label(text, style) {
@@ -278,35 +298,35 @@ class RadioIndicator extends PanelMenu.Button {
                 }
             }
         };
-        inputs.connect('notify::allocation', sizeInputs);
-        inputs.connect('style-changed', sizeInputs);
+        inputs.connectObject('notify::allocation', sizeInputs, this);
+        inputs.connectObject('style-changed', sizeInputs, this);
         fields.add_child(inputs);
         this._copySource = new St.Button({child: new St.Icon({icon_name: 'edit-copy-symbolic'}),
             style_class: 'icon-button gnome-radio-compact-button', can_focus: true,
             y_align: Clutter.ActorAlign.CENTER, accessible_name: 'Copy stream URL'});
-        this._copySource.connect('clicked', () => St.Clipboard.get_default().set_text(
-            St.ClipboardType.CLIPBOARD, this._urlEntry.get_text()));
+        this._copySource.connectObject('clicked', () => St.Clipboard.get_default().set_text(
+            St.ClipboardType.CLIPBOARD, this._urlEntry.get_text()), this);
         fields.add_child(this._copySource);
         this._save = new St.Button({label: 'Save', can_focus: true,
             style_class: 'button', accessible_name: 'Save station'});
-        this._save.connect('clicked', () => this._saveStation());
+        this._save.connectObject('clicked', () => this._saveStation(), this);
         const actions = new St.BoxLayout({style_class: 'gnome-radio-form-actions'});
         this._cancel = new St.Button({label: 'Cancel', can_focus: true, style_class: 'button'});
-        this._cancel.connect('clicked', () => this._closeForm());
+        this._cancel.connectObject('clicked', () => this._closeForm(), this);
         this._remove = new St.Button({label: 'Delete', can_focus: true, style_class: 'button'});
-        this._remove.connect('clicked', () => {
+        this._remove.connectObject('clicked', () => {
             if (this._editingId)
                 this._call('RemoveStation', new GLibVariant('(s)', [this._editingId]), () => this._closeForm());
-        });
+        }, this);
         [this._save, this._cancel, this._remove].forEach(actor => actions.add_child(actor));
-        this._urlEntry.clutter_text.connect('activate', () => this._saveStation());
-        this._nameEntry.clutter_text.connect('key-press-event', (_actor, event) => {
+        this._urlEntry.clutter_text.connectObject('activate', () => this._saveStation(), this);
+        this._nameEntry.clutter_text.connectObject('key-press-event', (_actor, event) => {
             if (event.get_key_symbol() === Clutter.KEY_Return) {
                 this._urlEntry.grab_key_focus();
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
-        });
+        }, this);
         [this._formHeading, fields, actions].forEach(actor => box.add_child(actor));
         this._form.add_child(box);
         this.menu.addMenuItem(this._form);
@@ -583,10 +603,10 @@ class RadioIndicator extends PanelMenu.Button {
         item.add_style_class_name('gnome-radio-station-row');
         item.setOrnament(PopupMenu.Ornament.HIDDEN);
         item.accessible_name = `Select ${saved.name}${playing ? ' (playing)' : ''}`;
-        item.connect('activate', () => this._call('SelectStation', new GLibVariant('(s)', [saved.id]), () => {
+        item.connectObject('activate', () => this._call('SelectStation', new GLibVariant('(s)', [saved.id]), () => {
             if (section === this._recent && !['Playing', 'Connecting'].includes(this._state.status))
                 this._call('PlayPause', null);
-        }));
+        }), this);
         let marker = null;
         if (selected) {
             const paused = this._state.status === 'Paused';
@@ -603,18 +623,18 @@ class RadioIndicator extends PanelMenu.Button {
         const play = new St.Button({child: new St.Icon({icon_name: 'media-playback-start-symbolic'}),
             can_focus: true, y_align: Clutter.ActorAlign.CENTER, style_class: 'icon-button gnome-radio-compact-button',
             accessible_name: `Play ${saved.name}`});
-        play.connect('clicked', () => this._call('SelectStation', new GLibVariant('(s)', [saved.id]), () => {
+        play.connectObject('clicked', () => this._call('SelectStation', new GLibVariant('(s)', [saved.id]), () => {
             this._sync();
             if (!['Playing', 'Connecting'].includes(this._state.status)) this._call('PlayPause', null);
-        }));
+        }), item);
         const remove = new St.Button({child: new St.Icon({icon_name: 'user-trash-symbolic'}),
             can_focus: true, y_align: Clutter.ActorAlign.CENTER, style_class: 'icon-button gnome-radio-compact-button',
             accessible_name: `Remove ${saved.name}`});
-        remove.connect('clicked', () => this._call('RemoveStation', new GLibVariant('(s)', [saved.id])));
+        remove.connectObject('clicked', () => this._call('RemoveStation', new GLibVariant('(s)', [saved.id])), item);
         const edit = new St.Button({child: new St.Icon({icon_name: 'document-edit-symbolic'}),
             can_focus: true, y_align: Clutter.ActorAlign.CENTER, style_class: 'icon-button gnome-radio-compact-button',
             accessible_name: `Edit ${saved.name}`});
-        edit.connect('clicked', () => this._openEditor(saved.id));
+        edit.connectObject('clicked', () => this._openEditor(saved.id), item);
         item.add_child(play);
         item.add_child(edit);
         item.add_child(remove);
@@ -628,7 +648,7 @@ class RadioIndicator extends PanelMenu.Button {
                 button.can_focus = reveal;
             }
         };
-        item.connect('notify::hover', () => {
+        item.connectObject('notify::hover', () => {
             // Native menu hover can leave keyboard focus on the last row.
             // Hand focus back when the pointer leaves; keyboard-only navigation
             // still reveals actions through the stage's focus signal below.
@@ -636,7 +656,7 @@ class RadioIndicator extends PanelMenu.Button {
             if (!item.hover && focus && item.contains(focus))
                 this.menu.actor.grab_key_focus();
             revealActions();
-        });
+        }, this);
         global.stage.connectObject('notify::key-focus', revealActions, item);
         revealActions();
         buttons.set(saved.id, {select: item, play, edit, remove, label, marker});
@@ -723,8 +743,11 @@ export default class RadioExtension extends Extension {
         const starting = (async () => {
             // Reconnect only after the preceding process has fully exited.
             await this._shutdown;
+            const proxyReady = await indicator?._proxyReady;
             if (token.cancelled || this._indicator !== indicator || !indicator?._alive)
                 throw new Error('radiolina startup cancelled.');
+            if (!proxyReady)
+                throw new Error('radiolina interface unavailable. Disable and re-enable the extension to retry.');
             if (!this._process) {
                 const args = ['gjs', '-m', `${this.path}/src/service/main.js`,
                     `--owner=${Gio.DBus.session.get_unique_name()}`];

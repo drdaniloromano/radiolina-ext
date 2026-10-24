@@ -13,6 +13,8 @@ AAC_BASE_IMAGE ?= localhost/radiolina-shell-test:50
 REQUIRE_AAC ?= 0
 CI_PROFILE ?= 49
 CI_IMAGE_FLAGS ?=
+PACKAGE_ZIP ?= build/radiolina@drdaniloromano.github.io.zip
+PACKAGE_CHECK_OUTPUT ?= build/package-check
 # Mount only build/test inputs, never the private workspace or repository metadata.
 CONTAINER_SOURCES = $(foreach path,extension src scripts tests LICENSE,-v "$(CURDIR)/$(path):/project/$(path):ro")
 CONTAINER_RUN_FLAGS = --rm --network=none --security-opt label=disable
@@ -20,6 +22,11 @@ CONTAINER_ID_ARGS = --build-arg TEST_UID=$$(id -u) --build-arg TEST_GID=$$(id -g
 
 build:
 	python3 scripts/build.py --oom-score-adj "$(OOM_SCORE_ADJ)"
+
+.PHONY: container-check-package
+container-check-package:
+	python3 scripts/check-package.py --engine "$(CONTAINER_ENGINE)" \
+	    --zip "$(PACKAGE_ZIP)" --output "$(PACKAGE_CHECK_OUTPUT)"
 
 # CI adapts these same contained targets; it never uploads or publishes anything.
 ci-start:
