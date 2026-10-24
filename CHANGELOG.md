@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixes
+
+- Address EGO-X-004 from [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  load the bundled D-Bus interface XML asynchronously, wait for proxy readiness
+  before starting playback, and consume cancelled/stale results without reviving
+  disabled UI. Missing or malformed XML reports a bounded startup error.
+
 ### Development
 
 - Build a fresh installer ZIP from the version tag in a dedicated workflow when

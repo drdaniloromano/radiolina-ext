@@ -44,7 +44,11 @@ recording, account system, or podcast subsystem.
 
 ### Lifecycle and cancellation
 
-`enable()` loads owned styles, creates the indicator, and starts the service.
+`enable()` loads owned styles and creates the indicator. Its bundled D-Bus XML
+loads asynchronously with the indicator's cancellable; service startup waits for
+the proxy to be ready. A missing or malformed interface reports a startup error
+without launching the backend. Read results are always finished, then discarded
+if the indicator was disabled; a replacement indicator owns its own initialization.
 `disable()` destroys UI/subscriptions, unloads its stylesheet, and requests service
 shutdown without blocking Shell. Service teardown handles SIGTERM/SIGINT and loss
 of its owning Shell D-Bus connection. Infobox Stop exits the backend; subsequent

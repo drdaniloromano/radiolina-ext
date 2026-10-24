@@ -572,8 +572,88 @@ class ShellE2E(unittest.TestCase):
             f"Main.extensionManager.enableExtension('{UUID}')"
         )
         # Run the exact documented command through the real Looking Glass evaluator.
-        evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
+        # Hold real native read results only in this disposable Shell. A completed
+        # read can arrive after disable; a new indicator must own its own result.
+        xml_path = installed / 'src/service/radio.xml'
+        evaluate(f'''(() => {{
+            const proto = Object.getPrototypeOf(Gio.File.new_for_path({json.dumps(str(xml_path))}));
+            const hook = global._radioXmlRead = {{proto, path: {json.dumps(str(xml_path))},
+                async: proto.load_contents_async, finish: proto.load_contents_finish,
+                queue: [], finished: 0, mode: 'completed'}};
+            proto.load_contents_async = function(cancellable, callback) {{
+                if (this.get_path() !== hook.path)
+                    return hook.async.call(this, cancellable, callback);
+                if (hook.mode === 'unstarted') {{
+                    hook.queue.push(() => hook.async.call(this, cancellable, callback));
+                    return;
+                }}
+                // Model a completed result whose delivery cannot be cancelled.
+                return hook.async.call(this, null, (file, result) =>
+                    hook.queue.push(() => callback(file, result)));
+            }};
+            proto.load_contents_finish = function(result) {{
+                if (this.get_path() === hook.path) hook.finished++;
+                return hook.finish.call(this, result);
+            }};
+        }})(); true''')
+        try:
+            evaluate(f'Main.createLookingGlass()._evaluate({json.dumps(command)}); true')
+            wait(lambda: evaluate('global._radioXmlRead.queue.length === 1'), 'asynchronous XML read pending')
+            self.assertTrue(evaluate(f'''Boolean({INDICATOR}?._alive && !{INDICATOR}._proxy &&
+                !{INDICATOR}._extension._process && {INDICATOR}._extension._starting)'''),
+                'No backend or proxy is created before asynchronous XML initialization')
+            evaluate(f'{INDICATOR}.menu.open(); true')
+            self.assertTrue(evaluate(f'{INDICATOR}.menu.isOpen'), 'Shell popup remains responsive during the read')
+            evaluate(f"global._radioXmlRetired = {INDICATOR}; Main.extensionManager.disableExtension('{UUID}'); "
+                     f"Main.extensionManager.enableExtension('{UUID}'); true")
+            wait(lambda: evaluate('global._radioXmlRead.queue.length === 2'), 'replacement XML read pending')
+            evaluate('global._radioXmlRead.queue.shift()(); true')
+            self.assertTrue(evaluate(f'''global._radioXmlRead.finished === 1 &&
+                !global._radioXmlRetired._alive && !global._radioXmlRetired._proxy &&
+                global._radioXmlRetired._cancellable.is_cancelled() && !{INDICATOR}._proxy'''),
+                'A late successful result is finished without attaching to either indicator')
+            evaluate('global._radioXmlRead.queue.shift()(); true')
+            wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner)'), 'replacement proxy and service ready')
+            pid = evaluate(f'{INDICATOR}._extension._process.get_identifier()')
+            evaluate(f"Main.extensionManager.disableExtension('{UUID}'); true")
+            wait(lambda: not Path(f'/proc/{pid}').exists(), 'service reaped before XML cancellation fixture')
+            evaluate(f"global._radioXmlRead.mode = 'unstarted'; Main.extensionManager.enableExtension('{UUID}'); true")
+            wait(lambda: evaluate('global._radioXmlRead.queue.length === 1'), 'native XML read held before start')
+            evaluate(f"global._radioXmlCancelled = {INDICATOR}; Main.extensionManager.disableExtension('{UUID}'); "
+                     'global._radioXmlRead.queue.shift()(); true')
+            wait(lambda: evaluate('global._radioXmlRead.finished === 3'), 'cancelled native read result consumed')
+            self.assertTrue(evaluate(f'''!{INDICATOR} && !global._radioXmlCancelled._proxy &&
+                !global._radioXmlCancelled._extension._starting &&
+                !global._radioXmlCancelled._extension._process'''))
+        finally:
+            evaluate('''(() => {const h = global._radioXmlRead;
+                h.proto.load_contents_async = h.async; h.proto.load_contents_finish = h.finish;
+                global._radioXmlRead = null; global._radioXmlRetired = null;
+                global._radioXmlCancelled = null;})(); true''')
+
+        xml_bytes = xml_path.read_bytes()
+        try:
+            for contents in (None, b'<node><malformed'):
+                if contents is None:
+                    xml_path.unlink()
+                else:
+                    xml_path.write_bytes(contents)
+                evaluate(f"Main.extensionManager.enableExtension('{UUID}'); true")
+                wait(lambda: evaluate(f'''Boolean({INDICATOR}?._errorRow.visible &&
+                    {INDICATOR}._error.text === 'Could not start the radio service. Check GJS and GStreamer.' &&
+                    !{INDICATOR}._extension._starting && !{INDICATOR}._extension._process)'''),
+                    'missing/malformed XML fails safely without launching a backend')
+                evaluate(f"Main.extensionManager.disableExtension('{UUID}'); true")
+        finally:
+            xml_path.write_bytes(xml_bytes)
+        evaluate(f"Main.extensionManager.enableExtension('{UUID}'); true")
         wait(lambda: evaluate(f'Boolean({INDICATOR}?._proxy?.g_name_owner)'), 'extension and service ready')
+        Path('workspace/shell-async-interface.json').write_text(json.dumps({
+            'late_success_ignored': True, 'cancelled_read_finished': True,
+            'replacement_ready': True, 'missing_and_malformed_xml_safe': True,
+            'shell_responsive_during_read': True}, indent=2) + '\n')
+        print('Async interface: responsive popup, stale/cancelled read teardown, '
+              'replacement readiness and missing/malformed XML recovery passed')
         wait(lambda: evaluate(f'{INDICATOR}._state.selected === {json.dumps(saved_id)} && '
                              f'{INDICATOR}._state.recentLimit === 7'), 'saved selection and settings survive new identity')
         self.assertEqual(evaluate(f'{INDICATOR}._state.stations'),

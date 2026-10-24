@@ -230,20 +230,39 @@ class RadioIndicator extends PanelMenu.Button {
         this._render();
 
         const xmlFile = extension.dir.get_child('src').get_child('service').get_child('radio.xml');
-        const xml = new TextDecoder().decode(xmlFile.load_contents(null)[1]);
-        const Proxy = Gio.DBusProxy.makeProxyWrapper(xml);
-        this._proxy = new Proxy(Gio.DBus.session, BUS, PATH, (proxy, error) => {
-            if (!this._alive)
-                return;
-            if (error) {
-                this._showError('radiolina service unavailable. Disable and re-enable the extension to retry.');
-                return;
-            }
-            this._propertySignal = proxy.connect('g-properties-changed', () => this._sync());
-            this._ownerSignal = proxy.connect('notify::g-name-owner', () => this._sync());
-            this._raiseSignal = proxy.connectSignal('Raise', () => this.menu.open());
-            this._sync();
-        }, this._cancellable);
+        this._proxyReady = this._loadProxy(xmlFile);
+    }
+
+    _loadProxy(xmlFile) {
+        // Resolve false on failure/cancellation: an already retired indicator may
+        // have no startup waiter, and must never produce an unhandled rejection.
+        return new Promise(resolve => {
+            xmlFile.load_contents_async(this._cancellable, (file, result) => {
+                try {
+                    // Always finish the operation, even after disable, to consume
+                    // its result before checking whether this UI still owns it.
+                    const [, contents] = file.load_contents_finish(result);
+                    if (!this._alive || this._cancellable.is_cancelled()) {
+                        resolve(false);
+                        return;
+                    }
+                    const Proxy = Gio.DBusProxy.makeProxyWrapper(new TextDecoder().decode(contents));
+                    this._proxy = new Proxy(Gio.DBus.session, BUS, PATH, (proxy, error) => {
+                        if (!this._alive || this._cancellable.is_cancelled() || error) {
+                            resolve(false);
+                            return;
+                        }
+                        this._propertySignal = proxy.connect('g-properties-changed', () => this._sync());
+                        this._ownerSignal = proxy.connect('notify::g-name-owner', () => this._sync());
+                        this._raiseSignal = proxy.connectSignal('Raise', () => this.menu.open());
+                        this._sync();
+                        resolve(true);
+                    }, this._cancellable);
+                } catch {
+                    resolve(false);
+                }
+            });
+        });
     }
 
     _label(text, style) {
@@ -723,8 +742,11 @@ export default class RadioExtension extends Extension {
         const starting = (async () => {
             // Reconnect only after the preceding process has fully exited.
             await this._shutdown;
+            const proxyReady = await indicator?._proxyReady;
             if (token.cancelled || this._indicator !== indicator || !indicator?._alive)
                 throw new Error('radiolina startup cancelled.');
+            if (!proxyReady)
+                throw new Error('radiolina interface unavailable. Disable and re-enable the extension to retry.');
             if (!this._process) {
                 const args = ['gjs', '-m', `${this.path}/src/service/main.js`,
                     `--owner=${Gio.DBus.session.get_unique_name()}`];
