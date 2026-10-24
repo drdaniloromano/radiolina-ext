@@ -679,10 +679,11 @@ Use the opt-in [dependency advisory procedure](SECURITY.md) before finalizing a
 release. Machine-readable reports can feed future preflight automation; vendor
 query success alone does not satisfy the upstream/applicability review.
 
-The current tagged package version is **0.5.0**, with a maintainer-published
-GitHub Release. GNOME Extensions submission is pending the final
-[security priorities](SECURITY.md#release-priorities) and package review. Missing
-full-VM/hardware coverage alone does not block release; document its limitations.
+The package version is defined in [metadata.json](../extension/metadata.json).
+See [GitHub Releases](https://github.com/drdaniloromano/radiolina-ext/releases)
+for published versions. GNOME Extensions review is separate from GitHub releases;
+retain the [security priorities](SECURITY.md#release-priorities) and package-review
+limits. Missing full-VM/hardware coverage alone does not block release; document it.
 Use `MAJOR.MINOR.PATCH`:
 patches for fixes, minor increments for features/compatibility breaks during `0.x`,
 and major increments for compatibility breaks after `1.0`. Set `version-name` in

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-10-24
+
 ### Fixes
 
 - Address EGO-L-003 from [GNOME review 77008](https://extensions.gnome.org/review/77008):
