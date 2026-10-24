@@ -561,6 +561,18 @@ for CVEs or replace GNOME's review. Local Podman execution is verified; the loca
 `docker` command is a Podman wrapper, so genuine Docker verification requires the
 new hosted workflow run. No hosted run or submission is implied by local results.
 
+#### EGO-P-007: playback service files
+
+The files flagged in [review 77008](https://extensions.gnome.org/review/77008) are
+required by [the playback service](../src/service/main.js). The
+[Shell adapter](../extension/extension.js) launches it as a separate `gjs -m`
+process through `Gio.Subprocess.new(args, ...)`. Shexli 0.2.1 does not follow that
+named argument array, so it misses the service and its imports.
+
+Keep these modules in the ZIP and keep playback outside Shell. The warning remains
+visible for human review. Service E2E and GNOME 49/50 lifecycle tests exercise the
+service's startup, playback and cleanup; this does not extend Shexli's coverage.
+
 ### GitHub settings and cost limits
 
 Before separately authorizing a push/run, verify repository visibility and

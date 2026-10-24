@@ -15,6 +15,9 @@
 
 ### Development
 
+- Explain EGO-P-007 in [GNOME review 77008](https://extensions.gnome.org/review/77008):
+  the flagged modules belong to the separately launched playback service. Keep
+  the required files, process separation and visible warning for human review.
 - Analyze the final ZIP with contained, pinned Shexli before development/release
   uploads. Reject analyzer errors, crashes and invalid reports; preserve warnings
   and manual-review findings as review evidence. Keep host dependencies unchanged.
