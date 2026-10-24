@@ -57,6 +57,9 @@ decisions and [testing](docs/TESTING.md) for coverage and isolation requirements
 Keep dependencies/artifacts contained; do not install development packages globally.
 Use versioned Shell containers for automated UI/lifecycle checks. Use an isolated
 full desktop for physical audio/media-key, lock, and suspend acceptance.
+The optional [GNOME 49 VM recipe](docs/DEVELOPMENT.md#optional-gnome-49-live-vm)
+recreates disposable media on demand. Never download or boot it automatically;
+keep its assets/evidence ignored and stop it after use.
 
 - `make container-build`: build the development image.
 - `make container-refresh`: pull/rebuild without cache and upgrade image packages

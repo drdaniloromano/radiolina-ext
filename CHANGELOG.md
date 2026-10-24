@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Development
+
+- Preserve an on-demand GNOME 49 live-VM rebuild procedure and launcher, with
+  signed ISO verification, explicit downloads, contained installer preparation
+  and ignored disposable media. Keep it optional and outside routine CI.
+
 ## 0.6.0 — 2026-10-24
 
 ### Fixes

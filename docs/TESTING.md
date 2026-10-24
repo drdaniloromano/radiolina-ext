@@ -81,6 +81,22 @@ Logs, screenshots, and measurements go to ignored `workspace/`, including
 `shell-e2e.log`, `playback-hover-{light,dark}.png`, `large-text-*.png`, and
 `shell-oom-recovery.json`. Keep temporary fixtures and VM assets outside Git.
 
+### Optional GNOME 49 live desktop
+
+The [on-demand rebuild procedure](DEVELOPMENT.md#optional-gnome-49-live-vm)
+recreates the earlier Fedora 43/GNOME 49.1 reference guest without an installed
+guest disk. It requires an explicit 2.74 GB download after media deletion and
+existing host virtualization tools. It is outside CI and the normal test suite.
+Use `python3 scripts/gnome49-vm/vm.py stop` afterward; closing its viewer does
+not release the VM's RAM. Preparation checks signatures, hashes and package
+identity, but does not establish boot, audibility, media keys, lock or suspend
+acceptance. Record those separately against the exact guest/package versions;
+the original guest suspend attempt remains unverified.
+`python3 tests/e2e/desktop_vm.py` checks offline preparation boundaries: valid
+and tampered signatures (when existing GnuPG is available), explicit download
+opt-in, corrupt media/incompatible packages, foreign PID rejection and exclusion
+of extra payload files. It never downloads, boots or signals a process.
+
 ## Automated coverage
 
 Three offline security-tool E2E cases exercise command boundaries, recursive

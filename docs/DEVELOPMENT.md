@@ -372,6 +372,83 @@ universal kill order: other managers such as [systemd-oomd](https://www.freedesk
 use their own policies. There is no system-wide OOM setting or daemon dependency.
 See [OOM verification and limitations](TESTING.md#oom-isolation-and-crash-recovery).
 
+## Optional GNOME 49 live VM
+
+For occasional full-desktop checks, the original Fedora 43 Workstation Live
+43-1.6 x86_64 profile can be rebuilt on demand. It provides GNOME 49.1, two
+vCPUs and 2 GiB guest RAM, with additional QEMU host overhead. Media occupy about
+2.8 GiB; there is no installed guest disk. Prefer the versioned Shell containers
+for routine checks. This older, pinned desktop is a historical compatibility
+fixture, not evidence of current native dependency security.
+
+Run from the repository root on an already equipped Linux x86_64 host. Required
+existing tools are Python 3.11+, GnuPG, xorriso, QEMU with KVM/SPICE/virtio graphics,
+and `remote-viewer`. The launcher requires accessible `/dev/kvm` and uses
+`/dev/dri/renderD128` for accelerated rendering. This is the previously used
+local hardware profile; other graphics setups are unverified. The scripts install
+no host packages, configure no host services and do not fall back to CPU emulation.
+
+Prepare a current installer using contained tools, then check it:
+
+```sh
+make container-build
+make container-package
+make container-check-package PACKAGE_ZIP=build/radiolina@drdaniloromano.github.io.zip
+```
+
+Review analyzer warnings/manual findings. Alternatively use an installer from a
+trusted release, verify its published checksum, and pass that ZIP below. Package
+metadata checks alone do not attest source provenance or security.
+
+```sh
+python3 scripts/gnome49-vm/rebuild.py --download \
+    --zip build/radiolina@drdaniloromano.github.io.zip
+python3 scripts/gnome49-vm/vm.py ready --view
+```
+
+The first command prepares media without booting. It verifies the bundled signed
+Fedora checksum against the pinned signing fingerprint, hashes the entire ISO,
+extracts its kernel/initrd, and builds a read-only payload containing only the
+installer and guest setup script. Missing media require explicit `--download`
+(2,742,190,080 bytes); cached media are verified and reused. If Fedora moves the
+image out of current releases, explicitly add `--archive` for its official archive.
+Downloads require HTTPS and fail on size/hash/signature mismatches. Remove an
+interrupted `.iso.part` file explicitly before retrying.
+
+`ready --view` starts the disposable live guest, installs the payload, starts its
+desktop and verifies the indicator/service. Allow several minutes. Missing runtime
+packages may be installed **inside the guest** using Fedora repositories; their
+availability and resolved versions can change. The ISO is pinned, the resulting
+guest package set is not bit-for-bit reproducible. The guest account is `liveuser`,
+password `246810`; this public test password must never be reused elsewhere.
+One Nightride FM station is seeded without autoplay. No host extension is installed.
+
+```sh
+python3 scripts/gnome49-vm/vm.py status
+python3 scripts/gnome49-vm/vm.py view   # reopen a closed viewer
+python3 scripts/gnome49-vm/vm.py stop   # release CPU/RAM; discard guest changes
+```
+
+The VM uses read-only media, outbound user-mode networking, no forwarded ports,
+no host-directory sharing, and disabled clipboard/agent file transfer. Audio
+output goes through SPICE; there is no microphone device. Save observations before
+stopping. Physical media keys can be intercepted by the host, and guest suspend
+does not establish hardware suspend support. See [acceptance checks](TESTING.md).
+
+All downloaded/generated files and receipts are under ignored
+`workspace/gnome49-vm/`. After stopping, reclaim media by deleting only its
+`Fedora-Workstation-Live-43-1.6.x86_64.iso`, `boot/`, `payload/`, `payload.iso`,
+and `cache/`; keep any wanted evidence. The tracked scripts and verification
+material are sufficient to rebuild these files. Repeat preparation with a new
+ZIP while stopped to update the guest; always stop it after a failed setup.
+No VM is downloaded or started automatically by CI, packaging or ordinary tests.
+
+Verification on 2026-10-24 reused the cached ISO: signature, full SHA-256, kernel/
+initrd extraction and payload ISO creation passed with the 0.6.0 installer. Four
+offline boundary cases and the package-exclusion check passed. No fresh network
+download or VM boot was performed for this recipe extraction; the earlier
+49.1 guest acceptance does not attest a newly rebuilt/current package session.
+
 ## GitHub Actions test and build
 
 The [test workflow](../.github/workflows/ci.yml) prepares **development artifacts**;

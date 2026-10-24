@@ -45,3 +45,15 @@ same license bundled in the ZIP. This choice does not establish the origin of
 unverified material or change upstream licenses. Confirm any known external
 sources and retain their required notices before publishing. Do not remove an
 actual third-party attribution merely to simplify project documentation.
+
+## Optional VM verification material (2026-10-24)
+
+`scripts/gnome49-vm/` retains Fedora's public release-signing key and signed
+`Fedora-Workstation-43-1.6-x86_64-CHECKSUM` as verification data. The key was
+obtained from the host's distribution-supplied
+`/etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-43-primary`; its pinned fingerprint is
+`C6E7F081CF80E13146676E88829B606631645531`. The checksum accompanied the official
+Fedora 43 Workstation release download, and its signature is checked against
+that key before media preparation. These unmodified upstream verification files
+are not project-authored MIT code and are not included in the extension ZIP.
+The ISO itself remains ignored and is downloaded only on explicit request.
